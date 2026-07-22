@@ -1,3 +1,4 @@
+import { API_URL } from '../config';
 import { createContext, useContext, useState, useEffect } from 'react';
 import { toast } from 'sonner';
 
@@ -34,7 +35,7 @@ export function AuthProvider({ children }) {
       const fetchProfile = async () => {
         try {
           const token = localStorage.getItem('token');
-          const res = await fetch('http://localhost:5000/api/v1/users/profile', {
+          const res = await fetch(API_URL + '/api/v1/users/profile', {
             headers: {
               'Authorization': `Bearer ${token}`
             }
@@ -63,7 +64,7 @@ export function AuthProvider({ children }) {
 
   const login = async (email, password) => {
     try {
-      const response = await fetch('http://localhost:5000/api/v1/auth/login', {
+      const response = await fetch(API_URL + '/api/v1/auth/login', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -90,7 +91,7 @@ export function AuthProvider({ children }) {
 
   const register = async (userData) => {
     try {
-      const response = await fetch('http://localhost:5000/api/v1/auth/register', {
+      const response = await fetch(API_URL + '/api/v1/auth/register', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

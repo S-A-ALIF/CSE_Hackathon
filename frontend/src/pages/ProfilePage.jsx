@@ -1,7 +1,9 @@
+import { API_URL } from '../config';
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { useAuth } from '../contexts/AuthContext';
+import NotificationDropdown from '../components/NotificationDropdown';
 
 export default function ProfilePage() {
   const { currentUser, userProfile, setUserProfile } = useAuth();
@@ -61,7 +63,7 @@ export default function ProfilePage() {
     
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch('http://localhost:5000/api/v1/users/profile', {
+      const res = await fetch(API_URL + '/api/v1/users/profile', {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -96,13 +98,14 @@ export default function ProfilePage() {
   return (
     <div className="min-h-screen bg-slate-50">
       {/* Navbar */}
-      <nav className="bg-slate-900 text-white py-4 px-6 lg:px-20 flex justify-between items-center shadow-md">
+      <nav className="bg-slate-900 text-white py-4 px-6 lg:px-20 flex justify-between items-center shadow-md relative z-50">
         <Link to="/dashboard" className="text-2xl font-black tracking-tighter hover:opacity-80 transition-opacity">
           GSTU<span className="text-blue-500">Hackathon</span>
         </Link>
-        <div className="flex items-center space-x-6">
-          <Link to="/dashboard" className="w-10 h-10 rounded-full bg-slate-800 hover:bg-slate-700 flex items-center justify-center transition-colors">
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
+        <div className="flex items-center space-x-4">
+          <NotificationDropdown />
+          <Link to="/dashboard" className="w-10 h-10 rounded-full bg-slate-800 hover:bg-slate-700 border-2 border-slate-700 flex items-center justify-center transition-colors">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5 text-slate-300">
               <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18" />
             </svg>
           </Link>

@@ -10,7 +10,7 @@ const app: Application = express();
 // Global Middleware
 // CRITICAL: You must allow credentials (cookies/sessions) from your frontend origin
 app.use(cors({
-    origin: ["http://localhost:5173", "http://localhost:3000"], // Adjust to your frontend port
+    origin: ["http://localhost:5173", "http://localhost:3000", "https://gstu-cse-hackethon-vert.vercel.app"], // Added Vercel URL
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
     allowedHeaders: ["Content-Type", "Authorization"]
