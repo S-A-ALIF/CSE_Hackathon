@@ -9,6 +9,7 @@ export function useAuth() {
 
 export function AuthProvider({ children }) {
   const [currentUser, setCurrentUser] = useState(null);
+  const [userProfile, setUserProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   
   useEffect(() => {
@@ -26,6 +27,39 @@ export function AuthProvider({ children }) {
       setLoading(false);
     }
   }, []);
+
+  // Fetch detailed profile data whenever the current user changes
+  useEffect(() => {
+    if (currentUser) {
+      const fetchProfile = async () => {
+        try {
+          const token = localStorage.getItem('token');
+          const res = await fetch('http://localhost:5000/api/v1/users/profile', {
+            headers: {
+              'Authorization': `Bearer ${token}`
+            }
+          });
+          const data = await res.json();
+          if (res.ok && data.data) {
+             setUserProfile({
+               name: data.data.name || '',
+               student_id: data.data.studentId || '',
+               batch_session: data.data.batchSession || '',
+               phone_number: data.data.phoneNumber || ''
+             });
+          } else {
+             setUserProfile({ name: '', student_id: '', batch_session: '', phone_number: '' });
+          }
+        } catch (err) {
+          console.error("Failed to fetch profile:", err);
+          setUserProfile({ name: '', student_id: '', batch_session: '', phone_number: '' });
+        }
+      };
+      fetchProfile();
+    } else {
+      setUserProfile(null);
+    }
+  }, [currentUser]);
 
   const login = async (email, password) => {
     try {
@@ -86,6 +120,7 @@ export function AuthProvider({ children }) {
 
   const logout = () => {
     setCurrentUser(null);
+    setUserProfile(null);
     localStorage.removeItem('currentUser');
     localStorage.removeItem('token');
   };
@@ -95,7 +130,7 @@ export function AuthProvider({ children }) {
   }
 
   return (
-    <AuthContext.Provider value={{ currentUser, login, register, logout }}>
+    <AuthContext.Provider value={{ currentUser, userProfile, setUserProfile, login, register, logout }}>
       {children}
     </AuthContext.Provider>
   );

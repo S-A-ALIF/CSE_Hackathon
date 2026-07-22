@@ -1,0 +1,61 @@
+import { Request, Response, NextFunction } from 'express';
+import * as userService from './user.service';
+import { verifyToken } from '../../config/jwt.config';
+
+// Helper to extract user ID from auth token
+const getUserIdFromToken = (req: Request): string | null => {
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith('Bearer ')) return null;
+    try {
+        const token = authHeader.split(' ')[1];
+        const decoded = verifyToken(token);
+        return decoded?.id || null;
+    } catch {
+        return null;
+    }
+};
+
+export const getProfile = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const userId = getUserIdFromToken(req);
+        if (!userId) {
+            return res.status(401).json({ status: 'error', message: 'Unauthorized' });
+        }
+
+        const profile = await userService.getProfile(userId);
+        
+        res.status(200).json({
+            status: 'success',
+            data: profile // might be null if they haven't created it yet
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
+export const updateProfile = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const userId = getUserIdFromToken(req);
+        if (!userId) {
+            return res.status(401).json({ status: 'error', message: 'Unauthorized' });
+        }
+
+        const { name, student_id, batch_session, phone_number } = req.body;
+
+        const updatedProfile = await userService.upsertProfile({
+            userId,
+            name: name.trim(),
+            studentId: student_id.trim(),
+            batchSession: batch_session.trim(),
+            phoneNumber: phone_number.trim()
+        });
+
+        res.status(200).json({
+            status: 'success',
+            message: 'Profile updated successfully',
+            data: updatedProfile
+        });
+    } catch (error) {
+        next(error);
+    }
+};

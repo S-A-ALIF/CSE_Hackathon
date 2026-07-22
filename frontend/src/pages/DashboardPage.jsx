@@ -1,16 +1,31 @@
-import { useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 
 export default function DashboardPage() {
   const { currentUser, logout } = useAuth();
   const navigate = useNavigate();
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const menuRef = useRef(null);
 
   useEffect(() => {
     if (!currentUser) {
       navigate('/');
     }
   }, [currentUser, navigate]);
+
+  // Close menu when clicking outside
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (menuRef.current && !menuRef.current.contains(event.target)) {
+        setIsMenuOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [menuRef]);
 
   if (!currentUser) return null;
 
@@ -20,61 +35,80 @@ export default function DashboardPage() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      {/* Simple Dashboard Navbar */}
-      <nav className="bg-slate-900 text-white py-4 px-6 lg:px-20 flex justify-between items-center shadow-md">
+    <div className="min-h-screen bg-slate-50 flex flex-col">
+      {/* Dashboard Navbar */}
+      <nav className="bg-slate-900 text-white py-4 px-6 lg:px-20 flex justify-between items-center shadow-md relative z-50">
         <Link to="/" className="text-2xl font-black tracking-tighter hover:opacity-80 transition-opacity">
           GSTU<span className="text-blue-500">Hackathon</span>
         </Link>
-        <div className="flex items-center space-x-6">
-          <Link to="/" className="text-slate-300 font-semibold hover:text-white transition-colors">
-            Back to Landing Page
-          </Link>
-          <button 
-            onClick={handleLogout}
-            className="bg-red-500/10 text-red-400 border border-red-500/20 hover:bg-red-500/20 font-semibold py-2 px-4 rounded-lg transition-all"
+        
+        <div className="flex items-center space-x-4 relative" ref={menuRef}>
+          {/* Profile Icon */}
+          <Link 
+            to="/profile" 
+            className="w-10 h-10 rounded-full bg-slate-700 hover:bg-slate-600 border-2 border-slate-600 flex items-center justify-center transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500"
+            title="Profile"
           >
-            Logout
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5 text-slate-300">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" />
+            </svg>
+          </Link>
+
+          {/* Hamburger Menu */}
+          <button 
+            onClick={() => setIsMenuOpen(!isMenuOpen)}
+            className="p-2 rounded-lg text-slate-300 hover:bg-slate-800 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
+            </svg>
           </button>
+
+          {/* Dropdown Menu */}
+          {isMenuOpen && (
+            <div className="absolute top-full right-0 mt-2 w-48 bg-white rounded-xl shadow-xl py-2 border border-slate-200 animate-in fade-in slide-in-from-top-2">
+              <button 
+                onClick={() => { setIsMenuOpen(false); /* Add settings logic here later */ }}
+                className="w-full text-left px-4 py-2 text-slate-700 hover:bg-slate-50 transition-colors flex items-center gap-2"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4 text-slate-400">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.325.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 0 1 1.37.49l1.296 2.247a1.125 1.125 0 0 1-.26 1.431l-1.003.827c-.293.241-.438.613-.43.992a7.723 7.723 0 0 1 0 .255c-.008.378.137.75.43.991l1.004.827c.424.35.534.955.26 1.43l-1.298 2.247a1.125 1.125 0 0 1-1.369.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.47 6.47 0 0 1-.22.128c-.331.183-.581.495-.644.869l-.213 1.281c-.09.543-.56.94-1.11.94h-2.594c-.55 0-1.019-.398-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a6.52 6.52 0 0 1-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 0 1-1.369-.49l-1.297-2.247a1.125 1.125 0 0 1 .26-1.431l1.004-.827c.292-.24.437-.613.43-.991a6.932 6.932 0 0 1 0-.255c.007-.38-.138-.751-.43-.992l-1.004-.827a1.125 1.125 0 0 1-.26-1.43l1.297-2.247a1.125 1.125 0 0 1 1.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.086.22-.128.332-.183.582-.495.644-.869l.214-1.28Z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
+                </svg>
+                Settings
+              </button>
+              
+              <div className="h-px bg-slate-100 my-1"></div>
+              
+              <button 
+                onClick={handleLogout}
+                className="w-full text-left px-4 py-2 text-red-600 hover:bg-red-50 transition-colors flex items-center gap-2"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4 text-red-500">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 9V5.25A2.25 2.25 0 0 1 10.5 3h6a2.25 2.25 0 0 1 2.25 2.25v13.5A2.25 2.25 0 0 1 16.5 21h-6a2.25 2.25 0 0 1-2.25-2.25V15m-3 0-3-3m0 0 3-3m-3 3H15" />
+                </svg>
+                Log Out
+              </button>
+            </div>
+          )}
         </div>
       </nav>
 
       {/* Dashboard Content */}
-      <main className="container mx-auto px-6 lg:px-20 py-12 max-w-5xl">
-        <div className="bg-white rounded-3xl shadow-sm border border-slate-200 p-8 md:p-12">
-          <div className="flex items-center justify-between mb-8 pb-8 border-b border-slate-100">
-            <div>
-              <h1 className="text-3xl font-extrabold text-slate-900 mb-2">
-                Welcome back, {currentUser.name}!
-              </h1>
-              <p className="text-lg text-slate-500">
-                You are managing the team: <span className="font-bold text-slate-800">{currentUser.teamName}</span>
-              </p>
-            </div>
-            <div className="text-6xl hidden sm:block">👋</div>
+      <main className="flex-grow flex items-center justify-center p-6">
+        <div className="text-center animate-in fade-in zoom-in duration-500">
+          <div className="inline-block p-4 rounded-full bg-blue-100 text-blue-500 mb-6">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-12 h-12">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M11.42 15.17 17.25 21A2.652 2.652 0 0 0 21 17.25l-5.877-5.877M11.42 15.17l2.492-3.053c.24-.294.487-.588.74-.882M11.42 15.17l-3.053 2.492c-.294.24-.588.487-.882.74M9 15.75 3 21m0 0 3-3m-3 3 3 3m12-3 3-3m0 0-3-3m3 3-3 3M15.75 9l3-3m0 0-3-3m3 3-3 3M9 15.75l-3-3M3 12.75l-3-3M12 21v-3.75M21 12v-3.75" />
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v6M9 12h6" />
+            </svg>
           </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <div className="bg-blue-50 border border-blue-100 p-6 rounded-2xl">
-              <h3 className="text-xl font-bold text-blue-900 mb-2">Submission Portal</h3>
-              <p className="text-blue-700 mb-4">
-                The project submission portal will open during the hackathon. Check back later to submit your code!
-              </p>
-              <button disabled className="bg-blue-200 text-blue-500 font-bold py-2 px-6 rounded-lg cursor-not-allowed">
-                Submit Project
-              </button>
-            </div>
-
-            <div className="bg-slate-50 border border-slate-100 p-6 rounded-2xl">
-              <h3 className="text-xl font-bold text-slate-800 mb-2">Team Management</h3>
-              <p className="text-slate-600 mb-4">
-                Currently, team edits are locked. If you need to make urgent changes to your team roster, please contact the organizers.
-              </p>
-              <button disabled className="bg-slate-200 text-slate-400 font-bold py-2 px-6 rounded-lg cursor-not-allowed">
-                Edit Team
-              </button>
-            </div>
-          </div>
+          <h1 className="text-4xl md:text-5xl font-black text-slate-900 mb-4 tracking-tight">
+            Features not available at the moment
+          </h1>
+          <p className="text-lg text-slate-500 max-w-md mx-auto">
+            We are working hard to bring you the best hackathon experience. Check back soon for updates!
+          </p>
         </div>
       </main>
     </div>

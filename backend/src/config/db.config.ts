@@ -15,7 +15,7 @@ const poolConfig: PoolConfig = {
     // Performance & Resource Tuning for Production Environments
     max: 20,                          // Maximum number of active clients allowed in the pool
     idleTimeoutMillis: 30000,         // Close idle clients after 30 seconds of inactivity
-    connectionTimeoutMillis: 2000,    // Return an error if a connection takes longer than 2 seconds
+    connectionTimeoutMillis: 10000,   // Increased to 10s to allow Neon Serverless DB to wake up
     maxUses: 7500,                    // Recreate allocations after 7500 queries to mitigate memory leaks
     
     // Explicitly enforce SSL when running in a production ecosystem or using Neon

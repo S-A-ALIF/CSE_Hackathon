@@ -24,15 +24,12 @@ export default function Navbar() {
           <div className="flex space-x-4 items-center">
             {currentUser ? (
               <>
-                <span className="text-slate-300 font-medium mr-4">
-                  Welcome, <span className="text-white font-bold">{currentUser.name}</span>
-                </span>
-                <button 
-                  onClick={logout}
-                  className="bg-red-500/10 text-red-400 border border-red-500/20 hover:bg-red-500/20 font-semibold py-2 px-4 rounded-lg transition-all"
+                <Link 
+                  to="/dashboard"
+                  className="bg-blue-600/10 text-blue-400 border border-blue-500/20 hover:bg-blue-500/20 font-semibold py-2 px-4 rounded-lg transition-all"
                 >
-                  Logout
-                </button>
+                  Dashboard
+                </Link>
               </>
             ) : (
               <>
