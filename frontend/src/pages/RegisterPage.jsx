@@ -1,96 +1,120 @@
-import { Link } from 'react-router-dom';
-
-const ParticipantFields = ({ title, showBatchId = true }) => (
-  <div className="bg-slate-50 p-6 rounded-xl border border-slate-200 mb-6">
-    <h3 className="text-xl font-bold text-slate-800 mb-4 border-b pb-2">{title}</h3>
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-      <div>
-        <label className="block text-sm font-semibold text-slate-700 mb-1">Full Name</label>
-        <input type="text" className="w-full px-4 py-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Jane Doe" />
-      </div>
-      <div>
-        <label className="block text-sm font-semibold text-slate-700 mb-1">Email</label>
-        <input type="email" className="w-full px-4 py-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 outline-none" placeholder="jane@university.edu" />
-      </div>
-      <div>
-        <label className="block text-sm font-semibold text-slate-700 mb-1">Phone Number</label>
-        <input type="tel" className="w-full px-4 py-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 outline-none" placeholder="+880..." />
-      </div>
-      <div>
-        <label className="block text-sm font-semibold text-slate-700 mb-1">T-Shirt Size</label>
-        <select className="w-full px-4 py-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 outline-none bg-white">
-          <option>S</option>
-          <option>M</option>
-          <option>L</option>
-          <option>XL</option>
-          <option>XXL</option>
-        </select>
-      </div>
-      {showBatchId && (
-        <>
-          <div>
-            <label className="block text-sm font-semibold text-slate-700 mb-1">Batch</label>
-            <input type="text" className="w-full px-4 py-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 outline-none" placeholder="e.g. 20th" />
-          </div>
-          <div>
-            <label className="block text-sm font-semibold text-slate-700 mb-1">Student ID</label>
-            <input type="text" className="w-full px-4 py-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 outline-none" placeholder="1234567" />
-          </div>
-        </>
-      )}
-    </div>
-  </div>
-);
+import { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
+import { useAuth } from '../contexts/AuthContext';
 
 export default function RegisterPage() {
+  const { register } = useAuth();
+  const navigate = useNavigate();
+  
+  const [formData, setFormData] = useState({
+    email: '',
+    password: ''
+  });
+  const [showPassword, setShowPassword] = useState(false);
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    // Validation
+    if (!formData.email.trim() || !formData.password) {
+      toast.error('Please fill out all fields.');
+      return;
+    }
+
+    // Register User
+    const userData = {
+      email: formData.email,
+      password: formData.password
+    };
+
+    const result = await register(userData);
+    if (result.success) {
+      toast.success('Registration successful!');
+      navigate('/dashboard');
+    } else {
+      toast.error(result.message);
+    }
+  };
+
   return (
-    <div className="min-h-screen bg-slate-100 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-4xl mx-auto">
+    <div className="min-h-screen bg-slate-100 py-12 px-4 sm:px-6 lg:px-8 flex flex-col justify-center">
+      <div className="max-w-md w-full mx-auto">
         <div className="text-center mb-10">
           <Link to="/" className="text-2xl font-black text-slate-900 tracking-tighter hover:opacity-80 transition-opacity">
-            GSTU<span className="text-blue-500">Hackethon</span>
+            GSTU<span className="text-blue-500">Hackathon</span>
           </Link>
           <h2 className="mt-6 text-4xl font-extrabold text-slate-900">
-            Register Your Team
+            Create Account
           </h2>
           <p className="mt-2 text-lg text-slate-600">
-            Form your squad and get ready to build the future.
+            Register to participate in the hackathon.
           </p>
         </div>
 
-        <form className="bg-white rounded-3xl shadow-xl p-8 md:p-12 border border-slate-100">
+        <form onSubmit={handleSubmit} className="bg-white rounded-3xl shadow-xl p-8 md:p-12 border border-slate-100">
           
-          {/* Team Info */}
-          <div className="mb-10">
-            <h3 className="text-2xl font-bold text-slate-900 mb-4 border-b-2 border-blue-500 inline-block pb-1">Team Details</h3>
+          <div className="flex flex-col gap-6 mb-6">
             <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-2">Team Name</label>
-              <input type="text" className="w-full px-4 py-3 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 outline-none text-lg" placeholder="e.g. The Innovators" />
+              <label className="block text-sm font-semibold text-slate-700 mb-2">Email Address</label>
+              <input 
+                type="email" 
+                name="email"
+                value={formData.email}
+                onChange={handleChange}
+                className="w-full px-4 py-3 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 outline-none" 
+                placeholder="you@example.com" 
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-semibold text-slate-700 mb-2">Password</label>
+              <div className="relative">
+                <input 
+                  type={showPassword ? 'text' : 'password'}
+                  name="password"
+                  value={formData.password}
+                  onChange={handleChange}
+                  className="w-full px-4 py-3 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 outline-none pr-12" 
+                  placeholder="••••••••" 
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 focus:outline-none"
+                >
+                  {showPassword ? (
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M3.98 8.223A10.477 10.477 0 0 0 1.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.451 10.451 0 0 1 12 4.5c4.756 0 8.773 3.162 10.065 7.498a10.522 10.522 0 0 1-4.293 5.774M6.228 6.228 3 3m3.228 3.228 3.65 3.65m7.894 7.894L21 21m-3.228-3.228-3.65-3.65m0 0a3 3 0 1 0-4.243-4.243m4.242 4.242L9.88 9.88" />
+                    </svg>
+                  ) : (
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178Z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
+                    </svg>
+                  )}
+                </button>
+              </div>
             </div>
           </div>
 
-          {/* Participants */}
-          <div className="mb-10">
-            <h3 className="text-2xl font-bold text-slate-900 mb-6 border-b-2 border-blue-500 inline-block pb-1">Team Members</h3>
-            <ParticipantFields title="Participant 1 (Team Leader)" />
-            <ParticipantFields title="Participant 2" />
-            <ParticipantFields title="Participant 3" />
-          </div>
-
-          {/* Supervisor */}
-          <div className="mb-10">
-            <h3 className="text-2xl font-bold text-slate-900 mb-6 border-b-2 border-blue-500 inline-block pb-1">Supervisor</h3>
-            <ParticipantFields title="Faculty Supervisor" showBatchId={false} />
-          </div>
-
-          <button type="button" className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-5 px-4 rounded-xl shadow-lg shadow-blue-500/30 transition-all text-xl">
-            Submit Registration
+          <button type="submit" className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 px-4 rounded-xl shadow-lg shadow-blue-500/30 transition-all text-xl mt-6">
+            Register
           </button>
         </form>
 
         <div className="mt-8 text-center text-sm">
+          <span className="text-slate-600">Already have an account? </span>
           <Link to="/" className="text-blue-600 font-medium hover:underline">
-            &larr; Back to Home
+            Go to Home to Login
           </Link>
         </div>
       </div>

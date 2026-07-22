@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 
-export default function Hero() {
+export default function Home() {
   return (
     <section id="home" className="bg-slate-900 text-white min-h-screen flex flex-col justify-center relative overflow-hidden">
       {/* Decorative gradient blob */}
@@ -16,12 +16,9 @@ export default function Hero() {
         </p>
         
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
-          <Link to="/register" className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-4 px-8 rounded-lg shadow-lg shadow-blue-500/30 transition-all text-center">
+          <Link to="/register" className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-5 px-10 text-xl rounded-lg shadow-lg shadow-blue-500/30 transition-all text-center">
             Register Now
           </Link>
-          <button className="bg-slate-800 hover:bg-slate-700 border border-slate-700 text-white font-semibold py-4 px-8 rounded-lg transition-all">
-            Explore Tracks
-          </button>
         </div>
       </div>
       

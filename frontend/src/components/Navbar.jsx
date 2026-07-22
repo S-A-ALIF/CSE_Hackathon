@@ -1,8 +1,11 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import LoginModal from '../features/authentication/LoginModal';
+import { useAuth } from '../contexts/AuthContext';
 
 export default function Navbar() {
   const [isLoginOpen, setIsLoginOpen] = useState(false);
+  const { currentUser, logout } = useAuth();
 
   return (
     <>
@@ -14,19 +17,39 @@ export default function Navbar() {
           <div className="hidden md:flex space-x-6 lg:space-x-8 text-sm font-semibold text-slate-300">
             <a href="#home" className="hover:text-white transition-colors">Home</a>
             <a href="#about" className="hover:text-white transition-colors">About</a>
-            <a href="#tracks" className="hover:text-white transition-colors">Tracks</a>
             <a href="#requirements" className="hover:text-white transition-colors">Requirements</a>
             <a href="#rules" className="hover:text-white transition-colors">Rules</a>
             <a href="#schedule" className="hover:text-white transition-colors">Schedule</a>
-            <a href="#sponsors" className="hover:text-white transition-colors">Sponsors</a>
           </div>
-          <div>
-            <button 
-              onClick={() => setIsLoginOpen(true)}
-              className="bg-white/10 hover:bg-white/20 text-white font-semibold py-2 px-6 rounded-lg backdrop-blur-md transition-all"
-            >
-              Login
-            </button>
+          <div className="flex space-x-4 items-center">
+            {currentUser ? (
+              <>
+                <span className="text-slate-300 font-medium mr-4">
+                  Welcome, <span className="text-white font-bold">{currentUser.name}</span>
+                </span>
+                <button 
+                  onClick={logout}
+                  className="bg-red-500/10 text-red-400 border border-red-500/20 hover:bg-red-500/20 font-semibold py-2 px-4 rounded-lg transition-all"
+                >
+                  Logout
+                </button>
+              </>
+            ) : (
+              <>
+                <button 
+                  onClick={() => setIsLoginOpen(true)}
+                  className="text-white font-semibold py-2 px-4 hover:text-blue-400 transition-colors"
+                >
+                  Sign In
+                </button>
+                <Link 
+                  to="/register"
+                  className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-6 rounded-lg shadow-lg shadow-blue-500/30 transition-all"
+                >
+                  Sign Up
+                </Link>
+              </>
+            )}
           </div>
         </div>
       </nav>
