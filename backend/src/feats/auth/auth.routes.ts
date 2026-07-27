@@ -2,6 +2,7 @@ import { Router } from 'express';
 import * as authController from './auth.controller';
 import { validateRequest } from '../../middlewares/validateRequest';
 import { registerSchema, loginSchema } from './auth.validator';
+import { authMiddleware } from './auth.middleware';
 
 const router = Router();
 
@@ -34,6 +35,7 @@ router.post(
  */
 router.get(
     '/me',
+    authMiddleware,
     authController.getMe
 );
 

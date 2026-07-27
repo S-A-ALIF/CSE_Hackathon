@@ -13,3 +13,36 @@ html, body {
   background-color: #f8fafc; /* Slate 50 */
   color: #1e293b; /* Slate 800 */
 }
+
+/* Position Sonner toast close button ('X') on the right side of the notification card */
+[data-close-button="true"],
+[data-close-button] {
+  left: auto !important;
+  right: 12px !important;
+  top: 50% !important;
+  transform: translateY(-50%) !important;
+  background-color: rgba(241, 245, 249, 0.9) !important;
+  border: 1px solid #cbd5e1 !important;
+  color: #334155 !important;
+  width: 26px !important;
+  height: 26px !important;
+  border-radius: 50% !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  cursor: pointer !important;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05) !important;
+  transition: all 0.2s ease !important;
+}
+
+[data-close-button="true"]:hover,
+[data-close-button]:hover {
+  background-color: #e2e8f0 !important;
+  color: #0f172a !important;
+  border-color: #94a3b8 !important;
+}
+
+/* Add padding on the right of the toast card so text does not overlap the close cross */
+[data-sonner-toast] {
+  padding-right: 48px !important;
+}

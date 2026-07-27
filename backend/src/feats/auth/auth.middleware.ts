@@ -4,7 +4,7 @@ import { verifyToken } from '../../config/jwt.config';
 export const authMiddleware = (req: Request, res: Response, next: NextFunction): void => {
     const authHeader = req.headers.authorization;
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
-        res.status(401).json({ success: false, message: 'Unauthorized: No token provided' });
+        res.status(401).json({ status: 'error', success: false, message: 'Unauthorized: No token provided' });
         return;
     }
 
@@ -15,6 +15,6 @@ export const authMiddleware = (req: Request, res: Response, next: NextFunction):
         (req as any).user = decoded;
         next();
     } catch (err) {
-        res.status(401).json({ success: false, message: 'Unauthorized: Invalid token' });
+        res.status(401).json({ status: 'error', success: false, message: 'Unauthorized: Invalid token' });
     }
 };

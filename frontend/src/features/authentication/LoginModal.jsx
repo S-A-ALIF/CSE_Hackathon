@@ -15,8 +15,8 @@ export default function LoginModal({ isOpen, onClose }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    const success = await login(email, password);
-    if (success) {
+    const result = await login(email, password);
+    if (result && (result === true || result.success)) {
       toast.success('Successfully signed in!');
       onClose();
       setEmail('');
@@ -24,7 +24,7 @@ export default function LoginModal({ isOpen, onClose }) {
       setShowPassword(false);
       navigate('/dashboard');
     } else {
-      toast.error('Invalid email or password');
+      toast.error(result?.message || 'Invalid email or password');
     }
   };
 

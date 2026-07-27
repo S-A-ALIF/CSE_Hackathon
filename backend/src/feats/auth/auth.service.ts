@@ -57,7 +57,7 @@ export const loginUser = async (email: string, password: string) => {
         }
 
         // 4. Generate JWT
-        const token = generateToken({ id: user.id, role: user.role });
+        const token = generateToken({ id: user.id, email: user.email, role: user.role });
 
         return {
             token,
@@ -76,45 +76,23 @@ export const loginUser = async (email: string, password: string) => {
     }
 };
 
-export const getMe = async (userId: string, role: string) => {
+export const getMe = async (userId: string, role?: string) => {
     try {
-        let profile = null;
-        
-        if (role === 'admin') {
-            const instQuery = `
-                SELECT i.* FROM institutions i 
-                JOIN user_institutions ui ON i.id = ui.inst_id 
-                WHERE ui.user_id = $1
-            `;
-            const instResult = await pool.query(instQuery, [userId]);
-            profile = instResult.rows[0] || null;
-            
-        } else if (role === 'tutor') {
-            const tutorQuery = `
-                SELECT t.*, i.name as institution_name, i.id as inst_id 
-                FROM tutors t 
-                JOIN user_tutors ut ON t.id = ut.tutor_id 
-                LEFT JOIN tutor_institutions ti ON t.id = ti.tutor_id
-                LEFT JOIN institutions i ON ti.inst_id = i.id
-                WHERE ut.user_id = $1
-                LIMIT 1
-            `;
-            const tutorResult = await pool.query(tutorQuery, [userId]);
-            profile = tutorResult.rows[0] || null;
-            
-        } else if (role === 'student') {
-            const studentQuery = `
-                SELECT s.*, i.name as institution_name, i.id as inst_id
-                FROM students s 
-                JOIN user_students us ON s.id = us.student_id 
-                LEFT JOIN student_enrollments se ON s.id = se.student_id AND se.status = 'active'
-                LEFT JOIN institution_enrollments ie ON se.enrollment_id = ie.enrollment_id
-                LEFT JOIN institutions i ON ie.inst_id = i.id
-                WHERE us.user_id = $1
-                LIMIT 1
-            `;
-            const studentResult = await pool.query(studentQuery, [userId]);
-            profile = studentResult.rows[0] || null;
+        const userQuery = `
+            SELECT u.id, u.email, u.role, u.created_at,
+                   ui.name, ui.student_id, ui.batch_session, ui.phone_number,
+                   t.id as team_id, t.name as team_name, t.leader_id
+            FROM users u
+            LEFT JOIN user_info ui ON u.id = ui.user_id
+            LEFT JOIN team_members tm ON u.id = tm.user_id
+            LEFT JOIN teams t ON tm.team_id = t.id
+            WHERE u.id = $1
+        `;
+        const userResult = await pool.query(userQuery, [userId]);
+        const profile = userResult.rows[0];
+
+        if (!profile) {
+            throw new CustomError('User not found', 404);
         }
 
         return profile;

@@ -48,6 +48,9 @@ const PORT = envConfig.port || 5000;
 const server = app.listen(PORT, () => {
     console.log(`🚀 Server is running on port ${PORT}`);
     console.log(`Environment: ${envConfig.env}`);
+    pool.query('ALTER TABLE notifications ADD COLUMN IF NOT EXISTS action_status VARCHAR(20) DEFAULT NULL').catch(err => {
+        console.error('Migration error adding action_status:', err);
+    });
 });
 
 // Graceful Shutdown

@@ -14,6 +14,7 @@ export const errorHandler = (
     if (err instanceof CustomError) {
         return res.status(err.statusCode).json({
             status: 'error',
+            success: false,
             message: err.message
         });
     }
@@ -21,6 +22,7 @@ export const errorHandler = (
     // Default 500 error for unhandled exceptions
     res.status(500).json({
         status: 'error',
+        success: false,
         message: 'An unexpected server error occurred.'
     });
 };

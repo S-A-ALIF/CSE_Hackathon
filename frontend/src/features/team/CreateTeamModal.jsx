@@ -5,11 +5,19 @@ import { toast } from 'sonner';
 export default function CreateTeamModal({ isOpen, onClose, mode = 'create' }) {
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
+  const [successInfo, setSuccessInfo] = useState(null);
 
   if (!isOpen) return null;
 
+  const handleClose = () => {
+    setEmail('');
+    setSuccessInfo(null);
+    onClose();
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (loading) return;
     if (!email) {
       toast.error('Please enter an email address');
       return;
@@ -30,8 +38,12 @@ export default function CreateTeamModal({ isOpen, onClose, mode = 'create' }) {
       
       if (res.ok) {
         toast.success(`Invitation sent to ${email}!`);
-        setEmail('');
-        onClose();
+        setSuccessInfo({
+          email,
+          message: data.message,
+          pinCode: data.pinCode,
+          emailSent: data.emailSent
+        });
       } else {
         toast.error(data.message || 'Failed to send invitation');
       }
@@ -52,40 +64,104 @@ export default function CreateTeamModal({ isOpen, onClose, mode = 'create' }) {
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
       <div 
         className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"
-        onClick={onClose}
+        onClick={handleClose}
       ></div>
       <div className="relative bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in-95 duration-200">
         <div className="p-8">
-          <h2 className="text-3xl font-black text-slate-900 mb-2">{title}</h2>
-          <p className="text-slate-500 mb-8">{subtitle}</p>
-          
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-2">Teammate's Email</label>
-              <input 
-                type="email" 
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                className="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none transition-all" 
-                placeholder="teammate@example.com" 
-              />
+          {successInfo ? (
+            <div className="text-center space-y-6 animate-in fade-in zoom-in duration-200">
+              <div className="w-16 h-16 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto shadow-inner">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-8 h-8">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                </svg>
+              </div>
+
+              <div>
+                <h3 className="text-2xl font-black text-slate-900">Invitation Sent!</h3>
+                <p className="text-sm text-slate-500 mt-1">
+                  We sent an invitation to <span className="font-bold text-slate-800">{successInfo.email}</span>.
+                </p>
+              </div>
+
+              <div className="bg-slate-50 border border-slate-200 p-4 rounded-2xl">
+                <p className="text-sm font-semibold text-slate-800">
+                  Check Gmail Inbox
+                </p>
+                <p className="text-xs text-slate-500 mt-1">
+                  A 6-digit PIN code has been sent to <b>{successInfo.email}</b>. They must use the code from their email to join your team!
+                </p>
+              </div>
+
+              <div className="bg-blue-50/50 border border-blue-100 p-3 rounded-xl text-left">
+                <p className="text-xs text-blue-800">
+                  <b>Email status:</b> {successInfo.emailSent ? 'Email dispatched to inbox.' : 'Email delivery failed or blocked by SMTP settings. Please check server email credentials.'}
+                </p>
+              </div>
+
+              <div className="flex flex-col gap-2 pt-2">
+                <button 
+                  type="button"
+                  onClick={handleClose}
+                  className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3.5 rounded-xl shadow-md transition-all"
+                >
+                  Done
+                </button>
+                <button 
+                  type="button"
+                  onClick={() => {
+                    setEmail('');
+                    setSuccessInfo(null);
+                  }}
+                  className="w-full text-slate-500 hover:text-slate-800 font-semibold py-2 transition-colors text-sm"
+                >
+                  Invite Another Teammate
+                </button>
+              </div>
             </div>
-            
-            <button 
-              type="submit" 
-              className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-xl shadow-lg shadow-blue-500/30 transition-all text-lg"
-            >
-              Send Invitation
-            </button>
-            <button 
-              type="button"
-              onClick={onClose}
-              className="w-full text-slate-500 hover:text-slate-700 font-semibold py-2 transition-colors"
-            >
-              Cancel
-            </button>
-          </form>
+          ) : (
+            <>
+              <h2 className="text-3xl font-black text-slate-900 mb-2">{title}</h2>
+              <p className="text-slate-500 mb-8">{subtitle}</p>
+              
+              <form onSubmit={handleSubmit} className="space-y-6">
+                <div>
+                  <label className="block text-sm font-semibold text-slate-700 mb-2">Teammate's Email</label>
+                  <input 
+                    type="email" 
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                    disabled={loading}
+                    className="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none transition-all disabled:opacity-50" 
+                    placeholder="teammate@example.com" 
+                  />
+                </div>
+                
+                <button 
+                  type="submit" 
+                  disabled={loading}
+                  className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white font-bold py-4 rounded-xl shadow-lg shadow-blue-500/30 transition-all text-lg flex items-center justify-center gap-2"
+                >
+                  {loading ? (
+                    <>
+                      <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                      <span>Sending...</span>
+                    </>
+                  ) : (
+                    <span>Send Invitation</span>
+                  )}
+                </button>
+                <button 
+                  type="button"
+                  disabled={loading}
+                  onClick={handleClose}
+                  className="w-full text-slate-500 hover:text-slate-700 font-semibold py-2 transition-colors disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+              </form>
+            </>
+          )}
         </div>
       </div>
     </div>

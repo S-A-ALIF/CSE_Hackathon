@@ -86,15 +86,46 @@ export const teamService = {
      * Generate an invitation and send an email + notification
      */
     async inviteMember(inviterId: string, inviterEmail: string, teamId: string, inviteeEmail: string) {
-        const pinCode = generatePin();
-        const expiresAt = new Date();
-        expiresAt.setHours(expiresAt.getHours() + 48); // Expires in 48 hours
+        // 1. Check if invitee is already in a team
+        const targetUserRes = await pool.query('SELECT id FROM users WHERE email = $1', [inviteeEmail]);
+        if (targetUserRes.rows.length > 0) {
+            const inviteeUserId = targetUserRes.rows[0].id;
+            const existingMember = await pool.query('SELECT team_id FROM team_members WHERE user_id = $1', [inviteeUserId]);
+            if (existingMember.rows.length > 0) {
+                throw new Error(`${inviteeEmail} is already a member of a team.`);
+            }
+        }
 
-        // Store invitation in DB
-        await pool.query(
-            'INSERT INTO team_invitations (team_id, email, pin_code, expires_at) VALUES ($1, $2, $3, $4)',
-            [teamId, inviteeEmail, pinCode, expiresAt]
+        // 2. Check for an active, unexpired invitation for this email from this team
+        const existingInviteRes = await pool.query(
+            'SELECT id, pin_code, created_at FROM team_invitations WHERE team_id = $1 AND email = $2 AND is_used = false AND expires_at > NOW() ORDER BY created_at DESC LIMIT 1',
+            [teamId, inviteeEmail]
         );
+
+        let pinCode: string;
+        let isNewInvite = true;
+        const now = Date.now();
+
+        if (existingInviteRes.rows.length > 0) {
+            const existingInvite = existingInviteRes.rows[0];
+            const createdTime = new Date(existingInvite.created_at).getTime();
+            // Cooldown: prevent sending again within 60 seconds
+            if (now - createdTime < 60000) {
+                throw new Error(`An invitation was just sent to ${inviteeEmail}. Please wait 60 seconds before sending another.`);
+            }
+            // Reuse existing PIN code without creating duplicate database entries
+            pinCode = existingInvite.pin_code;
+            isNewInvite = false;
+        } else {
+            pinCode = generatePin();
+            const expiresAt = new Date();
+            expiresAt.setHours(expiresAt.getHours() + 48); // Expires in 48 hours
+
+            await pool.query(
+                'INSERT INTO team_invitations (team_id, email, pin_code, expires_at) VALUES ($1, $2, $3, $4)',
+                [teamId, inviteeEmail, pinCode, expiresAt]
+            );
+        }
 
         // Send Email
         const emailSent = await sendEmail({
@@ -111,13 +142,15 @@ export const teamService = {
             `
         });
 
-        // Send Notification
-        await notificationService.createNotification(
-            inviteeEmail,
-            `You received a team invitation from ${inviterEmail}. Check your email for the PIN code!`
-        );
+        // Only send an in-app notification if this is a new invitation (prevent spamming duplicate notifications)
+        if (isNewInvite) {
+            await notificationService.createNotification(
+                inviteeEmail,
+                `You received a team invitation from ${inviterEmail}. Check your email inbox for the 6-digit PIN code to join!`
+            );
+        }
 
-        return { success: true, emailSent };
+        return { success: true, emailSent, pinCode };
     },
 
     /**
@@ -158,6 +191,33 @@ export const teamService = {
                 [invitation.id]
             );
 
+            // 5. Query team leader email and joining user email to send acceptance confirmation notification
+            const leaderRes = await client.query(
+                `SELECT t.name as team_name, u.email as leader_email 
+                 FROM teams t 
+                 JOIN users u ON t.leader_id = u.id 
+                 WHERE t.id = $1`,
+                [invitation.team_id]
+            );
+
+            const userRes = await client.query('SELECT email FROM users WHERE id = $1', [userId]);
+
+            if (leaderRes.rows.length > 0 && userRes.rows.length > 0) {
+                const leaderEmail = leaderRes.rows[0].leader_email;
+                const teamName = leaderRes.rows[0].team_name;
+                const joiningEmail = userRes.rows[0].email;
+
+                await client.query(
+                    'INSERT INTO notifications (recipient_email, message) VALUES ($1, $2)',
+                    [leaderEmail, `${joiningEmail} has accepted your invitation and joined team "${teamName}"!`]
+                );
+
+                await client.query(
+                    "UPDATE notifications SET action_status = 'accepted', is_read = true WHERE recipient_email = $1 AND message LIKE '%You received a team invitation%' AND (action_status IS NULL OR action_status = 'pending')",
+                    [joiningEmail]
+                );
+            }
+
             await client.query('COMMIT');
             return { success: true, teamId: invitation.team_id };
         } catch (error) {
@@ -166,5 +226,92 @@ export const teamService = {
         } finally {
             client.release();
         }
+    },
+
+    /**
+     * Remove a member from the team (Leader only)
+     */
+    async removeMember(leaderId: string, memberIdToRemove: string) {
+        if (leaderId === memberIdToRemove) {
+            throw new Error('Team leader cannot remove themselves. Use leave or disband instead.');
+        }
+
+        const teamRes = await pool.query('SELECT id, leader_id FROM teams WHERE leader_id = $1', [leaderId]);
+        const team = teamRes.rows[0];
+        if (!team) {
+            throw new Error('Only the team leader can remove members.');
+        }
+
+        const res = await pool.query(
+            'DELETE FROM team_members WHERE team_id = $1 AND user_id = $2 RETURNING *',
+            [team.id, memberIdToRemove]
+        );
+
+        if (res.rowCount === 0) {
+            throw new Error('Member not found in team.');
+        }
+
+        return { success: true };
+    },
+
+    /**
+     * Leave a team (Member or Leader if only member)
+     */
+    async leaveTeam(userId: string) {
+        const client = await pool.connect();
+        try {
+            await client.query('BEGIN');
+
+            const memberRes = await client.query('SELECT team_id FROM team_members WHERE user_id = $1', [userId]);
+            const teamId = memberRes.rows[0]?.team_id;
+            if (!teamId) {
+                throw new Error('You are not in any team.');
+            }
+
+            const teamRes = await client.query('SELECT id, leader_id FROM teams WHERE id = $1', [teamId]);
+            const team = teamRes.rows[0];
+
+            if (team.leader_id === userId) {
+                const countRes = await client.query('SELECT COUNT(*) as count FROM team_members WHERE team_id = $1', [teamId]);
+                const count = parseInt(countRes.rows[0].count, 10);
+                if (count > 1) {
+                    // Transfer leadership to another member
+                    const nextMemberRes = await client.query(
+                        'SELECT user_id FROM team_members WHERE team_id = $1 AND user_id != $2 LIMIT 1',
+                        [teamId, userId]
+                    );
+                    const newLeaderId = nextMemberRes.rows[0].user_id;
+                    await client.query('UPDATE teams SET leader_id = $1 WHERE id = $2', [newLeaderId, teamId]);
+                } else {
+                    // Leader was only member; disband team
+                    await client.query('DELETE FROM teams WHERE id = $1', [teamId]);
+                    await client.query('COMMIT');
+                    return { success: true, disbanded: true };
+                }
+            }
+
+            await client.query('DELETE FROM team_members WHERE team_id = $1 AND user_id = $2', [teamId, userId]);
+            await client.query('COMMIT');
+            return { success: true };
+        } catch (error) {
+            await client.query('ROLLBACK');
+            throw error;
+        } finally {
+            client.release();
+        }
+    },
+
+    /**
+     * Disband the entire team (Leader only)
+     */
+    async disbandTeam(leaderId: string) {
+        const teamRes = await pool.query('SELECT id FROM teams WHERE leader_id = $1', [leaderId]);
+        const team = teamRes.rows[0];
+        if (!team) {
+            throw new Error('Only the team leader can disband the team.');
+        }
+
+        await pool.query('DELETE FROM teams WHERE id = $1', [team.id]);
+        return { success: true };
     }
 };

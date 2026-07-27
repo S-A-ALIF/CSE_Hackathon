@@ -6,11 +6,13 @@ import RegisterPage from './pages/RegisterPage';
 import DashboardPage from './pages/DashboardPage';
 import ProfilePage from './pages/ProfilePage';
 import TeamPage from './pages/TeamPage';
+import ProjectPage from './pages/ProjectPage';
+import ProblemsPage from './pages/ProblemsPage';
 
 function App() {
   return (
     <AuthProvider>
-      <Toaster richColors position="top-right" />
+      <Toaster richColors position="top-right" closeButton duration={4000} />
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<LandingPage />} />
@@ -18,6 +20,8 @@ function App() {
           <Route path="/dashboard" element={<DashboardPage />} />
           <Route path="/profile" element={<ProfilePage />} />
           <Route path="/team" element={<TeamPage />} />
+          <Route path="/project" element={<ProjectPage />} />
+          <Route path="/problems" element={<ProblemsPage />} />
         </Routes>
       </BrowserRouter>
     </AuthProvider>

@@ -1,9 +1,7 @@
 import jwt from 'jsonwebtoken';
-import { config } from 'dotenv';
+import { envConfig } from './env.config';
 
-config(); // Load environment variables from .env file
-
-const JWT_SECRET = process.env.JWT_SECRET || 'super-secret-key-change-in-production';
+const JWT_SECRET = envConfig.jwt.secret;
 const JWT_EXPIRES_IN = '7d';
 
 export const generateToken = (payload: object): string => {

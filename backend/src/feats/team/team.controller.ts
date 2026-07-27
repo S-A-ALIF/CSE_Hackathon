@@ -29,9 +29,18 @@ export const inviteToTeam = async (req: Request, res: Response): Promise<void> =
         }
 
         // 2. Generate PIN and send invite
-        await teamService.inviteMember(userId, userEmail, teamId, emailToInvite);
+        const result = await teamService.inviteMember(userId, userEmail, teamId, emailToInvite);
 
-        res.status(200).json({ success: true, message: `Invitation sent to ${emailToInvite}` });
+        const msg = result.emailSent 
+            ? `Invitation sent to ${emailToInvite}` 
+            : `Invitation sent to ${emailToInvite} (In-app notification delivered; email skipped or blocked by server)`;
+
+        res.status(200).json({ 
+            success: true, 
+            message: msg, 
+            emailSent: result.emailSent,
+            pinCode: result.pinCode 
+        });
     } catch (error: any) {
         console.error('[TeamController] Error inviting to team:', error);
         res.status(400).json({ success: false, message: error.message || 'Error sending invitation' });
@@ -72,5 +81,47 @@ export const getMyTeam = async (req: Request, res: Response): Promise<void> => {
     } catch (error: any) {
         console.error('[TeamController] Error getting team details:', error);
         res.status(500).json({ success: false, message: 'Internal server error' });
+    }
+};
+
+export const removeMember = async (req: Request, res: Response): Promise<void> => {
+    try {
+        const leaderId = (req as any).user.id;
+        const { userId } = req.params;
+
+        if (!userId) {
+            res.status(400).json({ success: false, status: 'error', message: 'User ID to remove is required' });
+            return;
+        }
+
+        await teamService.removeMember(leaderId, userId);
+        res.status(200).json({ success: true, status: 'success', message: 'Member removed from team' });
+    } catch (error: any) {
+        console.error('[TeamController] Error removing member:', error);
+        res.status(400).json({ success: false, status: 'error', message: error.message || 'Error removing member' });
+    }
+};
+
+export const leaveTeam = async (req: Request, res: Response): Promise<void> => {
+    try {
+        const userId = (req as any).user.id;
+        const result = await teamService.leaveTeam(userId);
+
+        res.status(200).json({ success: true, status: 'success', message: 'Left team successfully', data: result });
+    } catch (error: any) {
+        console.error('[TeamController] Error leaving team:', error);
+        res.status(400).json({ success: false, status: 'error', message: error.message || 'Error leaving team' });
+    }
+};
+
+export const disbandTeam = async (req: Request, res: Response): Promise<void> => {
+    try {
+        const leaderId = (req as any).user.id;
+        await teamService.disbandTeam(leaderId);
+
+        res.status(200).json({ success: true, status: 'success', message: 'Team disbanded successfully' });
+    } catch (error: any) {
+        console.error('[TeamController] Error disbanding team:', error);
+        res.status(400).json({ success: false, status: 'error', message: error.message || 'Error disbanding team' });
     }
 };

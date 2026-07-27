@@ -14,19 +14,45 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true);
   
   useEffect(() => {
-    // Check for existing token and user on load
-    try {
-      const storedUser = localStorage.getItem('currentUser');
-      const token = localStorage.getItem('token');
-      if (storedUser && token) {
-        setCurrentUser(JSON.parse(storedUser));
+    // Check for existing token and verify with server on load
+    const verifyUser = async () => {
+      try {
+        const storedUser = localStorage.getItem('currentUser');
+        const token = localStorage.getItem('token');
+        if (storedUser && token) {
+          // Immediately set stored user for optimistic render
+          setCurrentUser(JSON.parse(storedUser));
+          
+          // Verify token validity with server
+          const res = await fetch(API_URL + '/api/v1/auth/me', {
+            headers: {
+              'Authorization': `Bearer ${token}`
+            }
+          });
+          const data = await res.json();
+          if (res.ok && data.data) {
+            const freshUser = {
+              id: data.data.id,
+              email: data.data.email,
+              role: data.data.role
+            };
+            setCurrentUser(freshUser);
+            localStorage.setItem('currentUser', JSON.stringify(freshUser));
+          } else if (res.status === 401) {
+            // Token invalid or expired
+            localStorage.removeItem('currentUser');
+            localStorage.removeItem('token');
+            setCurrentUser(null);
+          }
+        }
+      } catch (err) {
+        console.error('Error verifying user:', err);
+      } finally {
+        setLoading(false);
       }
-    } catch (err) {
-      localStorage.removeItem('currentUser');
-      localStorage.removeItem('token');
-    } finally {
-      setLoading(false);
-    }
+    };
+
+    verifyUser();
   }, []);
 
   // Fetch detailed profile data whenever the current user changes
@@ -75,17 +101,17 @@ export function AuthProvider({ children }) {
       const data = await response.json();
 
       if (!response.ok) {
-        return false;
+        return { success: false, message: data.message || 'Invalid email or password' };
       }
 
       // Save token and user
       localStorage.setItem('token', data.token);
       localStorage.setItem('currentUser', JSON.stringify(data.data));
       setCurrentUser(data.data);
-      return true;
+      return { success: true };
     } catch (err) {
       console.error("Login error:", err);
-      return false;
+      return { success: false, message: 'Network error. Please try again later.' };
     }
   };
 
@@ -106,8 +132,8 @@ export function AuthProvider({ children }) {
       }
 
       // Automatically log them in after registration
-      const loginSuccess = await login(userData.email, userData.password);
-      if (loginSuccess) {
+      const loginResult = await login(userData.email, userData.password);
+      if (loginResult.success) {
          return { success: true };
       } else {
          return { success: false, message: 'Registered successfully, but failed to log in automatically.' };

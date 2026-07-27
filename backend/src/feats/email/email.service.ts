@@ -1,4 +1,5 @@
 import nodemailer from 'nodemailer';
+import { envConfig } from '../../config/env.config';
 
 export interface EmailPayload {
     to: string;
@@ -16,9 +17,10 @@ export interface EmailPayload {
 const transporter = nodemailer.createTransport({
     service: 'gmail',
     auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_APP_PASSWORD,
+        user: envConfig.email.user,
+        pass: envConfig.email.pass,
     },
+    connectionTimeout: 10000,
 });
 
 /**
@@ -28,16 +30,16 @@ const transporter = nodemailer.createTransport({
  */
 export const sendEmail = async (payload: EmailPayload): Promise<boolean> => {
     try {
-        if (!process.env.EMAIL_USER || !process.env.EMAIL_APP_PASSWORD) {
-            console.warn('[EmailService] Email credentials not configured. Skipping email send.');
+        if (!envConfig.email.user || !envConfig.email.pass) {
+            console.warn('[EmailService] EMAIL_USER or EMAIL_APP_PASSWORD not configured in environment. Email delivery skipped.');
             return false;
         }
 
         const senderName = payload.fromName || 'GSTU Hackathon';
-        const replyToAddress = payload.replyTo ? payload.replyTo : process.env.EMAIL_USER;
+        const replyToAddress = payload.replyTo ? payload.replyTo : envConfig.email.user;
 
         const mailOptions = {
-            from: `"${senderName}" <${process.env.EMAIL_USER}>`,
+            from: `"${senderName}" <${envConfig.email.user}>`,
             to: payload.to,
             subject: payload.subject,
             text: payload.text,
@@ -48,8 +50,8 @@ export const sendEmail = async (payload: EmailPayload): Promise<boolean> => {
         const info = await transporter.sendMail(mailOptions);
         console.log(`[EmailService] Email sent successfully to ${payload.to}. Message ID: ${info.messageId}`);
         return true;
-    } catch (error) {
-        console.error('[EmailService] Error sending email:', error);
+    } catch (error: any) {
+        console.error('[EmailService] Error sending email:', error.message || error);
         return false;
     }
 };

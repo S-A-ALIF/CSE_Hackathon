@@ -111,20 +111,56 @@ export default function DashboardPage() {
       </nav>
 
       {/* Dashboard Content */}
-      <main className="flex-grow flex items-center justify-center p-6">
-        <div className="text-center animate-in fade-in zoom-in duration-500">
-          <div className="inline-block p-4 rounded-full bg-blue-100 text-blue-500 mb-6">
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-12 h-12">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M11.42 15.17 17.25 21A2.652 2.652 0 0 0 21 17.25l-5.877-5.877M11.42 15.17l2.492-3.053c.24-.294.487-.588.74-.882M11.42 15.17l-3.053 2.492c-.294.24-.588.487-.882.74M9 15.75 3 21m0 0 3-3m-3 3 3 3m12-3 3-3m0 0-3-3m3 3-3 3M15.75 9l3-3m0 0-3-3m3 3-3 3M9 15.75l-3-3M3 12.75l-3-3M12 21v-3.75M21 12v-3.75" />
-              <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v6M9 12h6" />
-            </svg>
-          </div>
-          <h1 className="text-4xl md:text-5xl font-black text-slate-900 mb-4 tracking-tight">
-            Features not available at the moment
+      <main className="flex-grow p-6 lg:p-12 max-w-7xl mx-auto w-full">
+        <div className="mb-8">
+          <h1 className="text-3xl font-black text-slate-900 tracking-tight">
+            Welcome back, {currentUser.email.split('@')[0]}!
           </h1>
-          <p className="text-lg text-slate-500 max-w-md mx-auto">
-            We are working hard to bring you the best hackathon experience. Check back soon for updates!
-          </p>
+          <p className="text-slate-600 mt-1">Here is your hackathon command center. Manage your team, project, and submissions.</p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {/* Team Card */}
+          <Link
+            to="/team"
+            className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md hover:border-blue-500 transition-all group"
+          >
+            <div className="w-12 h-12 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center mb-4 group-hover:bg-blue-600 group-hover:text-white transition-colors">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M18 18.72a9.094 9.094 0 0 0 3.741-.479 3 3 0 0 0-4.682-2.72m.94 3.198.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0 1 12 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 0 1 6 18.719m12 0a5.971 5.971 0 0 0-.941-3.197m0 0A5.995 5.995 0 0 0 12 12.75a5.995 5.995 0 0 0-5.058 2.772m0 0a3 3 0 0 0-4.681 2.72 8.986 8.986 0 0 0 3.74.477m.94-3.197a5.971 5.971 0 0 0-.94 3.197M15 6.75a3 3 0 1 1-6 0 3 3 0 0 1 6 0Zm6 3a2.25 2.25 0 1 1-4.5 0 2.25 2.25 0 0 1 4.5 0Zm-13.5 0a2.25 2.25 0 1 1-4.5 0 2.25 2.25 0 0 1 4.5 0Z" />
+              </svg>
+            </div>
+            <h3 className="text-xl font-bold text-slate-900 mb-1">My Team</h3>
+            <p className="text-sm text-slate-500">Collaborate with your squad, invite teammates, and manage roles.</p>
+          </Link>
+
+          {/* Project Card */}
+          <Link
+            to="/project"
+            className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md hover:border-blue-500 transition-all group"
+          >
+            <div className="w-12 h-12 rounded-xl bg-purple-100 text-purple-600 flex items-center justify-center mb-4 group-hover:bg-purple-600 group-hover:text-white transition-colors">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M14.25 9.75 16.5 12l-2.25 2.25m-4.5 0L7.5 12l2.25-2.25M6 20.25h12A2.25 2.25 0 0 0 20.25 18V6A2.25 2.25 0 0 0 18 3.75H6A2.25 2.25 0 0 0 3.75 6v12A2.25 2.25 0 0 0 6 20.25Z" />
+              </svg>
+            </div>
+            <h3 className="text-xl font-bold text-slate-900 mb-1">Project Workspace</h3>
+            <p className="text-sm text-slate-500">Link your GitHub repository, track team work, and review code quality.</p>
+          </Link>
+
+          {/* Problems Card */}
+          <Link
+            to="/problems"
+            className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md hover:border-blue-500 transition-all group"
+          >
+            <div className="w-12 h-12 rounded-xl bg-emerald-100 text-emerald-600 flex items-center justify-center mb-4 group-hover:bg-emerald-600 group-hover:text-white transition-colors">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 18v-5.25m0 0a6.01 6.01 0 0 0 1.5-.189m-1.5.189a6.01 6.01 0 0 1-1.5-.189m3.75 7.478a12.06 12.06 0 0 1-4.5 0m3.75 2.383a14.406 14.406 0 0 1-3 0M14.25 18v-.192c0-.983.658-1.823 1.508-2.316a7.5 7.5 0 1 0-7.517 0c.85.493 1.509 1.333 1.509 2.316V18" />
+              </svg>
+            </div>
+            <h3 className="text-xl font-bold text-slate-900 mb-1">Problem Statements</h3>
+            <p className="text-sm text-slate-500">Explore hackathon tracks, requirements, and evaluation criteria.</p>
+          </Link>
         </div>
       </main>
     </div>

@@ -7,6 +7,7 @@
     "start": "node dist/bootstrap/index.js",
     "dev": "ts-node-dev --respawn --transpile-only src/bootstrap/index.ts",
     "build": "tsc",
+    "db:init": "ts-node scripts/init-all-db.ts",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
