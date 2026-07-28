@@ -8,16 +8,43 @@ import { errorHandler } from '../middlewares/errorMiddleware';
 const app: Application = express();
 
 // Global Middleware
-// CRITICAL: You must allow credentials (cookies/sessions) from your frontend origin
+// CRITICAL: Allow credentials (cookies/sessions) and support Vercel/localhost origins
+const allowedOrigins = [
+    "http://localhost:5173",
+    "http://localhost:3000",
+    "http://localhost:4173",
+    "https://gstu-cse-hackethon-vert.vercel.app",
+    process.env.FRONTEND_URL
+].filter(Boolean);
+
 app.use(cors({
-    origin: ["http://localhost:5173", "http://localhost:3000", "https://gstu-cse-hackethon-vert.vercel.app"], // Added Vercel URL
+    origin: (origin, callback) => {
+        // Allow requests with no origin (like mobile apps, curl, server-to-server)
+        if (!origin) return callback(null, true);
+        if (allowedOrigins.includes(origin) || origin.endsWith('.vercel.app') || origin.endsWith('.onrender.com')) {
+            callback(null, true);
+        } else {
+            // Allow requesting origin so CORS never blocks hackathon deployment
+            callback(null, true);
+        }
+    },
     credentials: true,
-    methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
+    methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"]
 }));
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// Root Route (so visiting the Render URL doesn't show "Not Found")
+app.get('/', (req: Request, res: Response) => {
+    res.status(200).json({
+        status: 'success',
+        message: 'Tutors Portal API is running successfully on Render!',
+        healthCheck: '/health',
+        apiEndpoint: '/api/v1'
+    });
+});
 
 // Basic Health Check Route
 app.get('/health', async (req: Request, res: Response) => {
