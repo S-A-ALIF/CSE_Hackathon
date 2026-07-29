@@ -2,8 +2,9 @@ import Navbar from '../components/Navbar';
 import Home from '../features/landing/Home';
 import About from '../features/landing/About';
 import Requirements from '../features/landing/Requirements';
+import Judging from '../features/landing/Judging';
 import Rules from '../features/landing/Rules';
-import Schedule from '../features/landing/Schedule';
+import Footer from '../features/landing/Footer';
 
 export default function LandingPage() {
   return (
@@ -12,8 +13,10 @@ export default function LandingPage() {
       <Home />
       <About />
       <Requirements />
+
+      <Judging />
       <Rules />
-      <Schedule />
+      <Footer />
     </div>
   );
 }

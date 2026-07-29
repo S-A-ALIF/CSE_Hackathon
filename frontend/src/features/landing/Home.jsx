@@ -2,30 +2,68 @@ import { Link } from 'react-router-dom';
 
 export default function Home() {
   return (
-    <section id="home" className="bg-slate-900 text-white min-h-screen flex flex-col justify-center relative overflow-hidden">
-      {/* Decorative gradient blob */}
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[800px] bg-blue-600/20 rounded-full blur-3xl -z-10 pointer-events-none"></div>
-
-      <div className="container mx-auto px-6 lg:px-20 z-10 text-center">
-        <h1 className="text-5xl md:text-7xl font-extrabold tracking-tight mb-6">
-          Building a Million <span className="text-blue-500">10x Minds</span><br />
-          For The Future.
-        </h1>
-        <p className="text-xl md:text-2xl text-slate-300 max-w-3xl mx-auto mb-10">
-          An independent initiative connecting education, innovation, and governance to shape our university's technical journey. Join the Ultimate Hackathon.
-        </p>
-        
-        <div className="flex flex-col sm:flex-row gap-4 justify-center">
-          <Link to="/register" className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-5 px-10 text-xl rounded-lg shadow-lg shadow-blue-500/30 transition-all text-center">
-            Register Now
-          </Link>
-        </div>
-      </div>
+    <section id="home" className="relative min-h-screen flex flex-col justify-center bg-slate-950 text-white overflow-hidden">
+      {/* Background grid */}
+      <div className="absolute inset-0 bg-[linear-gradient(to_right,#1e293b_1px,transparent_1px),linear-gradient(to_bottom,#1e293b_1px,transparent_1px)] bg-[size:60px_60px] opacity-40" />
       
+      {/* Glow blobs */}
+      <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-blue-600/15 rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-indigo-600/10 rounded-full blur-3xl pointer-events-none" />
+
+      <div className="relative container mx-auto px-6 lg:px-16 z-10 text-center pt-24 pb-16">
+        {/* Badge */}
+        <div className="inline-flex items-center gap-2 bg-blue-500/10 border border-blue-500/20 text-blue-400 text-xs font-bold tracking-widest uppercase px-4 py-2 rounded-full mb-8">
+          <span className="w-2 h-2 bg-blue-400 rounded-full animate-pulse" />
+          Department of Computer Science & Engineering
+        </div>
+
+
+        {/* Main Heading */}
+        <h1 className="text-5xl md:text-7xl lg:text-8xl font-black tracking-tight mb-6 leading-none">
+          <span className="text-white">GSTU</span>{' '}
+          <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-indigo-400 to-purple-400">
+            CSE
+          </span>
+          <br />
+          <span className="text-white text-4xl md:text-6xl lg:text-7xl">Hackathon</span>{' '}
+          <span className="text-slate-500 text-3xl md:text-5xl lg:text-6xl font-bold">2026</span>
+        </h1>
+
+        <p className="text-lg md:text-xl text-slate-400 max-w-2xl mx-auto mb-10 leading-relaxed">
+          An intra-university programming competition where teams of students build, compete, and innovate under one roof.
+          Show what you can build.
+        </p>
+
+        {/* CTA Buttons */}
+        <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-16">
+          <Link
+            to="/register"
+            className="group inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white font-bold py-4 px-10 text-base rounded-xl shadow-2xl shadow-blue-500/30 transition-all hover:scale-105"
+          >
+            Register Your Team
+            <svg className="w-5 h-5 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+            </svg>
+          </Link>
+          <a
+            href="#about"
+            className="inline-flex items-center gap-2 text-slate-300 hover:text-white font-semibold py-4 px-8 border border-white/10 hover:border-white/25 rounded-xl transition-all"
+          >
+            Learn More
+          </a>
+        </div>
+
+
+      </div>
+
       {/* Scroll indicator */}
-      <a href="#about" className="absolute bottom-10 left-1/2 -translate-x-1/2 animate-bounce text-slate-400 hover:text-blue-500 transition-colors">
-        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+      <a
+        href="#about"
+        className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 text-slate-500 hover:text-blue-400 transition-colors group"
+      >
+        <span className="text-xs font-semibold tracking-widest uppercase">Scroll</span>
+        <svg className="w-5 h-5 animate-bounce" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
         </svg>
       </a>
     </section>

@@ -1,38 +1,101 @@
+const timeline = [
+  { date: 'TBD', title: 'Registration Opens', desc: 'Teams register via the portal. Each team must have 3–4 members.' },
+  { date: 'TBD', title: 'Registration Closes', desc: 'All registrations must be completed before this deadline.' },
+  { date: 'TBD', title: 'Problem Statement Released', desc: 'The hackathon problem set is published to all registered teams.' },
+  { date: 'TBD', title: 'Hackathon Day', desc: '24-hour coding begins. Teams build, present, and compete.' },
+  { date: 'TBD', title: 'Final Presentations', desc: 'Teams present their projects to the judging panel.' },
+  { date: 'TBD', title: 'Results & Awards', desc: 'Winners announced and prizes distributed.' },
+];
+
 export default function About() {
   return (
-    <section id="about" className="bg-slate-50 py-24 text-slate-800">
-      <div className="container mx-auto px-6 lg:px-20">
-        <div className="max-w-4xl mx-auto text-center mb-16">
-          <h2 className="text-sm font-bold tracking-widest text-blue-600 uppercase mb-3">Who We Are</h2>
-          <h3 className="text-4xl md:text-5xl font-bold tracking-tight mb-6">Empowering the Next Generation of Builders.</h3>
-          <p className="text-lg text-slate-600">
-            We are a collective of educators, technologists, and students aiming to bridge the gap between academic theory and real-world execution. The Hackathon is our flagship event designed to push your limits.
+    <section id="about" className="bg-slate-900 py-28 text-white">
+      <div className="container mx-auto px-6 lg:px-16">
+        {/* Section Header */}
+        <div className="max-w-3xl mx-auto text-center mb-20">
+          <span className="inline-block text-xs font-bold tracking-widest text-blue-400 uppercase border border-blue-400/20 bg-blue-400/10 px-4 py-1.5 rounded-full mb-5">
+            About the Event
+          </span>
+          <h2 className="text-4xl md:text-5xl font-black tracking-tight mb-6">
+            An Intra-University Hackathon
+          </h2>
+          <p className="text-slate-400 text-lg leading-relaxed">
+            The GSTU CSE Hackathon is an annual programming competition organized by the Department of Computer Science & Engineering. It brings together students to solve real-world problems, collaborate in teams, and demonstrate their technical skills.
           </p>
         </div>
 
-        <div className="grid md:grid-cols-3 gap-8">
-          <div className="bg-white p-8 rounded-2xl shadow-sm border border-slate-100 text-center hover:shadow-md transition-shadow">
-            <div className="w-16 h-16 bg-blue-100 text-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-6">
-              <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path></svg>
+        {/* Objective Cards */}
+        <div className="grid md:grid-cols-3 gap-6 mb-24">
+          {[
+            {
+              icon: (
+                <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                </svg>
+              ),
+              title: 'Innovation',
+              desc: 'Build creative software solutions for real-world or community-facing problems using any tech stack.',
+              color: 'from-blue-500 to-blue-700',
+            },
+            {
+              icon: (
+                <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                </svg>
+              ),
+              title: 'Teamwork',
+              desc: 'Collaborate with peers across different batches. Every team must include senior batch participants.',
+              color: 'from-indigo-500 to-purple-700',
+            },
+            {
+              icon: (
+                <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
+                </svg>
+              ),
+              title: 'Recognition',
+              desc: 'Top teams are awarded certificates, prizes, and recognition from the department faculty.',
+              color: 'from-emerald-500 to-teal-700',
+            },
+          ].map((item) => (
+            <div key={item.title} className="relative bg-slate-800/50 border border-slate-700/50 p-8 rounded-2xl hover:border-slate-600 transition-all group">
+              <div className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${item.color} flex items-center justify-center mb-6 text-white shadow-lg`}>
+                {item.icon}
+              </div>
+              <h3 className="text-xl font-bold text-white mb-3">{item.title}</h3>
+              <p className="text-slate-400 leading-relaxed">{item.desc}</p>
             </div>
-            <h4 className="text-xl font-bold mb-3">Innovation</h4>
-            <p className="text-slate-600">Build solutions for real-world problems using cutting edge technology.</p>
-          </div>
-          
-          <div className="bg-white p-8 rounded-2xl shadow-sm border border-slate-100 text-center hover:shadow-md transition-shadow">
-            <div className="w-16 h-16 bg-blue-100 text-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-6">
-              <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
-            </div>
-            <h4 className="text-xl font-bold mb-3">Collaboration</h4>
-            <p className="text-slate-600">Team up with diverse minds across the university to build something amazing.</p>
+          ))}
+        </div>
+
+        {/* Timeline */}
+        <div className="max-w-3xl mx-auto">
+          <div className="text-center mb-12">
+            <span className="inline-block text-xs font-bold tracking-widest text-indigo-400 uppercase border border-indigo-400/20 bg-indigo-400/10 px-4 py-1.5 rounded-full mb-4">
+              Timeline
+            </span>
+            <h3 className="text-3xl font-black text-white">Important Dates</h3>
           </div>
 
-          <div className="bg-white p-8 rounded-2xl shadow-sm border border-slate-100 text-center hover:shadow-md transition-shadow">
-            <div className="w-16 h-16 bg-blue-100 text-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-6">
-              <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"></path></svg>
+          <div className="relative">
+            {/* Vertical line */}
+            <div className="absolute left-6 top-0 bottom-0 w-px bg-slate-700" />
+
+            <div className="space-y-8">
+              {timeline.map((item, idx) => (
+                <div key={idx} className="relative flex gap-8 items-start pl-16">
+                  {/* Dot */}
+                  <div className="absolute left-0 w-12 h-12 rounded-xl bg-slate-800 border-2 border-slate-600 flex items-center justify-center text-slate-400 text-xs font-black">
+                    {String(idx + 1).padStart(2, '0')}
+                  </div>
+                  <div className="flex-1 bg-slate-800/40 border border-slate-700/40 p-5 rounded-xl hover:border-slate-600 transition-colors">
+                    <div className="text-xs font-bold text-blue-400 uppercase tracking-wider mb-1">{item.date}</div>
+                    <h4 className="font-bold text-white mb-1">{item.title}</h4>
+                    <p className="text-sm text-slate-400">{item.desc}</p>
+                  </div>
+                </div>
+              ))}
             </div>
-            <h4 className="text-xl font-bold mb-3">Execution</h4>
-            <p className="text-slate-600">Ideas are cheap. We reward execution, deployment, and practical utility.</p>
           </div>
         </div>
       </div>

@@ -1,61 +1,141 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import LoginModal from '../features/authentication/LoginModal';
 import { useAuth } from '../contexts/AuthContext';
 
+const navLinks = [
+  { label: 'Home', href: '#home' },
+  { label: 'About', href: '#about' },
+  { label: 'Team Requirements', href: '#requirements' },
+  { label: 'Judging', href: '#judging' },
+  { label: 'Rules', href: '#rules' },
+];
+
 export default function Navbar() {
   const [isLoginOpen, setIsLoginOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
   const { currentUser, logout } = useAuth();
+
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 20);
+    window.addEventListener('scroll', onScroll);
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
 
   return (
     <>
-      <nav className="fixed top-0 w-full z-50 backdrop-blur-md bg-slate-900/80 border-b border-white/10">
-        <div className="container mx-auto px-6 lg:px-20 py-4 flex justify-between items-center">
-          <div className="text-2xl font-black text-white tracking-tighter">
-            GSTU<span className="text-blue-500">Hackathon</span>
+      <nav className={`fixed top-0 w-full z-50 transition-all duration-300 ${
+        scrolled
+          ? 'bg-slate-900/95 backdrop-blur-md shadow-lg shadow-black/20 border-b border-white/5'
+          : 'bg-transparent'
+      }`}>
+        <div className="container mx-auto px-6 lg:px-16 py-4 flex justify-between items-center">
+          {/* Logo */}
+          <div className="flex items-center gap-2.5">
+            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-blue-500/30">
+              <span className="text-white font-black text-sm">G</span>
+            </div>
+            <div className="text-white font-black text-lg tracking-tight leading-none">
+              GSTU<br />
+              <span className="text-blue-400 text-xs font-bold tracking-widest">CSE HACKATHON</span>
+            </div>
           </div>
-          <div className="hidden md:flex space-x-6 lg:space-x-8 text-sm font-semibold text-slate-300">
-            <a href="#home" className="hover:text-white transition-colors">Home</a>
-            <a href="#about" className="hover:text-white transition-colors">About</a>
-            <a href="#requirements" className="hover:text-white transition-colors">Requirements</a>
-            <a href="#rules" className="hover:text-white transition-colors">Rules</a>
-            <a href="#schedule" className="hover:text-white transition-colors">Schedule</a>
+
+          {/* Desktop Nav */}
+          <div className="hidden lg:flex items-center space-x-1">
+            {navLinks.map((link) => (
+              <a
+                key={link.href}
+                href={link.href}
+                className="text-sm font-medium text-slate-300 hover:text-white px-3 py-2 rounded-lg hover:bg-white/5 transition-all"
+              >
+                {link.label}
+              </a>
+            ))}
           </div>
-          <div className="flex space-x-4 items-center">
+
+          {/* Auth */}
+          <div className="hidden md:flex space-x-3 items-center">
             {currentUser ? (
               currentUser.role === 'admin' ? (
-                <Link 
+                <Link
                   to="/admin"
-                  className="bg-red-500/10 text-red-400 border border-red-500/20 hover:bg-red-500/20 font-bold py-2 px-4 rounded-lg transition-all flex items-center gap-1.5"
+                  className="bg-red-500/10 text-red-400 border border-red-500/20 hover:bg-red-500/20 font-bold py-2 px-4 rounded-lg transition-all flex items-center gap-1.5 text-sm"
                 >
                   <span>🛡️</span> Admin Panel
                 </Link>
               ) : (
-                <Link 
+                <Link
                   to="/dashboard"
-                  className="bg-blue-600/10 text-blue-400 border border-blue-500/20 hover:bg-blue-500/20 font-semibold py-2 px-4 rounded-lg transition-all"
+                  className="bg-blue-600/10 text-blue-400 border border-blue-500/20 hover:bg-blue-500/20 font-semibold py-2 px-4 rounded-lg transition-all text-sm"
                 >
                   Dashboard
                 </Link>
               )
             ) : (
               <>
-                <button 
+                <button
                   onClick={() => setIsLoginOpen(true)}
-                  className="text-white font-semibold py-2 px-4 hover:text-blue-400 transition-colors"
+                  className="text-slate-300 hover:text-white font-semibold py-2 px-4 transition-colors text-sm"
                 >
                   Sign In
                 </button>
-                <Link 
+                <Link
                   to="/register"
-                  className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-6 rounded-lg shadow-lg shadow-blue-500/30 transition-all"
+                  className="bg-blue-600 hover:bg-blue-500 text-white font-semibold py-2 px-5 rounded-lg shadow-lg shadow-blue-500/30 transition-all text-sm"
                 >
-                  Sign Up
+                  Register
                 </Link>
               </>
             )}
           </div>
+
+          {/* Mobile menu toggle */}
+          <button
+            className="lg:hidden text-slate-300 hover:text-white p-2"
+            onClick={() => setMobileOpen(!mobileOpen)}
+          >
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              {mobileOpen
+                ? <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                : <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+              }
+            </svg>
+          </button>
         </div>
+
+        {/* Mobile Menu */}
+        {mobileOpen && (
+          <div className="lg:hidden bg-slate-900/98 border-t border-white/5 px-6 py-4 space-y-2">
+            {navLinks.map((link) => (
+              <a
+                key={link.href}
+                href={link.href}
+                onClick={() => setMobileOpen(false)}
+                className="block text-slate-300 hover:text-white font-medium py-2 px-3 rounded-lg hover:bg-white/5 transition-all"
+              >
+                {link.label}
+              </a>
+            ))}
+            <div className="pt-3 border-t border-white/5 flex gap-3">
+              {currentUser ? (
+                <Link to="/dashboard" className="flex-1 text-center bg-blue-600 text-white font-semibold py-2 rounded-lg text-sm">
+                  Dashboard
+                </Link>
+              ) : (
+                <>
+                  <button onClick={() => { setIsLoginOpen(true); setMobileOpen(false); }} className="flex-1 text-slate-300 font-semibold py-2 border border-white/10 rounded-lg text-sm">
+                    Sign In
+                  </button>
+                  <Link to="/register" className="flex-1 text-center bg-blue-600 text-white font-semibold py-2 rounded-lg text-sm">
+                    Register
+                  </Link>
+                </>
+              )}
+            </div>
+          </div>
+        )}
       </nav>
 
       <LoginModal isOpen={isLoginOpen} onClose={() => setIsLoginOpen(false)} />
