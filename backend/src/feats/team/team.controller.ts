@@ -2,6 +2,25 @@ import { Request, Response } from 'express';
 import { teamService } from './team.service';
 import { pool } from '../../config/db.config';
 
+export const createTeam = async (req: Request, res: Response): Promise<void> => {
+    try {
+        const userId = (req as any).user.id;
+        const { name } = req.body;
+
+        if (!name || name.trim() === '') {
+            res.status(400).json({ success: false, message: 'Team name is required' });
+            return;
+        }
+
+        const teamId = await teamService.createTeam(userId, name.trim());
+
+        res.status(201).json({ success: true, message: 'Team created successfully!', data: { teamId } });
+    } catch (error: any) {
+        console.error('[TeamController] Error creating team:', error);
+        res.status(400).json({ success: false, message: error.message || 'Error creating team' });
+    }
+};
+
 export const inviteToTeam = async (req: Request, res: Response): Promise<void> => {
     try {
         const userId = (req as any).user.id;
@@ -12,7 +31,6 @@ export const inviteToTeam = async (req: Request, res: Response): Promise<void> =
             return;
         }
 
-        // Fetch user's email from DB since it's not in the token
         const userRes = await pool.query('SELECT email FROM users WHERE id = $1', [userId]);
         if (userRes.rows.length === 0) {
             res.status(404).json({ success: false, message: 'User not found' });
@@ -20,26 +38,21 @@ export const inviteToTeam = async (req: Request, res: Response): Promise<void> =
         }
         const userEmail = userRes.rows[0].email;
 
-        // 1. Get or Create Team for this user
+        // 1. Get Team for this user
         let teamId = await teamService.getUserTeam(userId);
         if (!teamId) {
-            // Auto-create a team if they don't have one
-            const defaultTeamName = `${userEmail.split('@')[0]}'s Team`;
-            teamId = await teamService.createTeam(userId, defaultTeamName);
+            res.status(400).json({ success: false, message: 'You must create a team first before inviting members' });
+            return;
         }
 
-        // 2. Generate PIN and send invite
-        const result = await teamService.inviteMember(userId, userEmail, teamId, emailToInvite);
+        // 2. Send in-app invite
+        await teamService.inviteMember(userId, userEmail, teamId, emailToInvite);
 
-        const msg = result.emailSent 
-            ? `Invitation sent to ${emailToInvite}` 
-            : `Invitation sent to ${emailToInvite} (In-app notification delivered; email skipped or blocked by server)`;
+        const msg = `Invitation sent to ${emailToInvite}! They can accept or reject from their notifications.`;
 
         res.status(200).json({ 
             success: true, 
-            message: msg, 
-            emailSent: result.emailSent,
-            pinCode: result.pinCode 
+            message: msg
         });
     } catch (error: any) {
         console.error('[TeamController] Error inviting to team:', error);
@@ -63,6 +76,28 @@ export const joinTeam = async (req: Request, res: Response): Promise<void> => {
     } catch (error: any) {
         console.error('[TeamController] Error joining team:', error);
         res.status(400).json({ success: false, message: error.message || 'Error joining team' });
+    }
+};
+
+export const requestToJoinByCode = async (req: Request, res: Response): Promise<void> => {
+    try {
+        const userId = (req as any).user.id;
+        const { teamCode } = req.body;
+
+        if (!teamCode || teamCode.trim() === '') {
+            res.status(400).json({ success: false, message: 'Team code is required' });
+            return;
+        }
+
+        const userRes = await pool.query('SELECT email FROM users WHERE id = $1', [userId]);
+        const userEmail = userRes.rows[0]?.email || 'Unknown User';
+
+        const result = await teamService.requestToJoinByCode(userId, userEmail, teamCode);
+
+        res.status(200).json({ success: true, message: `Join request sent to team "${result.teamName}" leader!`, data: result });
+    } catch (error: any) {
+        console.error('[TeamController] Error sending join request:', error);
+        res.status(400).json({ success: false, message: error.message || 'Error sending join request' });
     }
 };
 
@@ -123,5 +158,49 @@ export const disbandTeam = async (req: Request, res: Response): Promise<void> =>
     } catch (error: any) {
         console.error('[TeamController] Error disbanding team:', error);
         res.status(400).json({ success: false, status: 'error', message: error.message || 'Error disbanding team' });
+    }
+};
+
+export const updateTeamName = async (req: Request, res: Response): Promise<void> => {
+    try {
+        const leaderId = (req as any).user.id;
+        const { name } = req.body;
+        const updatedTeam = await teamService.updateTeamName(leaderId, name);
+
+        res.status(200).json({ success: true, status: 'success', message: 'Team name updated successfully', data: updatedTeam });
+    } catch (error: any) {
+        console.error('[TeamController] Error updating team name:', error);
+        res.status(400).json({ success: false, status: 'error', message: error.message || 'Error updating team name' });
+    }
+};
+
+export const transferLeadership = async (req: Request, res: Response): Promise<void> => {
+    try {
+        const leaderId = (req as any).user.id;
+        const { newLeaderId } = req.body;
+        await teamService.transferLeadership(leaderId, newLeaderId);
+
+        res.status(200).json({ success: true, status: 'success', message: 'Leadership transferred successfully' });
+    } catch (error: any) {
+        console.error('[TeamController] Error transferring leadership:', error);
+        res.status(400).json({ success: false, status: 'error', message: error.message || 'Error transferring leadership' });
+    }
+};
+
+export const updateTeamStatus = async (req: Request, res: Response): Promise<void> => {
+    try {
+        const userId = (req as any).user?.id;
+        if (!userId) {
+            res.status(401).json({ success: false, status: 'error', message: 'Unauthorized' });
+            return;
+        }
+
+        const { is_full } = req.body;
+        const result = await teamService.updateTeamStatus(userId, Boolean(is_full));
+
+        res.status(200).json({ success: true, status: 'success', message: 'Team status updated', is_full: result.is_full });
+    } catch (error: any) {
+        console.error('[TeamController] Error updating team status:', error);
+        res.status(400).json({ success: false, status: 'error', message: error.message || 'Error updating team status' });
     }
 };

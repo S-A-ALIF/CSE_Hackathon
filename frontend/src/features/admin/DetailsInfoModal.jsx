@@ -76,9 +76,11 @@ export default function DetailsInfoModal({ isOpen, onClose, data, type }) {
                         <div className="text-xs text-slate-500">{m.email}</div>
                       </div>
                       <div className="text-right">
-                        <span className="px-2.5 py-1 rounded-md bg-slate-100 text-slate-700 text-xs font-bold">
-                          {m.role || 'Member'}
-                        </span>
+                        {m.batch_session && (
+                          <span className="px-2.5 py-1 rounded-md bg-slate-100 text-slate-700 text-xs font-bold">
+                            {m.batch_session}
+                          </span>
+                        )}
                         {m.student_id && (
                           <div className="text-[11px] text-slate-500 mt-1">ID: {m.student_id}</div>
                         )}

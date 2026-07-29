@@ -198,13 +198,12 @@ export default function ProfilePage({ inDashboard = false }) {
                 </div>
 
                 <div className="md:col-span-2">
-                  <label className="block text-sm font-semibold text-slate-700 mb-2">Phone Number</label>
+                  <label className="block text-sm font-semibold text-slate-700 mb-2">Phone Number (Optional)</label>
                   <input 
                     type="tel" 
                     name="phone_number"
                     value={formData.phone_number}
                     onChange={handleChange}
-                    required
                     className="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none transition-all" 
                     placeholder="+8801..." 
                   />

@@ -5,6 +5,8 @@ import { toast } from 'sonner';
 import CreateTeamModal from '../features/team/CreateTeamModal';
 import JoinTeamModal from '../features/team/JoinTeamModal';
 import TeamManagementModal from '../features/team/TeamManagementModal';
+import ConfirmModal from '../components/ConfirmModal';
+import MemberInfoModal from '../features/team/MemberInfoModal';
 
 export default function TeamPage({ inDashboard = false }) {
   const { currentUser } = useAuth();
@@ -14,6 +16,8 @@ export default function TeamPage({ inDashboard = false }) {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isJoinModalOpen, setIsJoinModalOpen] = useState(false);
   const [isManageModalOpen, setIsManageModalOpen] = useState(false);
+  const [isConfirmLeaveOpen, setIsConfirmLeaveOpen] = useState(false);
+  const [selectedMember, setSelectedMember] = useState(null);
 
   const fetchTeam = async () => {
     try {
@@ -38,8 +42,7 @@ export default function TeamPage({ inDashboard = false }) {
     }
   };
 
-  const handleLeaveTeam = async () => {
-    if (!window.confirm('Are you sure you want to leave this team?')) return;
+  const executeLeaveTeam = async () => {
     try {
       const token = localStorage.getItem('token');
       const res = await fetch(`${API_URL}/api/v1/teams/leave`, {
@@ -52,6 +55,7 @@ export default function TeamPage({ inDashboard = false }) {
       const data = await res.json();
       if (res.ok && data.success) {
         toast.success(data.message || 'Left team successfully');
+        setIsConfirmLeaveOpen(false);
         fetchTeam();
       } else {
         toast.error(data.message || 'Failed to leave team');
@@ -60,6 +64,10 @@ export default function TeamPage({ inDashboard = false }) {
       console.error('Error leaving team:', error);
       toast.error('Network error leaving team');
     }
+  };
+
+  const handleLeaveTeam = () => {
+    setIsConfirmLeaveOpen(true);
   };
 
   useEffect(() => {
@@ -111,14 +119,33 @@ export default function TeamPage({ inDashboard = false }) {
           // Populated State
           <div className="space-y-8">
             <div className="bg-white rounded-3xl shadow-sm border border-slate-200 p-8">
-              <div className="flex items-center justify-between mb-8">
+              <div className="flex items-center justify-between mb-8 flex-wrap gap-4">
                 <div>
                   <h2 className="text-3xl font-black text-slate-900">{team.name}</h2>
                   <p className="text-slate-500 font-medium mt-1">Created on {new Date(team.created_at).toLocaleDateString()}</p>
                 </div>
-                <div className="flex items-center gap-3">
-                  <span className="px-4 py-2 bg-blue-100 text-blue-700 font-bold rounded-full text-sm">
-                    {team.members.length} Members
+                <div className="flex items-center gap-3 flex-wrap">
+                  {team.team_code && (
+                    <div className="flex items-center gap-2 bg-slate-100 border border-slate-200 px-3 py-1.5 rounded-xl font-mono text-sm font-bold text-slate-800">
+                      <span>Code:</span>
+                      <span className="text-blue-600">{team.team_code}</span>
+                      <button 
+                        onClick={() => {
+                          navigator.clipboard.writeText(team.team_code);
+                          toast.success('Team Code copied to clipboard!');
+                        }}
+                        className="text-slate-400 hover:text-slate-600 ml-1"
+                        title="Copy Code"
+                      >
+                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
+                      </button>
+                    </div>
+                  )}
+                  <span className={`px-4 py-2 font-bold rounded-full text-sm flex items-center gap-1.5 ${
+                    team.is_full ? 'bg-amber-100 text-amber-800 border border-amber-200' : 'bg-blue-100 text-blue-700'
+                  }`}>
+                    {team.is_full && <span>🔒 Declared Full</span>}
+                    <span>({team.members.length} / {team.maxMembers || 5} Members)</span>
                   </span>
                   {team.leader_id === currentUser?.id ? (
                     <button
@@ -139,24 +166,41 @@ export default function TeamPage({ inDashboard = false }) {
               </div>
 
               <div className="space-y-4">
-                <h3 className="text-lg font-bold text-slate-900 border-b border-slate-100 pb-2">Team Members</h3>
+                <div className="flex items-center justify-between border-b border-slate-100 pb-2">
+                  <h3 className="text-lg font-bold text-slate-900">Team Members</h3>
+                  <span className="text-xs font-semibold text-slate-400">Click any member to view full details</span>
+                </div>
                 <div className="grid gap-4">
                   {team.members.map((member) => (
-                    <div key={member.id} className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100 transition-colors hover:bg-slate-100">
+                    <div 
+                      key={member.id} 
+                      onClick={() => setSelectedMember(member)}
+                      className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100 transition-all hover:bg-white hover:border-blue-300 hover:shadow-md cursor-pointer group"
+                    >
                       <div className="flex items-center space-x-4">
-                        <div className="w-12 h-12 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold text-lg shadow-sm">
-                          {member.email.charAt(0).toUpperCase()}
+                        <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-600 to-indigo-700 text-white flex items-center justify-center font-bold text-lg shadow-sm">
+                          {(member.name || member.email).charAt(0).toUpperCase()}
                         </div>
                         <div>
-                          <p className="font-bold text-slate-900">{member.email}</p>
-                          <p className="text-sm text-slate-500 capitalize">{member.role}</p>
+                          <p className="font-bold text-slate-900 group-hover:text-blue-600 transition-colors">
+                            {member.name || member.email}
+                          </p>
+                          <p className="text-sm font-semibold text-slate-500">
+                            Student ID: <span className="text-slate-700 font-bold">{member.student_id && member.student_id !== 'N/A' ? member.student_id : 'Not provided'}</span>
+                          </p>
                         </div>
                       </div>
-                      {member.id === team.leader_id && (
-                        <span className="px-3 py-1 bg-amber-100 text-amber-700 text-xs font-bold rounded-full uppercase tracking-wide">
-                          Leader
+                      <div className="flex items-center gap-3">
+                        {member.id === team.leader_id && (
+                          <span className="px-3 py-1 bg-amber-100 text-amber-700 text-xs font-bold rounded-full uppercase tracking-wide">
+                            Leader
+                          </span>
+                        )}
+                        <span className="text-xs font-bold text-blue-600 bg-blue-50 px-2.5 py-1 rounded-lg border border-blue-100 group-hover:bg-blue-600 group-hover:text-white transition-all flex items-center gap-1">
+                          <span>View Info</span>
+                          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" /></svg>
                         </span>
-                      )}
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -166,15 +210,21 @@ export default function TeamPage({ inDashboard = false }) {
             {/* If user is leader, they might want to invite more people */}
             {team.leader_id === currentUser?.id && (
               <div className="text-center">
-                <button 
-                  onClick={() => setIsCreateModalOpen(true)}
-                  className="px-6 py-3 bg-white text-blue-600 font-bold rounded-xl border border-blue-200 hover:bg-blue-50 transition-all shadow-sm inline-flex items-center space-x-2"
-                >
-                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                  </svg>
-                  <span>Add member</span>
-                </button>
+                {team.members.length < (team.maxMembers || 5) && !team.is_full ? (
+                  <button 
+                    onClick={() => setIsCreateModalOpen(true)}
+                    className="px-6 py-3 bg-white text-blue-600 font-bold rounded-xl border border-blue-200 hover:bg-blue-50 transition-all shadow-sm inline-flex items-center space-x-2"
+                  >
+                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                    </svg>
+                    <span>Add member ({team.members.length}/{team.maxMembers || 5})</span>
+                  </button>
+                ) : (
+                  <div className="inline-flex items-center space-x-2 px-6 py-3 bg-slate-100 text-slate-500 font-bold rounded-xl border border-slate-200">
+                    <span>{team.is_full ? 'Team Declared Full' : 'Team Maximum Limit Reached'} ({team.members.length}/{team.maxMembers || 5})</span>
+                  </div>
+                )}
               </div>
             )}
           </div>
@@ -202,6 +252,21 @@ export default function TeamPage({ inDashboard = false }) {
         team={team}
         currentUser={currentUser}
         onTeamUpdated={fetchTeam}
+      />
+      <ConfirmModal
+        isOpen={isConfirmLeaveOpen}
+        onClose={() => setIsConfirmLeaveOpen(false)}
+        onConfirm={executeLeaveTeam}
+        title="Leave Team?"
+        message="Are you sure you want to leave this team? You will lose access to the team and its resources."
+        confirmText="Leave Team"
+        variant="danger"
+      />
+      <MemberInfoModal
+        isOpen={!!selectedMember}
+        onClose={() => setSelectedMember(null)}
+        member={selectedMember}
+        isLeader={team?.leader_id === selectedMember?.id}
       />
     </div>
   );

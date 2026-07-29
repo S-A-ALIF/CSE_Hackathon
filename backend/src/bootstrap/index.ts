@@ -81,11 +81,24 @@ const server = app.listen(PORT, () => {
         ALTER TABLE users ADD COLUMN IF NOT EXISTS ban_reason TEXT DEFAULT NULL;
         ALTER TABLE teams ADD COLUMN IF NOT EXISTS is_banned BOOLEAN DEFAULT false;
         ALTER TABLE teams ADD COLUMN IF NOT EXISTS ban_reason TEXT DEFAULT NULL;
+        ALTER TABLE teams ADD COLUMN IF NOT EXISTS team_code VARCHAR(20) UNIQUE DEFAULT NULL;
+        ALTER TABLE teams ADD COLUMN IF NOT EXISTS is_full BOOLEAN DEFAULT false;
+        UPDATE teams SET team_code = 'TM-' || UPPER(SUBSTRING(MD5(RANDOM()::TEXT), 1, 6)) WHERE team_code IS NULL;
+        CREATE TABLE IF NOT EXISTS team_join_requests (
+            id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+            team_id UUID REFERENCES teams(id) ON DELETE CASCADE,
+            user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+            status VARCHAR(20) DEFAULT 'pending',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            UNIQUE(team_id, user_id)
+        );
         CREATE TABLE IF NOT EXISTS platform_settings (
             key VARCHAR(50) PRIMARY KEY,
             value TEXT NOT NULL
         );
         INSERT INTO platform_settings (key, value) VALUES ('registration_open', 'true') ON CONFLICT (key) DO NOTHING;
+        INSERT INTO platform_settings (key, value) VALUES ('min_team_members', '3') ON CONFLICT (key) DO NOTHING;
+        INSERT INTO platform_settings (key, value) VALUES ('max_team_members', '5') ON CONFLICT (key) DO NOTHING;
     `).catch(err => {
         console.error('Migration error during startup:', err);
     });

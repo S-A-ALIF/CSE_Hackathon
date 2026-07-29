@@ -119,16 +119,25 @@ export const rejectInvitationNotification = async (req: Request, res: Response):
 export const acceptInvitationNotification = async (req: Request, res: Response): Promise<void> => {
     try {
         const { id } = req.params;
+        let targetEmail = (typeof req.query.email === 'string' && req.query.email) || (req as any).user?.email || req.body?.email;
 
-        if (!id) {
-            res.status(400).json({ success: false, status: 'error', message: 'Notification ID is required' });
+        if (!targetEmail) {
+            const userId = (req as any).user?.id || (req as any).user?.userId;
+            if (userId) {
+                const userRes = await pool.query('SELECT email FROM users WHERE id = $1', [userId]);
+                targetEmail = userRes.rows[0]?.email;
+            }
+        }
+
+        if (!id || !targetEmail) {
+            res.status(400).json({ success: false, status: 'error', message: 'Notification ID and User Email are required' });
             return;
         }
 
-        const updated = await notificationService.acceptTeamInvitation(id);
+        const updated = await notificationService.acceptTeamInvitation(id, targetEmail);
         res.status(200).json({ success: true, status: 'success', message: 'Invitation accepted.', data: updated });
     } catch (error: any) {
         console.error('[NotificationController] Error in acceptInvitationNotification:', error);
-        res.status(500).json({ success: false, status: 'error', message: 'Internal server error accepting invitation' });
+        res.status(400).json({ success: false, status: 'error', message: error.message || 'Internal server error accepting invitation' });
     }
 };

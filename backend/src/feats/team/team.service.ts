@@ -2,14 +2,19 @@ import { pool } from '../../config/db.config';
 import { sendEmail } from '../email/email.service';
 import { notificationService } from '../notification/notification.service';
 
-// Utility to generate a random 6-character alphanumeric PIN
-const generatePin = () => {
-    return Math.random().toString(36).substring(2, 8).toUpperCase();
+// Utility to generate a random uppercase Gamer Tag ID like TM-9X2P7Q
+const generateTeamCode = () => {
+    const chars = '23456789ABCDEFGHJKLMNPQRSTUVWXYZ';
+    let code = '';
+    for (let i = 0; i < 6; i++) {
+        code += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return `TM-${code}`;
 };
 
 export const teamService = {
     /**
-     * Get a user's current team details including members.
+     * Get a user's current team details including members and min/max limits.
      */
     async getMyTeamDetails(userId: string) {
         // 1. Get the team ID for this user
@@ -19,21 +24,33 @@ export const teamService = {
         if (!teamId) return null;
 
         // 2. Get team details
-        const teamRes = await pool.query('SELECT id, name, leader_id, created_at FROM teams WHERE id = $1', [teamId]);
+        const teamRes = await pool.query('SELECT id, name, team_code, leader_id, COALESCE(is_full, false) as is_full, created_at FROM teams WHERE id = $1', [teamId]);
         const team = teamRes.rows[0];
 
-        // 3. Get team members (joining with users table)
+        // 3. Get team members
         const membersQuery = `
-            SELECT u.id, u.email, u.role
+            SELECT u.id, u.email, u.role,
+                   COALESCE(ui.name, u.email) as name,
+                   COALESCE(ui.student_id, 'N/A') as student_id,
+                   COALESCE(ui.batch_session, 'N/A') as batch_session,
+                   COALESCE(ui.phone_number, 'N/A') as phone_number
             FROM team_members tm
             JOIN users u ON tm.user_id = u.id
+            LEFT JOIN user_info ui ON u.id = ui.user_id
             WHERE tm.team_id = $1
         `;
         const membersRes = await pool.query(membersQuery, [teamId]);
 
+        // 4. Get min/max team limits from platform_settings
+        const settingsRes = await pool.query("SELECT key, value FROM platform_settings WHERE key IN ('min_team_members', 'max_team_members')");
+        const minMembers = parseInt(settingsRes.rows.find(r => r.key === 'min_team_members')?.value || '3', 10);
+        const maxMembers = parseInt(settingsRes.rows.find(r => r.key === 'max_team_members')?.value || '5', 10);
+
         return {
             ...team,
-            members: membersRes.rows
+            members: membersRes.rows,
+            minMembers,
+            maxMembers
         };
     },
 
@@ -46,7 +63,7 @@ export const teamService = {
     },
 
     /**
-     * Create a new team and add the creator as the first member.
+     * Create a new team with Gamer-Tag code and add the creator as the first member.
      */
     async createTeam(userId: string, teamName: string) {
         const client = await pool.connect();
@@ -59,10 +76,22 @@ export const teamService = {
                 throw new Error('User is already in a team.');
             }
 
+            // Generate unique team code
+            let teamCode = generateTeamCode();
+            let isUnique = false;
+            while (!isUnique) {
+                const checkRes = await client.query('SELECT id FROM teams WHERE team_code = $1', [teamCode]);
+                if (checkRes.rows.length === 0) {
+                    isUnique = true;
+                } else {
+                    teamCode = generateTeamCode();
+                }
+            }
+
             // Create team
             const teamRes = await client.query(
-                'INSERT INTO teams (name, leader_id) VALUES ($1, $2) RETURNING id',
-                [teamName, userId]
+                'INSERT INTO teams (name, team_code, leader_id) VALUES ($1, $2, $3) RETURNING id, team_code',
+                [teamName, teamCode, userId]
             );
             const teamId = teamRes.rows[0].id;
 
@@ -83,74 +112,139 @@ export const teamService = {
     },
 
     /**
-     * Generate an invitation and send an email + notification
+     * Generate an in-app invitation without email PIN verification
      */
     async inviteMember(inviterId: string, inviterEmail: string, teamId: string, inviteeEmail: string) {
-        // 1. Check if invitee is already in a team
-        const targetUserRes = await pool.query('SELECT id FROM users WHERE email = $1', [inviteeEmail]);
-        if (targetUserRes.rows.length > 0) {
-            const inviteeUserId = targetUserRes.rows[0].id;
-            const existingMember = await pool.query('SELECT team_id FROM team_members WHERE user_id = $1', [inviteeUserId]);
-            if (existingMember.rows.length > 0) {
-                throw new Error(`${inviteeEmail} is already a member of a team.`);
-            }
+        const cleanEmail = inviteeEmail.trim();
+        // 1. Check if invitee is registered and whether they are already in a team
+        const targetUserRes = await pool.query('SELECT id, email FROM users WHERE LOWER(email) = LOWER($1)', [cleanEmail]);
+        if (targetUserRes.rows.length === 0) {
+            throw new Error(`No user found with email "${cleanEmail}". They must register an account first.`);
+        }
+        const inviteeUserId = targetUserRes.rows[0].id;
+        const actualEmail = targetUserRes.rows[0].email;
+
+        if (inviteeUserId === inviterId) {
+            throw new Error('You cannot invite yourself to your own team.');
         }
 
-        // 2. Check for an active, unexpired invitation for this email from this team
+        const existingMember = await pool.query('SELECT team_id FROM team_members WHERE user_id = $1', [inviteeUserId]);
+        if (existingMember.rows.length > 0) {
+            throw new Error(`${actualEmail} is already a member of a team and cannot be invited.`);
+        }
+
+        // 2. Check max team member limit & if team is declared full
+        const teamCheck = await pool.query('SELECT is_full FROM teams WHERE id = $1', [teamId]);
+        if (teamCheck.rows[0]?.is_full) {
+            throw new Error('You have declared your team full. Please reopen your team before inviting new members.');
+        }
+
+        const countRes = await pool.query('SELECT COUNT(*) as count FROM team_members WHERE team_id = $1', [teamId]);
+        const count = parseInt(countRes.rows[0].count, 10);
+        const maxRes = await pool.query("SELECT value FROM platform_settings WHERE key = 'max_team_members'");
+        const maxMembers = parseInt(maxRes.rows[0]?.value || '5', 10);
+        if (count >= maxMembers) {
+            throw new Error(`Your team has already reached the maximum limit of ${maxMembers} members.`);
+        }
+
+        // 3. Get team name
+        const teamRes = await pool.query('SELECT name FROM teams WHERE id = $1', [teamId]);
+        const teamName = teamRes.rows[0]?.name || 'a team';
+
+        // 4. Check cooldown for recent invite
         const existingInviteRes = await pool.query(
-            'SELECT id, pin_code, created_at FROM team_invitations WHERE team_id = $1 AND email = $2 AND is_used = false AND expires_at > NOW() ORDER BY created_at DESC LIMIT 1',
+            'SELECT id, created_at FROM team_invitations WHERE team_id = $1 AND email = $2 AND is_used = false AND expires_at > NOW() ORDER BY created_at DESC LIMIT 1',
             [teamId, inviteeEmail]
         );
-
-        let pinCode: string;
-        let isNewInvite = true;
-        const now = Date.now();
 
         if (existingInviteRes.rows.length > 0) {
             const existingInvite = existingInviteRes.rows[0];
             const createdTime = new Date(existingInvite.created_at).getTime();
-            // Cooldown: prevent sending again within 60 seconds
-            if (now - createdTime < 60000) {
+            if (Date.now() - createdTime < 60000) {
                 throw new Error(`An invitation was just sent to ${inviteeEmail}. Please wait 60 seconds before sending another.`);
             }
-            // Reuse existing PIN code without creating duplicate database entries
-            pinCode = existingInvite.pin_code;
-            isNewInvite = false;
         } else {
-            pinCode = generatePin();
             const expiresAt = new Date();
-            expiresAt.setHours(expiresAt.getHours() + 48); // Expires in 48 hours
-
+            expiresAt.setHours(expiresAt.getHours() + 48);
             await pool.query(
                 'INSERT INTO team_invitations (team_id, email, pin_code, expires_at) VALUES ($1, $2, $3, $4)',
-                [teamId, inviteeEmail, pinCode, expiresAt]
+                [teamId, inviteeEmail, 'INAPP', expiresAt]
             );
         }
 
-        // Send Email
-        const emailSent = await sendEmail({
-            to: inviteeEmail,
-            subject: "You've been invited to join a Hackathon Team!",
-            html: `
-                <div style="font-family: sans-serif; text-align: center;">
-                    <h2>Team Invitation</h2>
-                    <p>User <b>${inviterEmail}</b> has invited you to join their team for the GSTU Hackathon.</p>
-                    <p>Use the following 6-digit PIN code to join the team via the Dashboard:</p>
-                    <h1 style="background: #f1f5f9; padding: 20px; letter-spacing: 5px; color: #0f172a; border-radius: 8px; display: inline-block;">${pinCode}</h1>
-                    <p>This code expires in 48 hours.</p>
-                </div>
-            `
-        });
+        // 5. Send in-app notification with pending action
+        await notificationService.createNotification(
+            inviteeEmail,
+            `You received a team invitation from ${inviterEmail} to join team "${teamName}" [TeamID:${teamId}].`,
+            'pending'
+        );
 
-        // Only send an in-app notification if this is a new invitation (prevent spamming duplicate notifications)
-        if (isNewInvite) {
-            await notificationService.createNotification(
-                inviteeEmail,
-                `You received a team invitation from ${inviterEmail}. Check your email inbox for the 6-digit PIN code to join!`
-            );
+        return { success: true, emailSent: false, pinCode: null };
+    },
+
+    /**
+     * Request to join a team using Gamer-Tag Team Code (e.g. TM-XXXXXX)
+     */
+    async requestToJoinByCode(userId: string, userEmail: string, teamCode: string) {
+        // 1. Check if user is already in a team
+        const existing = await pool.query('SELECT team_id FROM team_members WHERE user_id = $1', [userId]);
+        if (existing.rows.length > 0) {
+            throw new Error('You are already in a team.');
         }
 
-        return { success: true, emailSent, pinCode };
+        // 2. Check if user profile is completed (name, student_id, batch_session)
+        const profileRes = await pool.query('SELECT name, student_id, batch_session FROM user_info WHERE user_id = $1', [userId]);
+        const profile = profileRes.rows[0];
+        if (!profile || !profile.name || !profile.student_id || !profile.batch_session) {
+            throw new Error('Please fill up your profile information (Name, Student ID, and Batch/Session) before joining a team.');
+        }
+
+        // 3. Find team by code
+        const teamRes = await pool.query(
+            'SELECT t.id, t.name, t.is_full, u.email as leader_email FROM teams t JOIN users u ON t.leader_id = u.id WHERE LOWER(t.team_code) = LOWER($1)',
+            [teamCode.trim()]
+        );
+        const team = teamRes.rows[0];
+        if (!team) {
+            throw new Error(`Invalid Team Code "${teamCode}". Please check the code and try again.`);
+        }
+        if (team.is_full) {
+            throw new Error(`Team "${team.name}" has been declared full by the team leader and is not accepting join requests.`);
+        }
+
+        // 3. Check team member limit
+        const countRes = await pool.query('SELECT COUNT(*) as count FROM team_members WHERE team_id = $1', [team.id]);
+        const count = parseInt(countRes.rows[0].count, 10);
+        const maxRes = await pool.query("SELECT value FROM platform_settings WHERE key = 'max_team_members'");
+        const maxMembers = parseInt(maxRes.rows[0]?.value || '5', 10);
+        if (count >= maxMembers) {
+            throw new Error(`Team "${team.name}" has already reached the maximum limit of ${maxMembers} members.`);
+        }
+
+        // 4. Check for existing pending join request
+        const reqRes = await pool.query(
+            'SELECT id FROM team_join_requests WHERE team_id = $1 AND user_id = $2 AND status = $3',
+            [team.id, userId, 'pending']
+        );
+        if (reqRes.rows.length > 0) {
+            throw new Error(`You already have a pending join request for team "${team.name}".`);
+        }
+
+        // 5. Insert join request
+        const insertRes = await pool.query(
+            'INSERT INTO team_join_requests (team_id, user_id, status) VALUES ($1, $2, $3) RETURNING id',
+            [team.id, userId, 'pending']
+        );
+        const requestId = insertRes.rows[0].id;
+
+        // 6. Send in-app notification to team leader
+        await notificationService.createNotification(
+            team.leader_email,
+            `${userEmail} has requested to join your team "${team.name}" [ReqID:${requestId}]`,
+            'pending'
+        );
+
+        return { success: true, teamName: team.name, requestId };
     },
 
     /**
@@ -275,13 +369,7 @@ export const teamService = {
                 const countRes = await client.query('SELECT COUNT(*) as count FROM team_members WHERE team_id = $1', [teamId]);
                 const count = parseInt(countRes.rows[0].count, 10);
                 if (count > 1) {
-                    // Transfer leadership to another member
-                    const nextMemberRes = await client.query(
-                        'SELECT user_id FROM team_members WHERE team_id = $1 AND user_id != $2 LIMIT 1',
-                        [teamId, userId]
-                    );
-                    const newLeaderId = nextMemberRes.rows[0].user_id;
-                    await client.query('UPDATE teams SET leader_id = $1 WHERE id = $2', [newLeaderId, teamId]);
+                    throw new Error('You cannot leave the team unless you transfer leadership to another member first.');
                 } else {
                     // Leader was only member; disband team
                     await client.query('DELETE FROM teams WHERE id = $1', [teamId]);
@@ -313,5 +401,90 @@ export const teamService = {
 
         await pool.query('DELETE FROM teams WHERE id = $1', [team.id]);
         return { success: true };
+    },
+
+    /**
+     * Update team name (Leader only)
+     */
+    async updateTeamName(leaderId: string, newName: string) {
+        const cleanName = newName.trim();
+        if (!cleanName) {
+            throw new Error('Team name cannot be empty.');
+        }
+
+        const teamRes = await pool.query('SELECT id FROM teams WHERE leader_id = $1', [leaderId]);
+        const team = teamRes.rows[0];
+        if (!team) {
+            throw new Error('Only the team leader can change the team name.');
+        }
+
+        const existingRes = await pool.query('SELECT id FROM teams WHERE LOWER(name) = LOWER($1) AND id != $2', [cleanName, team.id]);
+        if (existingRes.rows.length > 0) {
+            throw new Error('A team with that name already exists.');
+        }
+
+        const updatedRes = await pool.query('UPDATE teams SET name = $1 WHERE id = $2 RETURNING *', [cleanName, team.id]);
+        return updatedRes.rows[0];
+    },
+
+    /**
+     * Transfer team leadership to another team member (Leader only)
+     */
+    async transferLeadership(leaderId: string, newLeaderUserId: string) {
+        const teamRes = await pool.query('SELECT id, name FROM teams WHERE leader_id = $1', [leaderId]);
+        const team = teamRes.rows[0];
+        if (!team) {
+            throw new Error('Only the team leader can transfer leadership.');
+        }
+
+        if (leaderId === newLeaderUserId) {
+            throw new Error('You are already the team leader.');
+        }
+
+        const memberCheck = await pool.query('SELECT user_id FROM team_members WHERE team_id = $1 AND user_id = $2', [team.id, newLeaderUserId]);
+        if (memberCheck.rows.length === 0) {
+            throw new Error('Target user is not a member of this team.');
+        }
+
+        await pool.query('UPDATE teams SET leader_id = $1 WHERE id = $2', [newLeaderUserId, team.id]);
+
+        // Notify new leader
+        const targetUserRes = await pool.query('SELECT email FROM users WHERE id = $1', [newLeaderUserId]);
+        if (targetUserRes.rows[0]) {
+            await pool.query(
+                'INSERT INTO notifications (recipient_email, message) VALUES ($1, $2)',
+                [targetUserRes.rows[0].email, `You have been made the new team leader of "${team.name}".`]
+            );
+        }
+
+        return { success: true };
+    },
+
+    /**
+     * Declare team full or reopen it (Leader only)
+     */
+    async updateTeamStatus(userId: string, isFull: boolean) {
+        const memberRes = await pool.query('SELECT team_id FROM team_members WHERE user_id = $1', [userId]);
+        const teamId = memberRes.rows[0]?.team_id;
+        if (!teamId) {
+            throw new Error('You are not in a team.');
+        }
+
+        const teamRes = await pool.query('SELECT id, leader_id, name, is_full FROM teams WHERE id = $1', [teamId]);
+        const team = teamRes.rows[0];
+        if (!team) {
+            throw new Error('Team not found.');
+        }
+        if (team.leader_id !== userId) {
+            throw new Error('Only the team leader can declare the team full or reopen it.');
+        }
+
+        const updatedRes = await pool.query(
+            'UPDATE teams SET is_full = $1 WHERE id = $2 RETURNING id, is_full',
+            [Boolean(isFull), teamId]
+        );
+
+        return { success: true, is_full: updatedRes.rows[0].is_full };
     }
 };
+

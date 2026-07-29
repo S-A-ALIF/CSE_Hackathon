@@ -9,7 +9,8 @@ import {
     updateMember,
     deleteMember,
     getSettings,
-    toggleRegistration
+    toggleRegistration,
+    updateTeamLimits
 } from './admin.controller';
 
 const router = Router();
@@ -33,5 +34,6 @@ router.delete('/members/:id', deleteMember);
 // Platform Settings
 router.get('/settings', getSettings);
 router.post('/settings/toggle-registration', toggleRegistration);
+router.post('/settings/team-limits', updateTeamLimits);
 
 export default router;

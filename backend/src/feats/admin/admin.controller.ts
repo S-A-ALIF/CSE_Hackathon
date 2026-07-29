@@ -350,3 +350,41 @@ export const toggleRegistration = async (req: Request, res: Response) => {
         res.status(500).json({ status: 'error', success: false, message: 'Failed to toggle registration' });
     }
 };
+
+/**
+ * POST /api/v1/admin/settings/team-limits
+ * Update min_team_members and max_team_members
+ */
+export const updateTeamLimits = async (req: Request, res: Response) => {
+    try {
+        const { min_team_members, max_team_members } = req.body;
+        if (min_team_members !== undefined) {
+            await pool.query(
+                "INSERT INTO platform_settings (key, value) VALUES ('min_team_members', $1) ON CONFLICT (key) DO UPDATE SET value = $1",
+                [String(min_team_members)]
+            );
+        }
+        if (max_team_members !== undefined) {
+            await pool.query(
+                "INSERT INTO platform_settings (key, value) VALUES ('max_team_members', $1) ON CONFLICT (key) DO UPDATE SET value = $1",
+                [String(max_team_members)]
+            );
+        }
+
+        const result = await pool.query('SELECT key, value FROM platform_settings');
+        const settings: Record<string, string> = {};
+        result.rows.forEach(r => {
+            settings[r.key] = r.value;
+        });
+
+        res.status(200).json({
+            status: 'success',
+            success: true,
+            data: settings,
+            message: 'Team size limits updated successfully'
+        });
+    } catch (error) {
+        console.error('Error updating team limits:', error);
+        res.status(500).json({ status: 'error', success: false, message: 'Failed to update team limits' });
+    }
+};

@@ -7,6 +7,7 @@ const createTeamsSchema = async () => {
             CREATE TABLE IF NOT EXISTS teams (
                 id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
                 name VARCHAR(255) NOT NULL,
+                team_code VARCHAR(20) UNIQUE DEFAULT NULL,
                 leader_id UUID REFERENCES users(id) ON DELETE CASCADE,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             );
@@ -26,6 +27,15 @@ const createTeamsSchema = async () => {
                 expires_at TIMESTAMP NOT NULL,
                 is_used BOOLEAN DEFAULT false,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
+
+            CREATE TABLE IF NOT EXISTS team_join_requests (
+                id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                team_id UUID REFERENCES teams(id) ON DELETE CASCADE,
+                user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+                status VARCHAR(20) DEFAULT 'pending',
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                UNIQUE(team_id, user_id)
             );
         `);
         console.log("✅ Teams schema created successfully.");

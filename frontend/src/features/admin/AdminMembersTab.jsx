@@ -3,12 +3,21 @@ import { API_URL } from '../../config';
 import { toast } from 'sonner';
 import DetailsInfoModal from './DetailsInfoModal';
 import EditModal from './EditModal';
+import ConfirmModal from '../../components/ConfirmModal';
 
 export default function AdminMembersTab() {
   const [members, setMembers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [roleFilter, setRoleFilter] = useState('all');
+  const [confirmConfig, setConfirmConfig] = useState({
+    isOpen: false,
+    title: '',
+    message: '',
+    confirmText: 'Delete',
+    variant: 'danger',
+    onConfirm: () => {}
+  });
 
   // Modals state
   const [detailsModalData, setDetailsModalData] = useState(null);
@@ -72,8 +81,7 @@ export default function AdminMembersTab() {
     }
   };
 
-  const handleDeleteMember = async (memberId, memberEmail) => {
-    if (!window.confirm(`Are you sure you want to permanently delete user "${memberEmail}"?`)) return;
+  const executeDeleteMember = async (memberId) => {
     try {
       const token = localStorage.getItem('token');
       const res = await fetch(`${API_URL}/api/v1/admin/members/${memberId}`, {
@@ -85,6 +93,7 @@ export default function AdminMembersTab() {
       const data = await res.json();
       if (res.ok && data.success) {
         toast.success('Member deleted successfully');
+        setConfirmConfig(prev => ({ ...prev, isOpen: false }));
         fetchMembers();
       } else {
         toast.error(data.message || 'Failed to delete member');
@@ -93,6 +102,17 @@ export default function AdminMembersTab() {
       console.error('Error deleting member:', err);
       toast.error('Error deleting member');
     }
+  };
+
+  const handleDeleteMember = (memberId, memberEmail) => {
+    setConfirmConfig({
+      isOpen: true,
+      title: "Delete Member?",
+      message: `Are you sure you want to permanently delete user "${memberEmail}"? This action cannot be undone.`,
+      confirmText: "Delete Member",
+      variant: "danger",
+      onConfirm: () => executeDeleteMember(memberId)
+    });
   };
 
   const filteredMembers = members.filter((m) => {
@@ -272,6 +292,16 @@ export default function AdminMembersTab() {
         data={editModalData}
         type="member"
         onSaved={fetchMembers}
+      />
+
+      <ConfirmModal
+        isOpen={confirmConfig.isOpen}
+        onClose={() => setConfirmConfig(prev => ({ ...prev, isOpen: false }))}
+        onConfirm={confirmConfig.onConfirm}
+        title={confirmConfig.title}
+        message={confirmConfig.message}
+        confirmText={confirmConfig.confirmText}
+        variant={confirmConfig.variant}
       />
     </div>
   );

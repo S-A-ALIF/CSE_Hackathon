@@ -2,7 +2,8 @@ import { API_URL } from '../../config';
 import { useState } from 'react';
 import { toast } from 'sonner';
 
-export default function CreateTeamModal({ isOpen, onClose, mode = 'create' }) {
+export default function CreateTeamModal({ isOpen, onClose, mode = 'create', onSuccess }) {
+  const [teamName, setTeamName] = useState('');
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [successInfo, setSuccessInfo] = useState(null);
@@ -10,6 +11,7 @@ export default function CreateTeamModal({ isOpen, onClose, mode = 'create' }) {
   if (!isOpen) return null;
 
   const handleClose = () => {
+    setTeamName('');
     setEmail('');
     setSuccessInfo(null);
     onClose();
@@ -18,47 +20,75 @@ export default function CreateTeamModal({ isOpen, onClose, mode = 'create' }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (loading) return;
-    if (!email) {
-      toast.error('Please enter an email address');
-      return;
-    }
 
     setLoading(true);
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch(API_URL + '/api/v1/teams/invite', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({ emailToInvite: email })
-      });
-      const data = await res.json();
-      
-      if (res.ok) {
-        toast.success(`Invitation sent to ${email}!`);
-        setSuccessInfo({
-          email,
-          message: data.message,
-          pinCode: data.pinCode,
-          emailSent: data.emailSent
+
+      if (mode === 'create') {
+        if (!teamName.trim()) {
+          toast.error('Please enter a team name');
+          setLoading(false);
+          return;
+        }
+
+        const res = await fetch(API_URL + '/api/v1/teams/create', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({ name: teamName.trim() })
         });
+        const data = await res.json();
+
+        if (res.ok && (data.success || res.status === 201)) {
+          toast.success('Team created successfully!');
+          onSuccess?.();
+          handleClose();
+        } else {
+          toast.error(data.message || 'Failed to create team');
+        }
       } else {
-        toast.error(data.message || 'Failed to send invitation');
+        if (!email.trim()) {
+          toast.error('Please enter an email address');
+          setLoading(false);
+          return;
+        }
+
+        const res = await fetch(API_URL + '/api/v1/teams/invite', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({ emailToInvite: email.trim() })
+        });
+        const data = await res.json();
+
+        if (res.ok && (data.success || res.status === 200)) {
+          toast.success(`Invitation sent to ${email}!`);
+          setSuccessInfo({
+            email: email.trim(),
+            message: data.message
+          });
+          onSuccess?.();
+        } else {
+          toast.error(data.message || 'Failed to send invitation');
+        }
       }
     } catch (error) {
-      console.error('Error sending invite:', error);
+      console.error('Error in modal submit:', error);
       toast.error('A network error occurred.');
     } finally {
       setLoading(false);
     }
   };
 
-  const title = mode === 'invite' ? 'Add Member' : 'Create a Team';
+  const title = mode === 'invite' ? 'Invite Member' : 'Create a Team';
   const subtitle = mode === 'invite' 
-    ? 'Send an invitation to add someone to your existing team.' 
-    : 'Send an invitation to your teammate via email.';
+    ? 'Send an in-app invitation to add someone to your team.' 
+    : 'Enter a name for your team. You will be the team leader.';
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
@@ -79,22 +109,16 @@ export default function CreateTeamModal({ isOpen, onClose, mode = 'create' }) {
               <div>
                 <h3 className="text-2xl font-black text-slate-900">Invitation Sent!</h3>
                 <p className="text-sm text-slate-500 mt-1">
-                  We sent an invitation to <span className="font-bold text-slate-800">{successInfo.email}</span>.
+                  We sent an in-app invitation to <span className="font-bold text-slate-800">{successInfo.email}</span>.
                 </p>
               </div>
 
-              <div className="bg-slate-50 border border-slate-200 p-4 rounded-2xl">
+              <div className="bg-slate-50 border border-slate-200 p-4 rounded-2xl text-left">
                 <p className="text-sm font-semibold text-slate-800">
-                  Check Gmail Inbox
+                  How they can join:
                 </p>
                 <p className="text-xs text-slate-500 mt-1">
-                  A 6-digit PIN code has been sent to <b>{successInfo.email}</b>. They must use the code from their email to join your team!
-                </p>
-              </div>
-
-              <div className="bg-blue-50/50 border border-blue-100 p-3 rounded-xl text-left">
-                <p className="text-xs text-blue-800">
-                  <b>Email status:</b> {successInfo.emailSent ? 'Email dispatched to inbox.' : 'Email delivery failed or blocked by SMTP settings. Please check server email credentials.'}
+                  The user will receive an invitation in their <b>in-app notification dropdown</b>. They can click <b>Accept</b> or <b>Reject</b> directly from their notifications without needing any email PIN code!
                 </p>
               </div>
 
@@ -124,18 +148,33 @@ export default function CreateTeamModal({ isOpen, onClose, mode = 'create' }) {
               <p className="text-slate-500 mb-8">{subtitle}</p>
               
               <form onSubmit={handleSubmit} className="space-y-6">
-                <div>
-                  <label className="block text-sm font-semibold text-slate-700 mb-2">Teammate's Email</label>
-                  <input 
-                    type="email" 
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    required
-                    disabled={loading}
-                    className="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none transition-all disabled:opacity-50" 
-                    placeholder="teammate@example.com" 
-                  />
-                </div>
+                {mode === 'create' ? (
+                  <div>
+                    <label className="block text-sm font-semibold text-slate-700 mb-2">Team Name</label>
+                    <input 
+                      type="text" 
+                      value={teamName}
+                      onChange={(e) => setTeamName(e.target.value)}
+                      required
+                      disabled={loading}
+                      className="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none transition-all disabled:opacity-50" 
+                      placeholder="e.g. Code Wizards" 
+                    />
+                  </div>
+                ) : (
+                  <div>
+                    <label className="block text-sm font-semibold text-slate-700 mb-2">Teammate's Email</label>
+                    <input 
+                      type="email" 
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      required
+                      disabled={loading}
+                      className="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none transition-all disabled:opacity-50" 
+                      placeholder="teammate@example.com" 
+                    />
+                  </div>
+                )}
                 
                 <button 
                   type="submit" 
@@ -145,10 +184,10 @@ export default function CreateTeamModal({ isOpen, onClose, mode = 'create' }) {
                   {loading ? (
                     <>
                       <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                      <span>Sending...</span>
+                      <span>{mode === 'create' ? 'Creating...' : 'Sending...'}</span>
                     </>
                   ) : (
-                    <span>Send Invitation</span>
+                    <span>{mode === 'create' ? 'Create Team' : 'Send Invitation'}</span>
                   )}
                 </button>
                 <button 

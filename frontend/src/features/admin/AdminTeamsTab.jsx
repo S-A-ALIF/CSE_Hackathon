@@ -3,12 +3,21 @@ import { API_URL } from '../../config';
 import { toast } from 'sonner';
 import DetailsInfoModal from './DetailsInfoModal';
 import EditModal from './EditModal';
+import ConfirmModal from '../../components/ConfirmModal';
 
 export default function AdminTeamsTab() {
   const [teams, setTeams] = useState([]);
   const [loading, setLoading] = useState(true);
   const [expandedTeams, setExpandedTeams] = useState({});
   const [searchTerm, setSearchTerm] = useState('');
+  const [confirmConfig, setConfirmConfig] = useState({
+    isOpen: false,
+    title: '',
+    message: '',
+    confirmText: 'Delete',
+    variant: 'danger',
+    onConfirm: () => {}
+  });
 
   // Modals state
   const [detailsModalData, setDetailsModalData] = useState(null);
@@ -66,8 +75,7 @@ export default function AdminTeamsTab() {
     }
   };
 
-  const handleDeleteTeam = async (teamId, teamName) => {
-    if (!window.confirm(`Are you sure you want to permanently delete team "${teamName}"?`)) return;
+  const executeDeleteTeam = async (teamId) => {
     try {
       const token = localStorage.getItem('token');
       const res = await fetch(`${API_URL}/api/v1/admin/teams/${teamId}`, {
@@ -79,6 +87,7 @@ export default function AdminTeamsTab() {
       const data = await res.json();
       if (res.ok && data.success) {
         toast.success('Team deleted successfully');
+        setConfirmConfig(prev => ({ ...prev, isOpen: false }));
         fetchTeams();
       } else {
         toast.error(data.message || 'Failed to delete team');
@@ -87,6 +96,17 @@ export default function AdminTeamsTab() {
       console.error('Error deleting team:', err);
       toast.error('Error deleting team');
     }
+  };
+
+  const handleDeleteTeam = (teamId, teamName) => {
+    setConfirmConfig({
+      isOpen: true,
+      title: "Delete Team?",
+      message: `Are you sure you want to permanently delete team "${teamName}"? This action cannot be undone.`,
+      confirmText: "Delete Team",
+      variant: "danger",
+      onConfirm: () => executeDeleteTeam(teamId)
+    });
   };
 
   const handleBanToggleTeam = async (team) => {
@@ -117,8 +137,7 @@ export default function AdminTeamsTab() {
     }
   };
 
-  const handleDeleteMember = async (memberId, memberEmail) => {
-    if (!window.confirm(`Are you sure you want to permanently delete user "${memberEmail}"?`)) return;
+  const executeDeleteMember = async (memberId) => {
     try {
       const token = localStorage.getItem('token');
       const res = await fetch(`${API_URL}/api/v1/admin/members/${memberId}`, {
@@ -130,6 +149,7 @@ export default function AdminTeamsTab() {
       const data = await res.json();
       if (res.ok && data.success) {
         toast.success('Member deleted successfully');
+        setConfirmConfig(prev => ({ ...prev, isOpen: false }));
         fetchTeams();
       } else {
         toast.error(data.message || 'Failed to delete member');
@@ -138,6 +158,17 @@ export default function AdminTeamsTab() {
       console.error('Error deleting member:', err);
       toast.error('Error deleting member');
     }
+  };
+
+  const handleDeleteMember = (memberId, memberEmail) => {
+    setConfirmConfig({
+      isOpen: true,
+      title: "Delete Member?",
+      message: `Are you sure you want to permanently delete user "${memberEmail}"? This action cannot be undone.`,
+      confirmText: "Delete Member",
+      variant: "danger",
+      onConfirm: () => executeDeleteMember(memberId)
+    });
   };
 
   const filteredTeams = teams.filter(t =>
@@ -390,6 +421,16 @@ export default function AdminTeamsTab() {
         data={editModalData}
         type={editModalType}
         onSaved={fetchTeams}
+      />
+
+      <ConfirmModal
+        isOpen={confirmConfig.isOpen}
+        onClose={() => setConfirmConfig(prev => ({ ...prev, isOpen: false }))}
+        onConfirm={confirmConfig.onConfirm}
+        title={confirmConfig.title}
+        message={confirmConfig.message}
+        confirmText={confirmConfig.confirmText}
+        variant={confirmConfig.variant}
       />
     </div>
   );

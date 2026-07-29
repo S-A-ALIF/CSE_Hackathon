@@ -28,11 +28,21 @@ const formatGMT6 = (dateString) => {
   }
 };
 
+// Remove backend tags like [TeamID:...] or [ReqID:...] so display ends cleanly at the team name
+const formatNotificationMessage = (msg) => {
+  if (!msg) return '';
+  let cleaned = msg
+    .replace(/\s*\[TeamID:[a-fA-F0-9-]+\]\.?/i, '.')
+    .replace(/\s*\[ReqID:[a-fA-F0-9-]+\]\.?/i, '.');
+  return cleaned.replace(/\.\./g, '.').trim();
+};
+
 export default function NotificationDropdown() {
   const { currentUser } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [actionLoading, setActionLoading] = useState({});
   const [showJoinModal, setShowJoinModal] = useState(false);
   const dropdownRef = useRef(null);
 
@@ -151,14 +161,41 @@ export default function NotificationDropdown() {
     }
   };
 
-  const handleAcceptInvite = (notification) => {
-    setIsOpen(false);
-    setShowJoinModal(true);
+  const handleAcceptInvite = async (notification) => {
+    const token = localStorage.getItem('token');
+    if (!token || !currentUser || actionLoading[notification.id]) return;
+    try {
+      setActionLoading(prev => ({ ...prev, [notification.id]: 'accept' }));
+      const res = await fetch(`${API_URL}/api/v1/notifications/${notification.id}/accept-invite?email=${encodeURIComponent(currentUser.email)}`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      const data = await res.json();
+      if (res.ok) {
+        toast.success(data.message || 'Accepted successfully!');
+        await fetchNotifications(false);
+      } else {
+        toast.error(data.message || 'Failed to accept');
+      }
+    } catch (error) {
+      console.error('Error accepting invite/request:', error);
+      toast.error('Network error accepting request');
+    } finally {
+      setActionLoading(prev => {
+        const next = { ...prev };
+        delete next[notification.id];
+        return next;
+      });
+    }
   };
 
   const handleRejectInvite = async (notification) => {
     const token = localStorage.getItem('token');
+    if (!token || !currentUser || actionLoading[notification.id]) return;
     try {
+      setActionLoading(prev => ({ ...prev, [notification.id]: 'reject' }));
       const res = await fetch(`${API_URL}/api/v1/notifications/${notification.id}/reject-invite?email=${encodeURIComponent(currentUser.email)}`, {
         method: 'POST',
         headers: {
@@ -168,13 +205,19 @@ export default function NotificationDropdown() {
       const data = await res.json();
       if (res.ok) {
         toast.success(data.message || 'Invitation rejected');
-        fetchNotifications(false);
+        await fetchNotifications(false);
       } else {
         toast.error(data.message || 'Failed to reject invitation');
       }
     } catch (error) {
       console.error('Error rejecting invite:', error);
       toast.error('Network error rejecting invitation');
+    } finally {
+      setActionLoading(prev => {
+        const next = { ...prev };
+        delete next[notification.id];
+        return next;
+      });
     }
   };
 
@@ -199,16 +242,18 @@ export default function NotificationDropdown() {
 
       {/* Dropdown Menu */}
       {isOpen && (
-        <div className="absolute top-full right-0 mt-2 w-80 bg-white rounded-xl shadow-2xl border border-slate-200 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200 z-[60]">
-          <div className="bg-slate-50 border-b border-slate-100 px-4 py-3 flex justify-between items-center">
-            <h3 className="font-bold text-slate-800">Notifications</h3>
-            <span className="text-xs font-semibold bg-blue-100 text-blue-700 px-2 py-1 rounded-full">
-              {unreadCount} New
-            </span>
+        <div className="absolute right-0 mt-2 w-80 md:w-96 bg-white rounded-2xl shadow-xl border border-slate-100 py-2 z-50 animate-in fade-in slide-in-from-top-2 duration-200 overflow-hidden">
+          <div className="px-4 py-3 border-b border-slate-100 flex items-center justify-between">
+            <h3 className="font-bold text-slate-900">Notifications</h3>
+            {unreadCount > 0 && (
+              <span className="text-xs bg-blue-100 text-blue-700 font-bold px-2.5 py-0.5 rounded-full">
+                {unreadCount} New
+              </span>
+            )}
           </div>
 
-          <div className="max-h-96 overflow-y-auto">
-            {loading && notifications.length === 0 ? (
+          <div className="max-h-96 overflow-y-auto divide-y divide-slate-100">
+            {loading ? (
               <div className="p-4 text-center text-sm text-slate-500">Loading...</div>
             ) : notifications.length === 0 ? (
               <div className="p-8 text-center flex flex-col items-center">
@@ -224,7 +269,11 @@ export default function NotificationDropdown() {
                   <div 
                     key={notification.id} 
                     onClick={() => {
-                        if (!notification.is_read) handleMarkAsRead(notification.id);
+                        const isInviteOrRequest = notification.message.includes('You received a team invitation') || notification.message.includes('requested to join your team');
+                        const isPendingAction = !notification.action_status || notification.action_status === 'pending';
+                        if (!notification.is_read && !(isInviteOrRequest && isPendingAction)) {
+                          handleMarkAsRead(notification.id);
+                        }
                     }}
                     className={`p-4 border-b border-slate-100 cursor-pointer transition-all duration-200 hover:bg-slate-50 flex items-center justify-between group ${
                       notification.is_read ? 'opacity-60' : 'bg-blue-50/30'
@@ -238,28 +287,42 @@ export default function NotificationDropdown() {
                       )}
                       <div>
                         <p className={`text-sm ${notification.is_read ? 'text-slate-600' : 'text-slate-800 font-medium'}`}>
-                          {notification.message}
+                          {formatNotificationMessage(notification.message)}
                         </p>
                         <p className="text-xs text-slate-400 mt-1">
                           {formatGMT6(notification.created_at)}
                         </p>
-                        {notification.message.includes('You received a team invitation') && (
+                        {(notification.message.includes('You received a team invitation') || notification.message.includes('requested to join your team')) && (
                           <div className="mt-2.5" onClick={(e) => e.stopPropagation()}>
-                            {!notification.action_status ? (
+                            {(!notification.action_status || notification.action_status === 'pending') ? (
                               <div className="flex items-center gap-2">
                                 <button
                                   type="button"
+                                  disabled={!!actionLoading[notification.id]}
                                   onClick={() => handleAcceptInvite(notification)}
-                                  className="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-lg shadow-sm transition-all"
+                                  className="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-lg shadow-sm transition-all disabled:opacity-50 flex items-center gap-1.5"
                                 >
-                                  Accept
+                                  {actionLoading[notification.id] === 'accept' && (
+                                    <svg className="animate-spin h-3 w-3 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                    </svg>
+                                  )}
+                                  {actionLoading[notification.id] === 'accept' ? 'Accepting...' : 'Accept'}
                                 </button>
                                 <button
                                   type="button"
+                                  disabled={!!actionLoading[notification.id]}
                                   onClick={() => handleRejectInvite(notification)}
-                                  className="px-3 py-1 bg-slate-200 hover:bg-rose-500 hover:text-white text-slate-700 text-xs font-bold rounded-lg transition-all"
+                                  className="px-3 py-1 bg-slate-200 hover:bg-rose-500 hover:text-white text-slate-700 text-xs font-bold rounded-lg transition-all disabled:opacity-50 flex items-center gap-1.5"
                                 >
-                                  Reject
+                                  {actionLoading[notification.id] === 'reject' && (
+                                    <svg className="animate-spin h-3 w-3 text-current" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                    </svg>
+                                  )}
+                                  {actionLoading[notification.id] === 'reject' ? 'Rejecting...' : 'Reject'}
                                 </button>
                               </div>
                             ) : notification.action_status === 'accepted' ? (
