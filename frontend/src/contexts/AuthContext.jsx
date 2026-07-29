@@ -108,7 +108,7 @@ export function AuthProvider({ children }) {
       localStorage.setItem('token', data.token);
       localStorage.setItem('currentUser', JSON.stringify(data.data));
       setCurrentUser(data.data);
-      return { success: true };
+      return { success: true, user: data.data };
     } catch (err) {
       console.error("Login error:", err);
       return { success: false, message: 'Network error. Please try again later.' };

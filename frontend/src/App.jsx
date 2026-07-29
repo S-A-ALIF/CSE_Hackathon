@@ -8,6 +8,7 @@ import ProfilePage from './pages/ProfilePage';
 import TeamPage from './pages/TeamPage';
 import ProjectPage from './pages/ProjectPage';
 import ProblemsPage from './pages/ProblemsPage';
+import AdminPage from './pages/AdminPage';
 
 function App() {
   return (
@@ -22,6 +23,7 @@ function App() {
           <Route path="/team" element={<TeamPage />} />
           <Route path="/project" element={<ProjectPage />} />
           <Route path="/problems" element={<ProblemsPage />} />
+          <Route path="/admin" element={<AdminPage />} />
         </Routes>
       </BrowserRouter>
     </AuthProvider>

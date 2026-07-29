@@ -12,6 +12,7 @@ export default function RegisterPage() {
     password: ''
   });
   const [showPassword, setShowPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -23,6 +24,7 @@ export default function RegisterPage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (isLoading) return;
 
     // Validation
     if (!formData.email.trim() || !formData.password) {
@@ -36,12 +38,17 @@ export default function RegisterPage() {
       password: formData.password
     };
 
-    const result = await register(userData);
-    if (result.success) {
-      toast.success('Registration successful!');
-      navigate('/dashboard');
-    } else {
-      toast.error(result.message);
+    setIsLoading(true);
+    try {
+      const result = await register(userData);
+      if (result.success) {
+        toast.success('Registration successful!');
+        navigate('/dashboard');
+      } else {
+        toast.error(result.message);
+      }
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -106,8 +113,24 @@ export default function RegisterPage() {
             </div>
           </div>
 
-          <button type="submit" className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 px-4 rounded-xl shadow-lg shadow-blue-500/30 transition-all text-xl mt-6">
-            Register
+          <button 
+            type="submit" 
+            disabled={isLoading}
+            className={`w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 px-4 rounded-xl shadow-lg shadow-blue-500/30 transition-all text-xl mt-6 flex items-center justify-center gap-3 ${
+              isLoading ? 'opacity-70 cursor-not-allowed' : ''
+            }`}
+          >
+            {isLoading ? (
+              <>
+                <svg className="animate-spin h-6 w-6 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                <span>Registering...</span>
+              </>
+            ) : (
+              <span>Register</span>
+            )}
           </button>
         </form>
 

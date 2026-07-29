@@ -9,6 +9,12 @@ export const registerUser = async (userData: any): Promise<User> => {
     const { email, password, role } = userData;
 
     try {
+        // 0. Check if registration is open
+        const settingRes = await pool.query("SELECT value FROM platform_settings WHERE key = 'registration_open'");
+        if (settingRes.rows.length > 0 && settingRes.rows[0].value === 'false') {
+            throw new CustomError('Registration is currently closed by administration.', 403);
+        }
+
         // 1. Check if user already exists
         const existingUser = await pool.query('SELECT id FROM users WHERE email = $1', [email]);
         
@@ -47,6 +53,11 @@ export const loginUser = async (email: string, password: string) => {
         // 2. Validate user existence
         if (!user) {
             throw new CustomError('Invalid email or password', 401);
+        }
+
+        // 2.5 Check if user is banned
+        if (user.is_banned) {
+            throw new CustomError(`Your account has been banned: ${user.ban_reason || 'Violation of platform rules.'}`, 403);
         }
 
         // 3. Compare passwords

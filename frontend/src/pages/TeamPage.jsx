@@ -6,7 +6,7 @@ import CreateTeamModal from '../features/team/CreateTeamModal';
 import JoinTeamModal from '../features/team/JoinTeamModal';
 import TeamManagementModal from '../features/team/TeamManagementModal';
 
-export default function TeamPage() {
+export default function TeamPage({ inDashboard = false }) {
   const { currentUser } = useAuth();
   const [team, setTeam] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -17,6 +17,7 @@ export default function TeamPage() {
 
   const fetchTeam = async () => {
     try {
+      setLoading(true);
       const token = localStorage.getItem('token');
       const res = await fetch(API_URL + '/api/v1/teams/my-team', {
         headers: {
@@ -26,6 +27,8 @@ export default function TeamPage() {
       const data = await res.json();
       if (res.ok && data.success) {
         setTeam(data.data);
+      } else {
+        setTeam(null);
       }
     } catch (error) {
       console.error('Error fetching team:', error);
@@ -72,7 +75,7 @@ export default function TeamPage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 py-12 px-4 sm:px-6 lg:px-8">
+    <div className={inDashboard ? 'py-2' : 'min-h-screen bg-slate-50 py-12 px-4 sm:px-6 lg:px-8'}>
       <div className="max-w-4xl mx-auto space-y-8">
         {/* Header */}
         <div>

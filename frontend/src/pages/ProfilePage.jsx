@@ -5,7 +5,7 @@ import { toast } from 'sonner';
 import { useAuth } from '../contexts/AuthContext';
 import NotificationDropdown from '../components/NotificationDropdown';
 
-export default function ProfilePage() {
+export default function ProfilePage({ inDashboard = false }) {
   const { currentUser, userProfile, setUserProfile } = useAuth();
   const navigate = useNavigate();
   
@@ -59,6 +59,7 @@ export default function ProfilePage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (saving) return;
     setSaving(true);
     
     try {
@@ -69,12 +70,17 @@ export default function ProfilePage() {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify(formData)
+        body: JSON.stringify({
+          name: formData.name,
+          student_id: formData.student_id,
+          batch_session: formData.batch_session,
+          phone_number: formData.phone_number
+        })
       });
       
       const data = await res.json();
       
-      if (res.ok) {
+      if (res.ok && (data.status === 'success' || data.success)) {
         toast.success('Profile updated successfully!');
         setUserProfile(formData); // Update context
         setProfileData(formData); // Update view mode data
@@ -96,21 +102,23 @@ export default function ProfilePage() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className={inDashboard ? '' : 'min-h-screen bg-slate-50'}>
       {/* Navbar */}
-      <nav className="bg-slate-900 text-white py-4 px-6 lg:px-20 flex justify-between items-center shadow-md relative z-50">
-        <Link to="/dashboard" className="text-2xl font-black tracking-tighter hover:opacity-80 transition-opacity">
-          GSTU<span className="text-blue-500">Hackathon</span>
-        </Link>
-        <div className="flex items-center space-x-4">
-          <NotificationDropdown />
-          <Link to="/dashboard" className="w-10 h-10 rounded-full bg-slate-800 hover:bg-slate-700 border-2 border-slate-700 flex items-center justify-center transition-colors">
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5 text-slate-300">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18" />
-            </svg>
+      {!inDashboard && (
+        <nav className="bg-slate-900 text-white py-4 px-6 lg:px-20 flex justify-between items-center shadow-md relative z-50">
+          <Link to="/dashboard" className="text-2xl font-black tracking-tighter hover:opacity-80 transition-opacity">
+            GSTU<span className="text-blue-500">Hackathon</span>
           </Link>
-        </div>
-      </nav>
+          <div className="flex items-center space-x-4">
+            <NotificationDropdown />
+            <Link to="/dashboard" className="w-10 h-10 rounded-full bg-slate-800 hover:bg-slate-700 border-2 border-slate-700 flex items-center justify-center transition-colors">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5 text-slate-300">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18" />
+              </svg>
+            </Link>
+          </div>
+        </nav>
+      )}
 
       {/* Main Content */}
       <main className="container mx-auto px-6 py-12 max-w-4xl animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -214,12 +222,17 @@ export default function ProfilePage() {
                 <button 
                   type="submit" 
                   disabled={saving}
-                  className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-xl shadow-lg shadow-blue-500/30 transition-all disabled:opacity-70 flex items-center gap-2"
+                  className={`bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-xl shadow-lg shadow-blue-500/30 transition-all flex items-center justify-center gap-2 ${
+                    saving ? 'opacity-70 cursor-not-allowed' : ''
+                  }`}
                 >
                   {saving ? (
                     <>
-                      <div className="animate-spin rounded-full h-4 w-4 border-2 border-white/20 border-t-white"></div>
-                      Saving...
+                      <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      <span>Saving...</span>
                     </>
                   ) : 'Save Changes'}
                 </button>

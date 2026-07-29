@@ -72,6 +72,19 @@ const initAllTables = async () => {
             ALTER TABLE notifications ADD COLUMN IF NOT EXISTS action_status VARCHAR(20) DEFAULT NULL;
         `);
 
+        console.log("5️⃣ Creating 'platform_settings' table and updating ban columns...");
+        await client.query(`
+            ALTER TABLE users ADD COLUMN IF NOT EXISTS is_banned BOOLEAN DEFAULT false;
+            ALTER TABLE users ADD COLUMN IF NOT EXISTS ban_reason TEXT DEFAULT NULL;
+            ALTER TABLE teams ADD COLUMN IF NOT EXISTS is_banned BOOLEAN DEFAULT false;
+            ALTER TABLE teams ADD COLUMN IF NOT EXISTS ban_reason TEXT DEFAULT NULL;
+            CREATE TABLE IF NOT EXISTS platform_settings (
+                key VARCHAR(50) PRIMARY KEY,
+                value TEXT NOT NULL
+            );
+            INSERT INTO platform_settings (key, value) VALUES ('registration_open', 'true') ON CONFLICT (key) DO NOTHING;
+        `);
+
         await client.query('COMMIT');
         console.log("✅ All database tables initialized successfully!");
         process.exit(0);

@@ -23,14 +23,21 @@ export default function Navbar() {
           </div>
           <div className="flex space-x-4 items-center">
             {currentUser ? (
-              <>
+              currentUser.role === 'admin' ? (
+                <Link 
+                  to="/admin"
+                  className="bg-red-500/10 text-red-400 border border-red-500/20 hover:bg-red-500/20 font-bold py-2 px-4 rounded-lg transition-all flex items-center gap-1.5"
+                >
+                  <span>🛡️</span> Admin Panel
+                </Link>
+              ) : (
                 <Link 
                   to="/dashboard"
                   className="bg-blue-600/10 text-blue-400 border border-blue-500/20 hover:bg-blue-500/20 font-semibold py-2 px-4 rounded-lg transition-all"
                 >
                   Dashboard
                 </Link>
-              </>
+              )
             ) : (
               <>
                 <button 

@@ -40,7 +40,7 @@ const PROBLEMS = [
   }
 ];
 
-export default function ProblemsPage() {
+export default function ProblemsPage({ inDashboard = false }) {
   const [selectedTrack, setSelectedTrack] = useState('All');
 
   const filteredProblems = selectedTrack === 'All'
@@ -48,15 +48,17 @@ export default function ProblemsPage() {
     : PROBLEMS.filter(p => p.track === selectedTrack);
 
   return (
-    <div className="min-h-screen bg-slate-50 py-12 px-4 sm:px-6 lg:px-8">
+    <div className={inDashboard ? 'py-2' : 'min-h-screen bg-slate-50 py-12 px-4 sm:px-6 lg:px-8'}>
       <div className="max-w-6xl mx-auto space-y-8">
         {/* Header */}
         <div>
-          <div className="flex items-center gap-2 text-sm font-semibold text-blue-600 mb-1">
-            <Link to="/dashboard" className="hover:underline">Dashboard</Link>
-            <span>/</span>
-            <span>Problem Statements</span>
-          </div>
+          {!inDashboard && (
+            <div className="flex items-center gap-2 text-sm font-semibold text-blue-600 mb-1">
+              <Link to="/dashboard" className="hover:underline">Dashboard</Link>
+              <span>/</span>
+              <span>Problem Statements</span>
+            </div>
+          )}
           <h1 className="text-4xl font-black tracking-tight text-slate-900">Hackathon Problem Statements</h1>
           <p className="mt-2 text-lg text-slate-600">Select a problem statement for your team and build a winning solution.</p>
         </div>

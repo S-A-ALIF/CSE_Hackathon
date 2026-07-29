@@ -26,6 +26,7 @@ export const getProfile = async (req: Request, res: Response, next: NextFunction
         
         res.status(200).json({
             status: 'success',
+            success: true,
             data: profile // might be null if they haven't created it yet
         });
     } catch (error) {
@@ -52,6 +53,7 @@ export const updateProfile = async (req: Request, res: Response, next: NextFunct
 
         res.status(200).json({
             status: 'success',
+            success: true,
             message: 'Profile updated successfully',
             data: updatedProfile
         });

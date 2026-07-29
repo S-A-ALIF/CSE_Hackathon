@@ -1,0 +1,278 @@
+import { useState, useEffect } from 'react';
+import { API_URL } from '../../config';
+import { toast } from 'sonner';
+import DetailsInfoModal from './DetailsInfoModal';
+import EditModal from './EditModal';
+
+export default function AdminMembersTab() {
+  const [members, setMembers] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [roleFilter, setRoleFilter] = useState('all');
+
+  // Modals state
+  const [detailsModalData, setDetailsModalData] = useState(null);
+  const [editModalData, setEditModalData] = useState(null);
+
+  // Menu open state
+  const [openMenuId, setOpenMenuId] = useState(null);
+
+  const fetchMembers = async () => {
+    setLoading(true);
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch(`${API_URL}/api/v1/admin/members`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setMembers(data.data);
+      } else {
+        toast.error(data.message || 'Failed to fetch members');
+      }
+    } catch (error) {
+      console.error('Error loading members:', error);
+      toast.error('Error fetching members');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchMembers();
+  }, []);
+
+  const handleBanToggleMember = async (member) => {
+    const nextBan = !member.is_banned;
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch(`${API_URL}/api/v1/admin/members/${member.id}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          is_banned: nextBan,
+          ban_reason: nextBan ? 'Banned by Admin' : null
+        })
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        toast.success(nextBan ? 'Member has been banned' : 'Member is unbanned');
+        fetchMembers();
+      } else {
+        toast.error(data.message || 'Failed to update ban status');
+      }
+    } catch (err) {
+      console.error('Error ban toggle:', err);
+      toast.error('Error updating ban status');
+    }
+  };
+
+  const handleDeleteMember = async (memberId, memberEmail) => {
+    if (!window.confirm(`Are you sure you want to permanently delete user "${memberEmail}"?`)) return;
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch(`${API_URL}/api/v1/admin/members/${memberId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        toast.success('Member deleted successfully');
+        fetchMembers();
+      } else {
+        toast.error(data.message || 'Failed to delete member');
+      }
+    } catch (err) {
+      console.error('Error deleting member:', err);
+      toast.error('Error deleting member');
+    }
+  };
+
+  const filteredMembers = members.filter((m) => {
+    const matchesSearch =
+      m.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (m.name && m.name.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (m.student_id && m.student_id.toLowerCase().includes(searchTerm.toLowerCase()));
+
+    const matchesRole = roleFilter === 'all' || m.role === roleFilter;
+
+    return matchesSearch && matchesRole;
+  });
+
+  return (
+    <div className="space-y-6">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div>
+          <h1 className="text-3xl font-black text-slate-900 tracking-tight">
+            Registered Members ({members.length})
+          </h1>
+          <p className="text-slate-600 mt-1">
+            Browse all user accounts, view profiles, and manage permissions.
+          </p>
+        </div>
+        <button
+          onClick={fetchMembers}
+          className="px-4 py-2 bg-blue-50 text-blue-600 hover:bg-blue-100 font-bold rounded-xl text-sm transition-colors"
+        >
+          Refresh Members
+        </button>
+      </div>
+
+      {/* Filter and Search Bar */}
+      <div className="flex flex-col sm:flex-row gap-4">
+        <input
+          type="text"
+          placeholder="Search by name, email, or student ID..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="flex-1 px-4 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-blue-500 font-semibold text-sm"
+        />
+        <select
+          value={roleFilter}
+          onChange={(e) => setRoleFilter(e.target.value)}
+          className="px-4 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-blue-500 font-semibold text-sm bg-white"
+        >
+          <option value="all">All Roles</option>
+          <option value="student">Student Only</option>
+          <option value="admin">Admin Only</option>
+        </select>
+      </div>
+
+      {loading ? (
+        <div className="flex justify-center py-20">
+          <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600"></div>
+        </div>
+      ) : filteredMembers.length === 0 ? (
+        <div className="bg-white p-12 rounded-2xl border border-slate-200 text-center">
+          <p className="text-slate-500 font-semibold">No members found matching your search.</p>
+        </div>
+      ) : (
+        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="border-b border-slate-200 bg-slate-50 text-slate-500 uppercase text-[11px] font-bold tracking-wider">
+                  <th className="py-3 px-4">Member Name & Email</th>
+                  <th className="py-3 px-4">Student ID</th>
+                  <th className="py-3 px-4">Session</th>
+                  <th className="py-3 px-4">Team</th>
+                  <th className="py-3 px-4">Role</th>
+                  <th className="py-3 px-4">Status</th>
+                  <th className="py-3 px-4 text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100 text-sm">
+                {filteredMembers.map((m) => {
+                  const menuKey = `member-row-${m.id}`;
+                  const isMenuOpen = openMenuId === menuKey;
+
+                  return (
+                    <tr
+                      key={m.id}
+                      className="hover:bg-slate-50/70 transition-colors"
+                    >
+                      <td
+                        className="py-3 px-4 cursor-pointer"
+                        onClick={() => setDetailsModalData(m)}
+                      >
+                        <div className="font-bold text-slate-900">{m.name || 'Unnamed Member'}</div>
+                        <div className="text-xs text-slate-500">{m.email}</div>
+                      </td>
+                      <td className="py-3 px-4 font-mono text-slate-700">{m.student_id || '—'}</td>
+                      <td className="py-3 px-4 text-slate-700">{m.batch_session || '—'}</td>
+                      <td className="py-3 px-4">
+                        {m.team_name ? (
+                          <span className="px-2.5 py-1 rounded-md bg-blue-50 text-blue-700 font-bold text-xs">
+                            {m.team_name}
+                          </span>
+                        ) : (
+                          <span className="text-slate-400 text-xs italic">No Team</span>
+                        )}
+                      </td>
+                      <td className="py-3 px-4">
+                        <span className="px-2.5 py-1 rounded-md bg-slate-100 text-slate-700 font-bold text-xs uppercase">
+                          {m.role}
+                        </span>
+                      </td>
+                      <td className="py-3 px-4">
+                        {m.is_banned ? (
+                          <span className="text-red-600 font-bold text-xs">🚫 Banned</span>
+                        ) : (
+                          <span className="text-emerald-600 font-bold text-xs">✅ Active</span>
+                        )}
+                      </td>
+                      <td className="py-3 px-4 text-right relative">
+                        <button
+                          onClick={() => setOpenMenuId(isMenuOpen ? null : menuKey)}
+                          className="w-8 h-8 rounded-lg hover:bg-slate-100 inline-flex items-center justify-center text-slate-500 font-bold text-lg"
+                        >
+                          ⋮
+                        </button>
+
+                        {isMenuOpen && (
+                          <div className="absolute right-4 mt-2 w-48 bg-white rounded-xl shadow-xl border border-slate-200 py-1 z-20 text-left">
+                            <button
+                              onClick={() => {
+                                setOpenMenuId(null);
+                                setEditModalData(m);
+                              }}
+                              className="w-full text-left px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 flex items-center gap-2"
+                            >
+                              ✏️ Edit Member
+                            </button>
+                            <button
+                              onClick={() => {
+                                setOpenMenuId(null);
+                                handleBanToggleMember(m);
+                              }}
+                              className="w-full text-left px-4 py-2 text-sm font-semibold text-amber-700 hover:bg-amber-50 flex items-center gap-2"
+                            >
+                              {m.is_banned ? '🟢 Unban User' : '🚫 Ban User'}
+                            </button>
+                            <button
+                              onClick={() => {
+                                setOpenMenuId(null);
+                                handleDeleteMember(m.id, m.email);
+                              }}
+                              className="w-full text-left px-4 py-2 text-sm font-semibold text-red-600 hover:bg-red-50 flex items-center gap-2"
+                            >
+                              🗑️ Delete User
+                            </button>
+                          </div>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* Details Modal */}
+      <DetailsInfoModal
+        isOpen={Boolean(detailsModalData)}
+        onClose={() => setDetailsModalData(null)}
+        data={detailsModalData}
+        type="member"
+      />
+
+      {/* Edit Modal */}
+      <EditModal
+        isOpen={Boolean(editModalData)}
+        onClose={() => setEditModalData(null)}
+        data={editModalData}
+        type="member"
+        onSaved={fetchMembers}
+      />
+    </div>
+  );
+}

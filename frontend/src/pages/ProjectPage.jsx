@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { toast } from 'sonner';
 
-export default function ProjectPage() {
+export default function ProjectPage({ inDashboard = false }) {
   const { currentUser } = useAuth();
   const [activeTab, setActiveTab] = useState('overview');
   const [repoUrl, setRepoUrl] = useState('https://github.com/gstu-hackathon/team-project-demo');
@@ -16,16 +16,18 @@ export default function ProjectPage() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 py-12 px-4 sm:px-6 lg:px-8">
+    <div className={inDashboard ? 'py-2' : 'min-h-screen bg-slate-50 py-12 px-4 sm:px-6 lg:px-8'}>
       <div className="max-w-6xl mx-auto space-y-8">
         {/* Header */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
-            <div className="flex items-center gap-2 text-sm font-semibold text-blue-600 mb-1">
-              <Link to="/dashboard" className="hover:underline">Dashboard</Link>
-              <span>/</span>
-              <span>Project Workspace</span>
-            </div>
+            {!inDashboard && (
+              <div className="flex items-center gap-2 text-sm font-semibold text-blue-600 mb-1">
+                <Link to="/dashboard" className="hover:underline">Dashboard</Link>
+                <span>/</span>
+                <span>Project Workspace</span>
+              </div>
+            )}
             <h1 className="text-4xl font-black tracking-tight text-slate-900">Project Workspace</h1>
             <p className="mt-2 text-lg text-slate-600">Track repository milestones, code quality, and team collaboration.</p>
           </div>

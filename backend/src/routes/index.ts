@@ -3,6 +3,7 @@ import authRoutes from '../feats/auth/auth.routes';
 import userRoutes from '../feats/user/user.routes';
 import notificationRoutes from '../feats/notification/notification.routes';
 import teamRoutes from '../feats/team/team.routes';
+import adminRoutes from '../feats/admin/admin.routes';
 
 const router = Router();
 
@@ -14,5 +15,6 @@ router.use('/auth', authRoutes);
 router.use('/users', userRoutes);
 router.use('/notifications', notificationRoutes);
 router.use('/teams', teamRoutes);
+router.use('/admin', adminRoutes);
 
 export default router;

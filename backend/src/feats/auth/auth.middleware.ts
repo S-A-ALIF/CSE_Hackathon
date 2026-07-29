@@ -18,3 +18,13 @@ export const authMiddleware = (req: Request, res: Response, next: NextFunction):
         res.status(401).json({ status: 'error', success: false, message: 'Unauthorized: Invalid token' });
     }
 };
+
+export const adminMiddleware = (req: Request, res: Response, next: NextFunction): void => {
+    const user = (req as any).user;
+    if (!user || user.role !== 'admin') {
+        res.status(403).json({ status: 'error', success: false, message: 'Forbidden: Admin access required' });
+        return;
+    }
+    next();
+};
+
