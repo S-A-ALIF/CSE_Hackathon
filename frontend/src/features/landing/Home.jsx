@@ -30,7 +30,7 @@ export default function Home() {
         </h1>
 
         <p className="text-lg md:text-xl text-slate-400 max-w-2xl mx-auto mb-10 leading-relaxed">
-          An intra-university programming competition where teams of students build, compete, and innovate under one roof.
+          An intra-department programming competition where teams of students build, compete, and innovate under one roof.
           Show what you can build.
         </p>
 

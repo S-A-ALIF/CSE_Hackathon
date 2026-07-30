@@ -359,15 +359,17 @@ export const updateTeamLimits = async (req: Request, res: Response) => {
     try {
         const { min_team_members, max_team_members } = req.body;
         if (min_team_members !== undefined) {
+            const val = min_team_members === '' || min_team_members === null || min_team_members === 'none' ? 'none' : String(min_team_members);
             await pool.query(
                 "INSERT INTO platform_settings (key, value) VALUES ('min_team_members', $1) ON CONFLICT (key) DO UPDATE SET value = $1",
-                [String(min_team_members)]
+                [val]
             );
         }
         if (max_team_members !== undefined) {
+            const val = max_team_members === '' || max_team_members === null || max_team_members === 'none' ? 'none' : String(max_team_members);
             await pool.query(
                 "INSERT INTO platform_settings (key, value) VALUES ('max_team_members', $1) ON CONFLICT (key) DO UPDATE SET value = $1",
-                [String(max_team_members)]
+                [val]
             );
         }
 

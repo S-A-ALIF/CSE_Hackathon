@@ -141,12 +141,24 @@ export default function TeamPage({ inDashboard = false }) {
                       </button>
                     </div>
                   )}
-                  <span className={`px-4 py-2 font-bold rounded-full text-sm flex items-center gap-1.5 ${
-                    team.is_full ? 'bg-amber-100 text-amber-800 border border-amber-200' : 'bg-blue-100 text-blue-700'
-                  }`}>
-                    {team.is_full && <span>🔒 Declared Full</span>}
-                    <span>({team.members.length} / {team.maxMembers || 5} Members)</span>
-                  </span>
+                  <div className="relative group cursor-pointer inline-flex items-center">
+                    {team.minMembers !== null && team.minMembers !== undefined && (
+                      <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block px-3 py-1.5 bg-slate-900 text-white text-xs font-bold rounded-lg shadow-lg whitespace-nowrap z-30 pointer-events-none border border-slate-700">
+                        min team size {team.minMembers ?? 3}
+                        <div className="absolute top-full left-1/2 -translate-x-1/2 -mt-1 border-4 border-transparent border-t-slate-900" />
+                      </div>
+                    )}
+                    <span className={`px-4 py-2 font-bold rounded-full text-sm flex items-center gap-1.5 transition-colors ${
+                      team.is_full
+                        ? 'bg-amber-100 text-amber-800 border border-amber-200'
+                        : team.members.length < (team.minMembers ?? 3)
+                        ? 'bg-red-100 text-red-700 border border-red-300 shadow-sm'
+                        : 'bg-blue-100 text-blue-700'
+                    }`}>
+                      {team.is_full && <span>🔒 Declared Full</span>}
+                      <span>({team.members.length} / {team.maxMembers || 5} Members)</span>
+                    </span>
+                  </div>
                   {team.leader_id === currentUser?.id ? (
                     <button
                       onClick={() => setIsManageModalOpen(true)}
@@ -210,7 +222,7 @@ export default function TeamPage({ inDashboard = false }) {
             {/* If user is leader, they might want to invite more people */}
             {team.leader_id === currentUser?.id && (
               <div className="text-center">
-                {team.members.length < (team.maxMembers || 5) && !team.is_full ? (
+                {(team.maxMembers === null || team.members.length < (team.maxMembers || 5)) && !team.is_full ? (
                   <button 
                     onClick={() => setIsCreateModalOpen(true)}
                     className="px-6 py-3 bg-white text-blue-600 font-bold rounded-xl border border-blue-200 hover:bg-blue-50 transition-all shadow-sm inline-flex items-center space-x-2"
@@ -218,11 +230,11 @@ export default function TeamPage({ inDashboard = false }) {
                     <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
                     </svg>
-                    <span>Add member ({team.members.length}/{team.maxMembers || 5})</span>
+                    <span>Add member ({team.maxMembers ? `${team.members.length}/${team.maxMembers}` : team.members.length})</span>
                   </button>
                 ) : (
                   <div className="inline-flex items-center space-x-2 px-6 py-3 bg-slate-100 text-slate-500 font-bold rounded-xl border border-slate-200">
-                    <span>{team.is_full ? 'Team Declared Full' : 'Team Maximum Limit Reached'} ({team.members.length}/{team.maxMembers || 5})</span>
+                    <span>{team.is_full ? 'Team Declared Full' : 'Team Maximum Limit Reached'} ({team.maxMembers ? `${team.members.length}/${team.maxMembers}` : team.members.length})</span>
                   </div>
                 )}
               </div>

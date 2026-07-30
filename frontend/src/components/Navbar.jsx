@@ -8,6 +8,7 @@ const navLinks = [
   { label: 'About', href: '#about' },
   { label: 'Team Requirements', href: '#requirements' },
   { label: 'Judging', href: '#judging' },
+  { label: 'Timeline', href: '#timeline' },
   { label: 'Rules', href: '#rules' },
 ];
 

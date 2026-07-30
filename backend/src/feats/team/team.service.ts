@@ -43,8 +43,16 @@ export const teamService = {
 
         // 4. Get min/max team limits from platform_settings
         const settingsRes = await pool.query("SELECT key, value FROM platform_settings WHERE key IN ('min_team_members', 'max_team_members')");
-        const minMembers = parseInt(settingsRes.rows.find(r => r.key === 'min_team_members')?.value || '3', 10);
-        const maxMembers = parseInt(settingsRes.rows.find(r => r.key === 'max_team_members')?.value || '5', 10);
+        const minVal = settingsRes.rows.find(r => r.key === 'min_team_members')?.value;
+        const maxVal = settingsRes.rows.find(r => r.key === 'max_team_members')?.value;
+        const parseLimit = (val: string | undefined, def: number | null): number | null => {
+            if (val === undefined || val === null) return def;
+            if (val === '' || val === 'none' || val === 'null') return null;
+            const n = parseInt(val, 10);
+            return isNaN(n) ? null : n;
+        };
+        const minMembers = parseLimit(minVal, 3);
+        const maxMembers = parseLimit(maxVal, 5);
 
         return {
             ...team,
@@ -142,8 +150,9 @@ export const teamService = {
         const countRes = await pool.query('SELECT COUNT(*) as count FROM team_members WHERE team_id = $1', [teamId]);
         const count = parseInt(countRes.rows[0].count, 10);
         const maxRes = await pool.query("SELECT value FROM platform_settings WHERE key = 'max_team_members'");
-        const maxMembers = parseInt(maxRes.rows[0]?.value || '5', 10);
-        if (count >= maxMembers) {
+        const maxVal = maxRes.rows[0]?.value;
+        const maxMembers = maxVal && maxVal !== 'none' && maxVal !== '' && !isNaN(parseInt(maxVal, 10)) ? parseInt(maxVal, 10) : null;
+        if (maxMembers !== null && count >= maxMembers) {
             throw new Error(`Your team has already reached the maximum limit of ${maxMembers} members.`);
         }
 
@@ -216,8 +225,9 @@ export const teamService = {
         const countRes = await pool.query('SELECT COUNT(*) as count FROM team_members WHERE team_id = $1', [team.id]);
         const count = parseInt(countRes.rows[0].count, 10);
         const maxRes = await pool.query("SELECT value FROM platform_settings WHERE key = 'max_team_members'");
-        const maxMembers = parseInt(maxRes.rows[0]?.value || '5', 10);
-        if (count >= maxMembers) {
+        const maxVal = maxRes.rows[0]?.value;
+        const maxMembers = maxVal && maxVal !== 'none' && maxVal !== '' && !isNaN(parseInt(maxVal, 10)) ? parseInt(maxVal, 10) : null;
+        if (maxMembers !== null && count >= maxMembers) {
             throw new Error(`Team "${team.name}" has already reached the maximum limit of ${maxMembers} members.`);
         }
 

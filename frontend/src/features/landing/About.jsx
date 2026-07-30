@@ -1,12 +1,3 @@
-const timeline = [
-  { date: 'TBD', title: 'Registration Opens', desc: 'Teams register via the portal. Each team must have 3–4 members.' },
-  { date: 'TBD', title: 'Registration Closes', desc: 'All registrations must be completed before this deadline.' },
-  { date: 'TBD', title: 'Problem Statement Released', desc: 'The hackathon problem set is published to all registered teams.' },
-  { date: 'TBD', title: 'Hackathon Day', desc: '24-hour coding begins. Teams build, present, and compete.' },
-  { date: 'TBD', title: 'Final Presentations', desc: 'Teams present their projects to the judging panel.' },
-  { date: 'TBD', title: 'Results & Awards', desc: 'Winners announced and prizes distributed.' },
-];
-
 export default function About() {
   return (
     <section id="about" className="bg-slate-900 py-28 text-white">
@@ -17,15 +8,14 @@ export default function About() {
             About the Event
           </span>
           <h2 className="text-4xl md:text-5xl font-black tracking-tight mb-6">
-            An Intra-University Hackathon
+            An Intra-Department Hackathon
           </h2>
           <p className="text-slate-400 text-lg leading-relaxed">
             The GSTU CSE Hackathon is an annual programming competition organized by the Department of Computer Science & Engineering. It brings together students to solve real-world problems, collaborate in teams, and demonstrate their technical skills.
           </p>
         </div>
 
-        {/* Objective Cards */}
-        <div className="grid md:grid-cols-3 gap-6 mb-24">
+        <div className="grid md:grid-cols-3 gap-6">
           {[
             {
               icon: (
@@ -66,37 +56,6 @@ export default function About() {
               <p className="text-slate-400 leading-relaxed">{item.desc}</p>
             </div>
           ))}
-        </div>
-
-        {/* Timeline */}
-        <div className="max-w-3xl mx-auto">
-          <div className="text-center mb-12">
-            <span className="inline-block text-xs font-bold tracking-widest text-indigo-400 uppercase border border-indigo-400/20 bg-indigo-400/10 px-4 py-1.5 rounded-full mb-4">
-              Timeline
-            </span>
-            <h3 className="text-3xl font-black text-white">Important Dates</h3>
-          </div>
-
-          <div className="relative">
-            {/* Vertical line */}
-            <div className="absolute left-6 top-0 bottom-0 w-px bg-slate-700" />
-
-            <div className="space-y-8">
-              {timeline.map((item, idx) => (
-                <div key={idx} className="relative flex gap-8 items-start pl-16">
-                  {/* Dot */}
-                  <div className="absolute left-0 w-12 h-12 rounded-xl bg-slate-800 border-2 border-slate-600 flex items-center justify-center text-slate-400 text-xs font-black">
-                    {String(idx + 1).padStart(2, '0')}
-                  </div>
-                  <div className="flex-1 bg-slate-800/40 border border-slate-700/40 p-5 rounded-xl hover:border-slate-600 transition-colors">
-                    <div className="text-xs font-bold text-blue-400 uppercase tracking-wider mb-1">{item.date}</div>
-                    <h4 className="font-bold text-white mb-1">{item.title}</h4>
-                    <p className="text-sm text-slate-400">{item.desc}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
         </div>
       </div>
     </section>

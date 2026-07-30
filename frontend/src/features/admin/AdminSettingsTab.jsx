@@ -6,6 +6,9 @@ export default function AdminSettingsTab() {
   const [settings, setSettings] = useState({});
   const [loading, setLoading] = useState(true);
   const [toggling, setToggling] = useState(false);
+  const [minTeamSize, setMinTeamSize] = useState('');
+  const [maxTeamSize, setMaxTeamSize] = useState('');
+  const [savingLimits, setSavingLimits] = useState(false);
 
   const fetchSettings = async () => {
     setLoading(true);
@@ -19,6 +22,8 @@ export default function AdminSettingsTab() {
       const data = await res.json();
       if (res.ok && data.success) {
         setSettings(data.data);
+        setMinTeamSize(data.data.min_team_members === 'none' ? '' : (data.data.min_team_members || '3'));
+        setMaxTeamSize(data.data.max_team_members === 'none' ? '' : (data.data.max_team_members || '5'));
       } else {
         toast.error(data.message || 'Failed to load settings');
       }
@@ -60,6 +65,37 @@ export default function AdminSettingsTab() {
       toast.error('Error updating registration status');
     } finally {
       setToggling(false);
+    }
+  };
+
+  const handleSaveTeamLimits = async (e) => {
+    e.preventDefault();
+    setSavingLimits(true);
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch(`${API_URL}/api/v1/admin/settings/team-limits`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          min_team_members: minTeamSize.trim() === '' ? 'none' : minTeamSize,
+          max_team_members: maxTeamSize.trim() === '' ? 'none' : maxTeamSize
+        })
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        toast.success(data.message || 'Team size limits updated successfully');
+        setSettings(data.data);
+      } else {
+        toast.error(data.message || 'Failed to update team size limits');
+      }
+    } catch (error) {
+      console.error('Error saving limits:', error);
+      toast.error('Error updating team size limits');
+    } finally {
+      setSavingLimits(false);
     }
   };
 
@@ -115,6 +151,90 @@ export default function AdminSettingsTab() {
             ? '🔴 Close Registration'
             : '🟢 Open Registration'}
         </button>
+      </div>
+
+      {/* Team Size Requirements Card */}
+      <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+          <div>
+            <h3 className="text-xl font-black text-slate-900">Team Size Requirements</h3>
+            <p className="text-slate-600 text-sm mt-1">
+              Configure the minimum and maximum allowed team sizes. Leave blank or clear for no restriction.
+            </p>
+          </div>
+        </div>
+
+        <form onSubmit={handleSaveTeamLimits} className="space-y-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+            <div>
+              <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-2">
+                Minimum Members Required
+              </label>
+              <div className="relative">
+                <input
+                  type="number"
+                  min="1"
+                  max="20"
+                  value={minTeamSize}
+                  onChange={(e) => setMinTeamSize(e.target.value)}
+                  placeholder="No minimum limit"
+                  className="w-full px-4 py-3 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent text-slate-800 font-bold"
+                />
+                {minTeamSize && (
+                  <button
+                    type="button"
+                    onClick={() => setMinTeamSize('')}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400 hover:text-red-500"
+                  >
+                    Clear (No Min)
+                  </button>
+                )}
+              </div>
+              <p className="text-xs text-slate-500 mt-1">
+                {minTeamSize ? `Teams must have at least ${minTeamSize} members.` : 'No minimum team size restriction set.'}
+              </p>
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-2">
+                Maximum Members Allowed
+              </label>
+              <div className="relative">
+                <input
+                  type="number"
+                  min="1"
+                  max="20"
+                  value={maxTeamSize}
+                  onChange={(e) => setMaxTeamSize(e.target.value)}
+                  placeholder="No maximum limit"
+                  className="w-full px-4 py-3 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent text-slate-800 font-bold"
+                />
+                {maxTeamSize && (
+                  <button
+                    type="button"
+                    onClick={() => setMaxTeamSize('')}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400 hover:text-red-500"
+                  >
+                    Clear (No Max)
+                  </button>
+                )}
+              </div>
+              <p className="text-xs text-slate-500 mt-1">
+                {maxTeamSize ? `Teams can have up to ${maxTeamSize} members.` : 'No maximum team size restriction set.'}
+              </p>
+            </div>
+          </div>
+
+          <div className="flex justify-end pt-2">
+            <button
+              type="submit"
+              disabled={savingLimits}
+              className="px-6 py-3 rounded-xl font-bold text-sm text-white bg-blue-600 hover:bg-blue-700 shadow-lg shadow-blue-600/30 transition-all disabled:opacity-50"
+            >
+              {savingLimits ? 'Saving Changes...' : 'Save Team Size Limits'}
+            </button>
+          </div>
+        </form>
       </div>
 
       {/* Other Platform Details Card */}
