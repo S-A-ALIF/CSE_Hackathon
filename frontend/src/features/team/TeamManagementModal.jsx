@@ -4,7 +4,7 @@ import { API_URL } from '../../config';
 import ConfirmModal from '../../components/ConfirmModal';
 import MemberInfoModal from './MemberInfoModal';
 
-export default function TeamManagementModal({ isOpen, onClose, team, currentUser, onTeamUpdated }) {
+export default function TeamManagementModal({ isOpen, onClose, team, currentUser, onTeamUpdated, invitations = [], invLoading = false, onFetchInvitations, onInvitationCancelled }) {
   const [loading, setLoading] = useState(false);
   const [teamName, setTeamName] = useState(team?.name || '');
   const [isEditingName, setIsEditingName] = useState(false);
@@ -12,6 +12,7 @@ export default function TeamManagementModal({ isOpen, onClose, team, currentUser
   const [transferLoading, setTransferLoading] = useState({});
   const [selectedMember, setSelectedMember] = useState(null);
   const [statusLoading, setStatusLoading] = useState(false);
+  const [cancelLoading, setCancelLoading] = useState({});
   const [confirmConfig, setConfirmConfig] = useState({
     isOpen: false,
     title: '',
@@ -30,6 +31,42 @@ export default function TeamManagementModal({ isOpen, onClose, team, currentUser
   if (!isOpen || !team) return null;
 
   const isLeader = team.leader_id === currentUser?.id;
+
+  const executeCancelInvitation = async (invitationId) => {
+    const token = localStorage.getItem('token');
+    if (!token) return;
+    try {
+      setCancelLoading(prev => ({ ...prev, [invitationId]: true }));
+      const res = await fetch(`${API_URL}/api/v1/teams/invitations/${invitationId}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        toast.success('Invitation cancelled.');
+        setConfirmConfig(prev => ({ ...prev, isOpen: false }));
+        onInvitationCancelled?.(invitationId);
+      } else {
+        toast.error(data.message || 'Failed to cancel invitation');
+      }
+    } catch (err) {
+      console.error('Error cancelling invitation:', err);
+      toast.error('Network error cancelling invitation');
+    } finally {
+      setCancelLoading(prev => { const n = { ...prev }; delete n[invitationId]; return n; });
+    }
+  };
+
+  const handleCancelInvitation = (inv) => {
+    setConfirmConfig({
+      isOpen: true,
+      title: 'Cancel Invitation?',
+      message: `Are you sure you want to cancel the invitation sent to ${inv.invitee_name || inv.email}? Their pending notification will also be removed.`,
+      confirmText: 'Cancel Invitation',
+      variant: 'danger',
+      onConfirm: () => executeCancelInvitation(inv.id)
+    });
+  };
 
   const handleUpdateName = async (e) => {
     e.preventDefault();
@@ -387,6 +424,76 @@ export default function TeamManagementModal({ isOpen, onClose, team, currentUser
           </div>
         </div>
 
+        {/* Pending Invitations — leader only */}
+        {isLeader && (
+          <div className="mb-6">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-sm font-bold text-slate-700 uppercase tracking-wider">
+                Pending Invitations
+                {invitations.length > 0 && (
+                  <span className="ml-2 inline-flex items-center justify-center w-5 h-5 bg-blue-100 text-blue-700 text-[10px] font-black rounded-full">
+                    {invitations.length}
+                  </span>
+                )}
+              </h3>
+              <button
+                type="button"
+                onClick={onFetchInvitations}
+                disabled={invLoading}
+                className="text-xs text-slate-400 hover:text-blue-600 transition-colors flex items-center gap-1"
+                title="Refresh"
+              >
+                <svg className={`w-3.5 h-3.5 ${invLoading ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
+                Refresh
+              </button>
+            </div>
+            {invLoading ? (
+              <div className="text-center py-4 text-slate-400 text-sm">Loading...</div>
+            ) : invitations.length === 0 ? (
+              <div className="text-center py-4 text-slate-400 text-xs border border-dashed border-slate-200 rounded-xl">
+                No active pending invitations.
+              </div>
+            ) : (
+              <div className="divide-y divide-slate-100 border border-slate-200 rounded-xl overflow-hidden">
+                {invitations.map((inv) => (
+                  <div key={inv.id} className="p-3 bg-slate-50/50 flex items-center justify-between gap-2">
+                    <div className="flex-1 min-w-0">
+                      <p className="font-semibold text-slate-800 text-sm truncate">
+                        {inv.invitee_name !== inv.email ? inv.invitee_name : inv.email}
+                      </p>
+                      {inv.invitee_name !== inv.email && (
+                        <p className="text-xs text-slate-400 truncate">{inv.email}</p>
+                      )}
+                      <p className="text-[10px] text-slate-400 mt-0.5">
+                        Expires: {new Date(new Date(inv.expires_at).getTime() + 6 * 60 * 60 * 1000).toLocaleString('en-GB', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit', hour12: true })}
+                      </p>
+                    </div>
+                    <button
+                      disabled={!!cancelLoading[inv.id]}
+                      onClick={() => handleCancelInvitation(inv)}
+                      className={`flex-shrink-0 text-red-500 hover:text-red-700 text-xs font-semibold px-2.5 py-1 rounded border border-red-200 hover:bg-red-50 transition-colors flex items-center gap-1.5 ${cancelLoading[inv.id] ? 'opacity-70 cursor-not-allowed' : ''}`}
+                    >
+                      {cancelLoading[inv.id] ? (
+                        <>
+                          <svg className="animate-spin h-3 w-3 text-current" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                          </svg>
+                          <span>Cancelling...</span>
+                        </>
+                      ) : (
+                        <span>Cancel</span>
+                      )}
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
         <div className="border-t border-slate-100 pt-6 flex flex-col sm:flex-row justify-between gap-3">
           <button
             disabled={loading}
@@ -416,7 +523,7 @@ export default function TeamManagementModal({ isOpen, onClose, team, currentUser
         message={confirmConfig.message}
         confirmText={confirmConfig.confirmText}
         variant={confirmConfig.variant}
-        loading={loading || Object.values(transferLoading).some(Boolean)}
+        loading={loading || Object.values(transferLoading).some(Boolean) || Object.values(cancelLoading).some(Boolean)}
       />
       <MemberInfoModal
         isOpen={!!selectedMember}

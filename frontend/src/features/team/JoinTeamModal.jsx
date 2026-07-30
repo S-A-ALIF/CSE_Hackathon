@@ -2,7 +2,7 @@ import { API_URL } from '../../config';
 import { useState } from 'react';
 import { toast } from 'sonner';
 
-export default function JoinTeamModal({ isOpen, onClose }) {
+export default function JoinTeamModal({ isOpen, onClose, onSuccess }) {
   const [teamCode, setTeamCode] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -32,6 +32,7 @@ export default function JoinTeamModal({ isOpen, onClose }) {
       if (res.ok && (data.success || res.status === 200)) {
         toast.success(data.message || 'Join request sent successfully!');
         setTeamCode('');
+        onSuccess?.();
         onClose();
       } else {
         toast.error(data.message || 'Failed to send join request');

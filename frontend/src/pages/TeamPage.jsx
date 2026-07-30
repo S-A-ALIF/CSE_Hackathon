@@ -12,12 +12,33 @@ export default function TeamPage({ inDashboard = false }) {
   const { currentUser } = useAuth();
   const [team, setTeam] = useState(null);
   const [loading, setLoading] = useState(true);
-  
+  const [invitations, setInvitations] = useState([]);
+  const [invLoading, setInvLoading] = useState(false);
+
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isJoinModalOpen, setIsJoinModalOpen] = useState(false);
   const [isManageModalOpen, setIsManageModalOpen] = useState(false);
   const [isConfirmLeaveOpen, setIsConfirmLeaveOpen] = useState(false);
   const [selectedMember, setSelectedMember] = useState(null);
+
+  const fetchActiveInvitations = async () => {
+    const token = localStorage.getItem('token');
+    if (!token) return;
+    try {
+      setInvLoading(true);
+      const res = await fetch(`${API_URL}/api/v1/teams/invitations`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setInvitations(data.data || []);
+      }
+    } catch (err) {
+      console.error('Error fetching active invitations:', err);
+    } finally {
+      setInvLoading(false);
+    }
+  };
 
   const fetchTeam = async () => {
     try {
@@ -73,6 +94,13 @@ export default function TeamPage({ inDashboard = false }) {
   useEffect(() => {
     fetchTeam();
   }, []);
+
+  // Fetch invitations once when team loads and user is leader — cached in parent
+  useEffect(() => {
+    if (team && currentUser && team.leader_id === currentUser.id) {
+      fetchActiveInvitations();
+    }
+  }, [team?.id]);
 
   if (loading) {
     return (
@@ -257,17 +285,13 @@ export default function TeamPage({ inDashboard = false }) {
       <CreateTeamModal 
         isOpen={isCreateModalOpen} 
         mode={team ? 'invite' : 'create'}
-        onClose={() => {
-          setIsCreateModalOpen(false);
-          fetchTeam(); // Refresh after invite
-        }} 
+        onClose={() => setIsCreateModalOpen(false)}
+        onSuccess={() => { fetchTeam(); if (team) fetchActiveInvitations(); }}
       />
       <JoinTeamModal 
         isOpen={isJoinModalOpen} 
-        onClose={() => {
-          setIsJoinModalOpen(false);
-          fetchTeam(); // Refresh after join
-        }} 
+        onClose={() => setIsJoinModalOpen(false)}
+        onSuccess={fetchTeam}
       />
       <TeamManagementModal
         isOpen={isManageModalOpen}
@@ -275,6 +299,10 @@ export default function TeamPage({ inDashboard = false }) {
         team={team}
         currentUser={currentUser}
         onTeamUpdated={fetchTeam}
+        invitations={invitations}
+        invLoading={invLoading}
+        onFetchInvitations={fetchActiveInvitations}
+        onInvitationCancelled={(id) => setInvitations(prev => prev.filter(inv => inv.id !== id))}
       />
       <ConfirmModal
         isOpen={isConfirmLeaveOpen}
