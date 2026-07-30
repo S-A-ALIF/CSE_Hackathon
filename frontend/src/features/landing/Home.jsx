@@ -19,35 +19,35 @@ export default function Home() {
 
 
         {/* Main Heading */}
-        <h1 className="text-5xl md:text-7xl lg:text-8xl font-black tracking-tight mb-6 leading-none">
+        <h1 className="text-4xl sm:text-5xl md:text-7xl lg:text-8xl font-black tracking-tight mb-6 leading-tight md:leading-none">
           <span className="text-white">GSTU</span>{' '}
           <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-indigo-400 to-purple-400">
             CSE
           </span>
           <br />
-          <span className="text-white text-4xl md:text-6xl lg:text-7xl">Hackathon</span>{' '}
-          <span className="text-slate-500 text-3xl md:text-5xl lg:text-6xl font-bold">2026</span>
+          <span className="text-white text-3xl sm:text-4xl md:text-6xl lg:text-7xl">Hackathon</span>{' '}
+          <span className="text-slate-500 text-2xl sm:text-3xl md:text-5xl lg:text-6xl font-bold">2026</span>
         </h1>
 
-        <p className="text-lg md:text-xl text-slate-400 max-w-2xl mx-auto mb-10 leading-relaxed">
+        <p className="text-base sm:text-lg md:text-xl text-slate-400 max-w-2xl mx-auto mb-10 leading-relaxed px-2">
           An intra-department programming competition where teams of students build, compete, and innovate under one roof.
           Show what you can build.
         </p>
 
         {/* CTA Buttons */}
-        <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-16">
+        <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-16 w-full max-w-xs sm:max-w-none mx-auto">
           <Link
             to="/register"
-            className="group inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white font-bold py-4 px-10 text-base rounded-xl shadow-2xl shadow-blue-500/30 transition-all hover:scale-105"
+            className="group w-full sm:w-auto inline-flex justify-center items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white font-bold py-4 px-10 text-base rounded-xl shadow-2xl shadow-blue-500/30 transition-all hover:scale-105"
           >
-            Register Your Team
+            Register Now
             <svg className="w-5 h-5 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
             </svg>
           </Link>
           <a
             href="#about"
-            className="inline-flex items-center gap-2 text-slate-300 hover:text-white font-semibold py-4 px-8 border border-white/10 hover:border-white/25 rounded-xl transition-all"
+            className="w-full sm:w-auto inline-flex justify-center items-center gap-2 text-slate-300 hover:text-white font-semibold py-4 px-8 border border-white/10 hover:border-white/25 rounded-xl transition-all"
           >
             Learn More
           </a>

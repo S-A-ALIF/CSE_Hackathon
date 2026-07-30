@@ -59,8 +59,8 @@ export default function ProblemsPage({ inDashboard = false }) {
               <span>Problem Statements</span>
             </div>
           )}
-          <h1 className="text-4xl font-black tracking-tight text-slate-900">Hackathon Problem Statements</h1>
-          <p className="mt-2 text-lg text-slate-600">Select a problem statement for your team and build a winning solution.</p>
+          <h1 className="text-2xl sm:text-3xl md:text-4xl font-black tracking-tight text-slate-900">Hackathon Problem Statements</h1>
+          <p className="mt-2 text-base sm:text-lg text-slate-600">Select a problem statement for your team and build a winning solution.</p>
         </div>
 
         {/* Filters */}
@@ -83,7 +83,7 @@ export default function ProblemsPage({ inDashboard = false }) {
         {/* Problems Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {filteredProblems.map((problem) => (
-            <div key={problem.id} className="bg-white rounded-3xl p-8 border border-slate-200 shadow-sm hover:shadow-md transition-all flex flex-col justify-between">
+            <div key={problem.id} className="bg-white rounded-3xl p-5 sm:p-8 border border-slate-200 shadow-sm hover:shadow-md transition-all flex flex-col justify-between">
               <div>
                 <div className="flex items-center justify-between mb-4">
                   <span className="px-3 py-1 bg-blue-100 text-blue-700 font-bold text-xs rounded-full uppercase tracking-wider">

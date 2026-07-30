@@ -27,9 +27,9 @@ export default function Judging() {
         {/* Criteria */}
         <div className="max-w-4xl mx-auto space-y-4 mb-16">
           {criteria.map((item, idx) => (
-            <div key={idx} className="bg-slate-800/50 border border-slate-700/50 rounded-2xl p-6 flex items-start gap-6 hover:border-purple-500/30 transition-all group">
-              <div className="flex-shrink-0 w-16 h-16 rounded-2xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center">
-                <span className="text-purple-400 font-black text-lg">{item.weight}</span>
+            <div key={idx} className="bg-slate-800/50 border border-slate-700/50 rounded-2xl p-4 sm:p-6 flex flex-col sm:flex-row items-start gap-4 sm:gap-6 hover:border-purple-500/30 transition-all group">
+              <div className="flex-shrink-0 w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center">
+                <span className="text-purple-400 font-black text-base sm:text-lg">{item.weight}</span>
               </div>
               <div>
                 <h3 className="font-bold text-white mb-2 group-hover:text-purple-300 transition-colors">{item.label}</h3>
@@ -40,7 +40,7 @@ export default function Judging() {
         </div>
 
         {/* Judging Process */}
-        <div className="max-w-4xl mx-auto grid md:grid-cols-3 gap-6">
+        <div className="max-w-4xl mx-auto grid grid-cols-1 sm:grid-cols-3 gap-6">
           {[
             { step: '1', title: 'Submit Project', desc: 'Team leader submits the project through the portal before the deadline.' },
             { step: '2', title: 'Judge Review', desc: 'Assigned faculty judges review and score each project based on predefined criteria.' },

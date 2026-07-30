@@ -57,7 +57,7 @@ export default function Navbar() {
           </div>
 
           {/* Auth */}
-          <div className="hidden md:flex space-x-3 items-center">
+          <div className="hidden lg:flex space-x-3 items-center">
             {currentUser ? (
               currentUser.role === 'admin' ? (
                 <Link
@@ -78,16 +78,10 @@ export default function Navbar() {
               <>
                 <button
                   onClick={() => setIsLoginOpen(true)}
-                  className="text-slate-300 hover:text-white font-semibold py-2 px-4 transition-colors text-sm"
+                  className="ml-6 bg-blue-600 hover:bg-blue-500 text-white font-semibold py-2 px-5 rounded-lg shadow-lg shadow-blue-500/30 transition-all text-sm"
                 >
                   Sign In
                 </button>
-                <Link
-                  to="/register"
-                  className="bg-blue-600 hover:bg-blue-500 text-white font-semibold py-2 px-5 rounded-lg shadow-lg shadow-blue-500/30 transition-all text-sm"
-                >
-                  Register
-                </Link>
               </>
             )}
           </div>
@@ -125,14 +119,12 @@ export default function Navbar() {
                   Dashboard
                 </Link>
               ) : (
-                <>
-                  <button onClick={() => { setIsLoginOpen(true); setMobileOpen(false); }} className="flex-1 text-slate-300 font-semibold py-2 border border-white/10 rounded-lg text-sm">
-                    Sign In
-                  </button>
-                  <Link to="/register" className="flex-1 text-center bg-blue-600 text-white font-semibold py-2 rounded-lg text-sm">
-                    Register
-                  </Link>
-                </>
+                <button 
+                  onClick={() => { setIsLoginOpen(true); setMobileOpen(false); }} 
+                  className="w-full text-center bg-blue-600 hover:bg-blue-500 text-white font-semibold py-2 rounded-lg text-sm shadow-lg shadow-blue-500/30 transition-all"
+                >
+                  Sign In
+                </button>
               )}
             </div>
           </div>

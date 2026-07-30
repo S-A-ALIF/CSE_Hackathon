@@ -46,14 +46,14 @@ export default function AdminSidebar({ activeTab, setActiveTab, onLogout }) {
 
   return (
     <aside 
-      className={`relative bg-slate-900 text-white flex flex-col justify-between p-6 border-r border-slate-800 transition-all duration-300 ${
-        isCollapsed ? 'w-20' : 'w-full md:w-64'
+      className={`relative bg-slate-900 text-white flex flex-col justify-between p-2 md:p-6 border-b md:border-b-0 md:border-r border-slate-800 transition-all duration-300 w-full ${
+        isCollapsed ? 'md:w-20' : 'md:w-64'
       }`}
     >
-      {/* Sidebar Toggle Button */}
+      {/* Sidebar Toggle Button (Hidden on Mobile) */}
       <button
         onClick={() => setIsCollapsed(!isCollapsed)}
-        className="absolute -right-3 top-6 w-6 h-6 rounded-full bg-slate-800 border border-slate-700 text-slate-300 hover:text-white hover:bg-slate-700 flex items-center justify-center shadow-md z-10 transition-colors"
+        className="hidden md:flex absolute -right-3 top-6 w-6 h-6 rounded-full bg-slate-800 border border-slate-700 text-slate-300 hover:text-white hover:bg-slate-700 items-center justify-center shadow-md z-10 transition-colors"
         title={isCollapsed ? 'Expand Sidebar' : 'Collapse Sidebar'}
       >
         <svg
@@ -69,7 +69,7 @@ export default function AdminSidebar({ activeTab, setActiveTab, onLogout }) {
       </button>
 
       <div>
-        <div className="mb-8">
+        <div className="hidden md:block mb-8">
           {!isCollapsed ? (
             <>
               <Link to="/" className="text-2xl font-black tracking-tighter block hover:opacity-90">
@@ -86,7 +86,7 @@ export default function AdminSidebar({ activeTab, setActiveTab, onLogout }) {
           )}
         </div>
 
-        <nav className="space-y-1">
+        <nav className="grid grid-cols-4 gap-1 md:flex md:flex-col md:space-y-1">
           {navItems.map((item) => {
             const isActive = activeTab === item.id;
             return (
@@ -94,8 +94,8 @@ export default function AdminSidebar({ activeTab, setActiveTab, onLogout }) {
                 key={item.id}
                 onClick={() => setActiveTab(item.id)}
                 title={isCollapsed ? item.label : undefined}
-                className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-semibold text-sm transition-all ${
-                  isCollapsed ? 'justify-center px-2' : ''
+                className={`flex flex-col md:flex-row items-center justify-center md:justify-start gap-1 md:gap-3 px-2 py-2 md:px-4 md:py-3 rounded-xl font-semibold text-xs md:text-sm transition-all ${
+                  isCollapsed ? 'md:justify-center md:px-2' : ''
                 } ${
                   isActive
                     ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/30'
@@ -103,14 +103,14 @@ export default function AdminSidebar({ activeTab, setActiveTab, onLogout }) {
                 }`}
               >
                 {item.icon}
-                {!isCollapsed && <span>{item.label}</span>}
+                <span className={`truncate text-[10px] sm:text-xs md:text-sm ${isCollapsed ? 'md:hidden' : ''}`}>{item.label}</span>
               </button>
             );
           })}
         </nav>
       </div>
 
-      <div className="pt-6 border-t border-slate-800">
+      <div className="hidden md:block pt-6 border-t border-slate-800">
         <button
           onClick={onLogout}
           title={isCollapsed ? 'Log Out' : undefined}

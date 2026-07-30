@@ -30,12 +30,12 @@ export default function Timeline() {
 
           <div className="space-y-8">
             {timeline.map((item, idx) => (
-              <div key={idx} className="relative flex gap-8 items-start pl-16">
+              <div key={idx} className="relative flex gap-4 sm:gap-8 items-start pl-14 sm:pl-16">
                 {/* Dot */}
-                <div className="absolute left-0 w-12 h-12 rounded-xl bg-slate-900 border-2 border-slate-700 flex items-center justify-center text-slate-300 text-xs font-black shadow-lg">
+                <div className="absolute left-0 w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-slate-900 border-2 border-slate-700 flex items-center justify-center text-slate-300 text-xs font-black shadow-lg">
                   {String(idx + 1).padStart(2, '0')}
                 </div>
-                <div className="flex-1 bg-slate-900/60 border border-slate-800 p-6 rounded-2xl hover:border-indigo-500/30 hover:shadow-lg hover:shadow-indigo-500/5 transition-all group">
+                <div className="flex-1 bg-slate-900/60 border border-slate-800 p-4 sm:p-6 rounded-2xl hover:border-indigo-500/30 hover:shadow-lg hover:shadow-indigo-500/5 transition-all group">
                   {item.date && (
                     <div className="text-xs font-bold text-indigo-400 uppercase tracking-wider mb-1">{item.date}</div>
                   )}

@@ -147,15 +147,16 @@ export default function DashboardPage() {
       {/* Main Body: Left Sidebar + Right Active Tab Content */}
       <div className="flex-grow flex flex-col md:flex-row h-[calc(100vh-73px)] overflow-hidden">
         {/* Left Fixed Sidebar */}
+        {/* Left Fixed Sidebar (Horizontal Topbar on Mobile) */}
         <aside 
-          className={`bg-slate-900 text-white border-r border-slate-800 p-4 flex flex-col justify-between shrink-0 relative transition-all duration-300 h-full ${
-            isSidebarOpen ? 'w-64' : 'w-20'
+          className={`bg-slate-900 text-white border-b md:border-b-0 md:border-r border-slate-800 p-2 md:p-4 flex flex-col justify-between shrink-0 relative transition-all duration-300 md:h-full w-full ${
+            isSidebarOpen ? 'md:w-64' : 'md:w-20'
           }`}
         >
-          {/* Toggle Button */}
+          {/* Toggle Button (Hidden on Mobile) */}
           <button
             onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-            className="absolute -right-3.5 top-6 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 w-7 h-7 rounded-full flex items-center justify-center shadow-lg transition-transform focus:outline-none z-50"
+            className="hidden md:flex absolute -right-3.5 top-6 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 w-7 h-7 rounded-full items-center justify-center shadow-lg transition-transform focus:outline-none z-50"
             title={isSidebarOpen ? "Collapse Sidebar" : "Expand Sidebar"}
           >
             <svg 
@@ -170,8 +171,8 @@ export default function DashboardPage() {
             </svg>
           </button>
 
-          <div className="space-y-6 overflow-hidden">
-            <div className="px-2 h-6 flex items-center">
+          <div className="space-y-4 md:space-y-6 overflow-hidden">
+            <div className="hidden md:flex px-2 h-6 items-center">
               {isSidebarOpen ? (
                 <span className="text-xs uppercase tracking-widest text-slate-400 font-bold block truncate">
                   Hacker Workspace
@@ -181,7 +182,7 @@ export default function DashboardPage() {
               )}
             </div>
 
-            <nav className="space-y-2">
+            <nav className="grid grid-cols-4 gap-1 md:flex md:flex-col md:space-y-2">
               {navItems.map((item) => {
                 const isActive = activeTab === item.id;
                 return (
@@ -189,14 +190,14 @@ export default function DashboardPage() {
                     key={item.id}
                     onClick={() => setActiveTab(item.id)}
                     title={!isSidebarOpen ? item.label : undefined}
-                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-semibold text-sm transition-all ${
+                    className={`flex flex-col md:flex-row items-center justify-center md:justify-start gap-1 md:gap-3 px-2 py-2 md:px-4 md:py-3 rounded-xl font-semibold text-xs md:text-sm transition-all ${
                       isActive
                         ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/30'
                         : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
-                    } ${!isSidebarOpen ? 'justify-center px-2' : ''}`}
+                    } ${!isSidebarOpen ? 'md:justify-center md:px-2' : ''}`}
                   >
                     <span className="shrink-0">{item.icon}</span>
-                    {isSidebarOpen && <span className="truncate">{item.label}</span>}
+                    <span className={`truncate text-[10px] sm:text-xs md:text-sm ${!isSidebarOpen ? 'md:hidden' : ''}`}>{item.label}</span>
                   </button>
                 );
               })}
@@ -204,7 +205,7 @@ export default function DashboardPage() {
           </div>
 
           {isSidebarOpen && (
-            <div className="pt-6 border-t border-slate-800 mt-6 px-2">
+            <div className="hidden md:block pt-6 border-t border-slate-800 mt-6 px-2">
               <p className="text-xs text-slate-400 truncate">GSTU CSE Hackathon</p>
               <p className="text-xs font-bold text-slate-300 mt-0.5 truncate">2026 Edition</p>
             </div>
@@ -212,7 +213,7 @@ export default function DashboardPage() {
         </aside>
 
         {/* Right Content Area */}
-        <main className="flex-grow p-6 lg:p-12 overflow-y-auto w-full h-full">
+        <main className="flex-grow p-4 sm:p-6 lg:p-12 overflow-y-auto w-full h-full">
           {activeTab === 'team' && <TeamPage inDashboard={true} />}
           {activeTab === 'project' && <ProjectPage inDashboard={true} />}
           {activeTab === 'problems' && <ProblemsPage inDashboard={true} />}

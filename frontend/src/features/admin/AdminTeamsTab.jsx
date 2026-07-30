@@ -231,29 +231,29 @@ export default function AdminTeamsTab() {
                 className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden transition-all"
               >
                 {/* Team Header Row */}
-                <div className="p-5 flex items-center justify-between gap-4 hover:bg-slate-50/50 transition-colors">
+                <div className="p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:bg-slate-50/50 transition-colors">
                   <div className="flex items-center gap-4 flex-1 cursor-pointer" onClick={() => toggleExpand(team.id)}>
-                    <span className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center font-bold text-lg">
+                    <span className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center font-bold text-lg shrink-0">
                       {isExpanded ? '▼' : '▶'}
                     </span>
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <h3 className="font-black text-slate-900 text-lg">{team.name}</h3>
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <h3 className="font-black text-slate-900 text-base sm:text-lg truncate">{team.name}</h3>
                         {team.is_banned && (
-                          <span className="px-2 py-0.5 rounded bg-red-100 text-red-700 text-xs font-bold">
+                          <span className="px-2 py-0.5 rounded bg-red-100 text-red-700 text-xs font-bold shrink-0">
                             BANNED
                           </span>
                         )}
                       </div>
-                      <p className="text-xs text-slate-500">
+                      <p className="text-xs text-slate-500 truncate">
                         Leader: <strong>{team.leader_name || team.leader_email}</strong> • Created{' '}
                         {new Date(team.created_at).toLocaleDateString()}
                       </p>
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-3">
-                    <span className="px-3 py-1 bg-slate-100 text-slate-700 rounded-full font-bold text-xs">
+                  <div className="flex items-center gap-2 sm:gap-3 self-end sm:self-auto">
+                    <span className="px-3 py-1 bg-slate-100 text-slate-700 rounded-full font-bold text-xs shrink-0">
                       {team.members?.length || 0} Members
                     </span>
 

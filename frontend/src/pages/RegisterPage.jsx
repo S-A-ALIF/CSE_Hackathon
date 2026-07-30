@@ -59,15 +59,15 @@ export default function RegisterPage() {
           <Link to="/" className="text-2xl font-black text-slate-900 tracking-tighter hover:opacity-80 transition-opacity">
             GSTU<span className="text-blue-500">Hackathon</span>
           </Link>
-          <h2 className="mt-6 text-4xl font-extrabold text-slate-900">
+          <h2 className="mt-6 text-2xl sm:text-4xl font-extrabold text-slate-900">
             Create Account
           </h2>
-          <p className="mt-2 text-lg text-slate-600">
+          <p className="mt-2 text-base sm:text-lg text-slate-600">
             Register to participate in the hackathon.
           </p>
         </div>
 
-        <form onSubmit={handleSubmit} className="bg-white rounded-3xl shadow-xl p-8 md:p-12 border border-slate-100">
+        <form onSubmit={handleSubmit} className="bg-white rounded-3xl shadow-xl p-6 sm:p-8 md:p-12 border border-slate-100">
           
           <div className="flex flex-col gap-6 mb-6">
             <div>

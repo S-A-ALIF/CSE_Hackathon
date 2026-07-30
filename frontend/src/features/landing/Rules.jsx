@@ -78,8 +78,8 @@ export default function Rules() {
         {/* Rules Grid */}
         <div className="max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-5">
           {rules.map((rule) => (
-            <div key={rule.id} className="bg-slate-800/50 border border-slate-700/50 rounded-2xl p-6 hover:border-slate-600 transition-all flex gap-5 items-start">
-              <div className="flex-shrink-0 w-12 h-12 rounded-xl bg-slate-700/50 border border-slate-600/50 flex items-center justify-center text-slate-300 font-black text-sm">
+            <div key={rule.id} className="bg-slate-800/50 border border-slate-700/50 rounded-2xl p-5 sm:p-6 hover:border-slate-600 transition-all flex flex-col sm:flex-row gap-3 sm:gap-5 items-start">
+              <div className="flex-shrink-0 w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-slate-700/50 border border-slate-600/50 flex items-center justify-center text-slate-300 font-black text-sm">
                 {rule.id}
               </div>
               <div>
