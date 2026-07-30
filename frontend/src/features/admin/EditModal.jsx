@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { API_URL } from '../../config';
 import { toast } from 'sonner';
+import ConfirmModal from '../../components/ConfirmModal';
 
 export default function EditModal({ isOpen, onClose, data, type, onSaved }) {
   if (!isOpen || !data) return null;
@@ -15,6 +16,7 @@ export default function EditModal({ isOpen, onClose, data, type, onSaved }) {
   const [isBanned, setIsBanned] = useState(false);
   const [banReason, setBanReason] = useState('');
   const [saving, setSaving] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
 
   useEffect(() => {
     if (data) {
@@ -28,8 +30,12 @@ export default function EditModal({ isOpen, onClose, data, type, onSaved }) {
     }
   }, [data]);
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = (e) => {
     e.preventDefault();
+    setShowConfirm(true);
+  };
+
+  const executeSave = async () => {
     setSaving(true);
     const token = localStorage.getItem('token');
     const endpoint = isTeam
@@ -60,6 +66,7 @@ export default function EditModal({ isOpen, onClose, data, type, onSaved }) {
       const result = await res.json();
       if (res.ok && result.success) {
         toast.success(`${isTeam ? 'Team' : 'Member'} updated successfully!`);
+        setShowConfirm(false);
         onSaved();
         onClose();
       } else {
@@ -210,6 +217,17 @@ export default function EditModal({ isOpen, onClose, data, type, onSaved }) {
             </button>
           </div>
         </form>
+
+        <ConfirmModal
+          isOpen={showConfirm}
+          onClose={() => setShowConfirm(false)}
+          onConfirm={executeSave}
+          title={`Save changes to ${isTeam ? 'Team' : 'Member'}?`}
+          message={`Are you sure you want to update the information for "${name || data.email || data.name}"?`}
+          confirmText="Save Changes"
+          variant="info"
+          requireInput={false}
+        />
       </div>
     </div>
   );

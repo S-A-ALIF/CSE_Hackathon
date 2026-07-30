@@ -62,7 +62,7 @@ export default function AdminMembersTab() {
     fetchMembers(false);
   }, []);
 
-  const handleBanToggleMember = async (member) => {
+  const executeBanToggleMember = async (member) => {
     const nextBan = !member.is_banned;
     try {
       const token = localStorage.getItem('token');
@@ -80,6 +80,7 @@ export default function AdminMembersTab() {
       const data = await res.json();
       if (res.ok && data.success) {
         toast.success(nextBan ? 'Member has been banned' : 'Member is unbanned');
+        setConfirmConfig(prev => ({ ...prev, isOpen: false }));
         adminCache.invalidate();
         fetchMembers(true);
       } else {
@@ -89,6 +90,21 @@ export default function AdminMembersTab() {
       console.error('Error ban toggle:', err);
       toast.error('Error updating ban status');
     }
+  };
+
+  const handleBanToggleMember = (member) => {
+    const nextBan = !member.is_banned;
+    setConfirmConfig({
+      isOpen: true,
+      title: nextBan ? "Ban Member?" : "Unban Member?",
+      message: nextBan
+        ? `Are you sure you want to ban user "${member.email}"? They will be restricted from participating.`
+        : `Are you sure you want to unban user "${member.email}"? They will be allowed to participate again.`,
+      confirmText: nextBan ? "Ban Member" : "Unban Member",
+      variant: nextBan ? "warning" : "info",
+      requireInput: false,
+      onConfirm: () => executeBanToggleMember(member)
+    });
   };
 
   const executeDeleteMember = async (memberId) => {
@@ -122,9 +138,13 @@ export default function AdminMembersTab() {
       message: `Are you sure you want to permanently delete user "${memberEmail}"? This action cannot be undone.`,
       confirmText: "Delete Member",
       variant: "danger",
+      requireInput: true,
+      requireInputText: "delete",
       onConfirm: () => executeDeleteMember(memberId)
     });
   };
+
+  const [sortOption, setSortOption] = useState('ascending');
 
   const filteredMembers = members.filter((m) => {
     const matchesSearch =
@@ -135,6 +155,27 @@ export default function AdminMembersTab() {
     const matchesRole = roleFilter === 'all' || m.role === roleFilter;
 
     return matchesSearch && matchesRole;
+  });
+
+  const sortedMembers = [...filteredMembers].sort((a, b) => {
+    switch (sortOption) {
+      case 'ascending':
+        return (a.name || a.email).localeCompare(b.name || b.email);
+      case 'descending':
+        return (b.name || b.email).localeCompare(a.name || a.email);
+      case 'team':
+        const teamA = a.team_name || '';
+        const teamB = b.team_name || '';
+        if (teamA && !teamB) return -1;
+        if (!teamA && teamB) return 1;
+        return teamA.localeCompare(teamB);
+      case 'status':
+        if (a.is_banned && !b.is_banned) return -1;
+        if (!a.is_banned && b.is_banned) return 1;
+        return 0;
+      default:
+        return 0;
+    }
   });
 
   return (
@@ -174,13 +215,23 @@ export default function AdminMembersTab() {
           <option value="student">Student Only</option>
           <option value="admin">Admin Only</option>
         </select>
+        <select
+          value={sortOption}
+          onChange={(e) => setSortOption(e.target.value)}
+          className="px-4 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-blue-500 font-semibold text-sm bg-white"
+        >
+          <option value="ascending">Sort A-Z</option>
+          <option value="descending">Sort Z-A</option>
+          <option value="team">Sort by Team</option>
+          <option value="status">Sort by Status (Banned)</option>
+        </select>
       </div>
 
       {loading ? (
         <div className="flex justify-center py-20">
           <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600"></div>
         </div>
-      ) : filteredMembers.length === 0 ? (
+      ) : sortedMembers.length === 0 ? (
         <div className="bg-white p-12 rounded-2xl border border-slate-200 text-center">
           <p className="text-slate-500 font-semibold">No members found matching your search.</p>
         </div>
@@ -200,7 +251,7 @@ export default function AdminMembersTab() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 text-sm">
-                {filteredMembers.map((m) => {
+                {sortedMembers.map((m) => {
                   const menuKey = `member-row-${m.id}`;
                   const isMenuOpen = openMenuId === menuKey;
 
@@ -313,6 +364,8 @@ export default function AdminMembersTab() {
         message={confirmConfig.message}
         confirmText={confirmConfig.confirmText}
         variant={confirmConfig.variant}
+        requireInput={confirmConfig.requireInput}
+        requireInputText={confirmConfig.requireInputText}
       />
     </div>
   );

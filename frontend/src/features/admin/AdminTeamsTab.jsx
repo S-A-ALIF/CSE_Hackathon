@@ -114,11 +114,13 @@ export default function AdminTeamsTab() {
       message: `Are you sure you want to permanently delete team "${teamName}"? This action cannot be undone.`,
       confirmText: "Delete Team",
       variant: "danger",
+      requireInput: true,
+      requireInputText: "delete",
       onConfirm: () => executeDeleteTeam(teamId)
     });
   };
 
-  const handleBanToggleTeam = async (team) => {
+  const executeBanToggleTeam = async (team) => {
     const nextBan = !team.is_banned;
     try {
       const token = localStorage.getItem('token');
@@ -136,6 +138,7 @@ export default function AdminTeamsTab() {
       const data = await res.json();
       if (res.ok && data.success) {
         toast.success(nextBan ? 'Team has been banned' : 'Team is unbanned');
+        setConfirmConfig(prev => ({ ...prev, isOpen: false }));
         adminCache.invalidate();
         fetchTeams(true);
       } else {
@@ -145,6 +148,21 @@ export default function AdminTeamsTab() {
       console.error('Error ban toggle:', err);
       toast.error('Error updating ban status');
     }
+  };
+
+  const handleBanToggleTeam = (team) => {
+    const nextBan = !team.is_banned;
+    setConfirmConfig({
+      isOpen: true,
+      title: nextBan ? "Ban Team?" : "Unban Team?",
+      message: nextBan
+        ? `Are you sure you want to ban team "${team.name}"? Their members will be restricted from participating.`
+        : `Are you sure you want to unban team "${team.name}"? They will be allowed to participate again.`,
+      confirmText: nextBan ? "Ban Team" : "Unban Team",
+      variant: nextBan ? "warning" : "info",
+      requireInput: false,
+      onConfirm: () => executeBanToggleTeam(team)
+    });
   };
 
   const executeDeleteMember = async (memberId) => {
@@ -178,6 +196,8 @@ export default function AdminTeamsTab() {
       message: `Are you sure you want to remove user "${memberEmail}" from their team?`,
       confirmText: 'Remove Member',
       variant: 'danger',
+      requireInput: true,
+      requireInputText: 'delete',
       onConfirm: () => executeDeleteMember(memberId)
     });
   };
@@ -463,6 +483,8 @@ export default function AdminTeamsTab() {
         message={confirmConfig.message}
         confirmText={confirmConfig.confirmText}
         variant={confirmConfig.variant}
+        requireInput={confirmConfig.requireInput}
+        requireInputText={confirmConfig.requireInputText}
       />
     </div>
   );
