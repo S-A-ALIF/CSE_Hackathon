@@ -32,7 +32,7 @@ export const adminSchemas = {
     }),
     toggleRegistration: z.object({
         body: z.object({
-            is_registration_open: z.union([z.boolean(), z.string()])
+            is_registration_open: z.union([z.boolean(), z.string()]).optional()
         })
     })
 };

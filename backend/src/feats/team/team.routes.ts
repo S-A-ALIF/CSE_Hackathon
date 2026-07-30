@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { createTeam, inviteToTeam, joinTeam, requestToJoinByCode, getMyTeam, removeMember, leaveTeam, disbandTeam, updateTeamName, transferLeadership, updateTeamStatus } from './team.controller';
+import { createTeam, inviteToTeam, joinTeam, requestToJoinByCode, getMyTeam, removeMember, leaveTeam, disbandTeam, updateTeamName, transferLeadership, updateTeamStatus, getActiveInvitations, cancelInvitation } from './team.controller';
 import { authMiddleware } from '../auth/auth.middleware';
 import { validateRequest } from '../../middlewares/validateRequest';
 import { teamSchemas } from './team.validator';
@@ -10,6 +10,8 @@ const router = Router();
 router.use(authMiddleware);
 
 router.get('/my-team', getMyTeam);
+router.get('/invitations', getActiveInvitations);
+router.delete('/invitations/:id', validateRequest(teamSchemas.paramId), cancelInvitation);
 router.post('/create', validateRequest(teamSchemas.create), createTeam);
 router.post('/invite', validateRequest(teamSchemas.invite), inviteToTeam);
 router.post('/join', validateRequest(teamSchemas.joinWithPin), joinTeam);

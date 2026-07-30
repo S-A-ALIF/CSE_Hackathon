@@ -12,7 +12,25 @@ export function AuthProvider({ children }) {
   const [currentUser, setCurrentUser] = useState(null);
   const [userProfile, setUserProfile] = useState(null);
   const [loading, setLoading] = useState(true);
-  
+  const [registrationOpen, setRegistrationOpen] = useState(true);
+
+  const fetchPlatformSettings = async () => {
+    try {
+      const res = await fetch(`${API_URL}/api/v1/settings`);
+      const data = await res.json();
+      if (res.ok && data.success && data.data) {
+        const isOpen = data.data.registration_open !== 'false' && data.data.registration_open !== false;
+        setRegistrationOpen(isOpen);
+      }
+    } catch (err) {
+      console.error('Error fetching platform settings:', err);
+    }
+  };
+
+  useEffect(() => {
+    fetchPlatformSettings();
+  }, []);
+
   useEffect(() => {
     // Check for existing token and verify with server on load
     const verifyUser = async () => {
@@ -134,7 +152,7 @@ export function AuthProvider({ children }) {
   }
 
   return (
-    <AuthContext.Provider value={{ currentUser, userProfile, setUserProfile, login, register, logout }}>
+    <AuthContext.Provider value={{ currentUser, userProfile, setUserProfile, login, register, logout, registrationOpen, fetchPlatformSettings }}>
       {children}
     </AuthContext.Provider>
   );

@@ -35,7 +35,7 @@ router.delete('/members/:id', deleteMember);
 
 // Platform Settings
 router.get('/settings', getSettings);
-router.post('/settings/toggle-registration', validateRequest(adminSchemas.toggleRegistration), toggleRegistration);
+router.post('/settings/toggle-registration', toggleRegistration);
 router.post('/settings/team-limits', validateRequest(adminSchemas.teamLimits), updateTeamLimits);
 
 export default router;

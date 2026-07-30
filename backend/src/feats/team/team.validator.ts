@@ -35,5 +35,10 @@ export const teamSchemas = {
         body: z.object({
             is_full: z.boolean().optional()
         })
+    }),
+    paramId: z.object({
+        params: z.object({
+            id: z.string().uuid({ message: "Invalid invitation ID format" })
+        })
     })
 };

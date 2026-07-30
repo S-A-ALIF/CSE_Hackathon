@@ -1,11 +1,24 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { useAuth } from '../contexts/AuthContext';
 
 export default function RegisterPage() {
-  const { register } = useAuth();
+  const { register, registrationOpen, fetchPlatformSettings } = useAuth();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    if (fetchPlatformSettings) {
+      fetchPlatformSettings();
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!registrationOpen) {
+      toast.error('Registration is currently closed by the administrator.');
+      navigate('/');
+    }
+  }, [registrationOpen, navigate]);
   
   const [formData, setFormData] = useState({
     name: '',
@@ -18,6 +31,28 @@ export default function RegisterPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+
+  if (!registrationOpen) {
+    return (
+      <div className="min-h-screen bg-slate-950 flex flex-col justify-center items-center px-4 text-white">
+        <div className="bg-slate-900 p-8 rounded-2xl shadow-2xl max-w-md w-full text-center border border-slate-800">
+          <div className="w-16 h-16 rounded-full bg-red-500/10 border border-red-500/20 text-red-400 flex items-center justify-center mx-auto mb-4 text-2xl">
+            🔒
+          </div>
+          <h2 className="text-2xl font-bold text-white mb-2">Registration Closed</h2>
+          <p className="text-slate-400 text-sm mb-6 leading-relaxed">
+            Registration for the GSTU CSE Hackathon is currently turned off by the administration.
+          </p>
+          <Link
+            to="/"
+            className="inline-block bg-blue-600 hover:bg-blue-500 text-white font-semibold py-2.5 px-6 rounded-xl shadow-lg shadow-blue-500/20 transition-all"
+          >
+            Return to Home
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   const handleChange = (e) => {
     const { name, value } = e.target;

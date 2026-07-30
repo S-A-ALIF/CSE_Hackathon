@@ -205,3 +205,26 @@ export const updateTeamStatus = async (req: Request, res: Response): Promise<voi
         res.status(400).json({ success: false, status: 'error', message: error.message || 'Error updating team status' });
     }
 };
+
+export const getActiveInvitations = async (req: Request, res: Response): Promise<void> => {
+    try {
+        const leaderId = (req as any).user.id;
+        const invitations = await teamService.getActiveInvitations(leaderId);
+        res.status(200).json({ success: true, status: 'success', data: invitations });
+    } catch (error: any) {
+        console.error('[TeamController] Error getting active invitations:', error);
+        res.status(400).json({ success: false, status: 'error', message: error.message || 'Error fetching active invitations' });
+    }
+};
+
+export const cancelInvitation = async (req: Request, res: Response): Promise<void> => {
+    try {
+        const leaderId = (req as any).user.id;
+        const { id } = req.params;
+        await teamService.cancelInvitation(leaderId, id);
+        res.status(200).json({ success: true, status: 'success', message: 'Invitation cancelled successfully' });
+    } catch (error: any) {
+        console.error('[TeamController] Error cancelling invitation:', error);
+        res.status(400).json({ success: false, status: 'error', message: error.message || 'Error cancelling invitation' });
+    }
+};

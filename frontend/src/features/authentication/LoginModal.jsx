@@ -4,7 +4,7 @@ import { toast } from 'sonner';
 import { useAuth } from '../../contexts/AuthContext';
 
 export default function LoginModal({ isOpen, onClose }) {
-  const { login } = useAuth();
+  const { login, registrationOpen } = useAuth();
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -117,12 +117,18 @@ export default function LoginModal({ isOpen, onClose }) {
           </button>
         </form>
 
-        <div className="mt-6 text-center text-sm text-slate-500">
-          Don't have an account?{' '}
-          <Link to="/register" onClick={onClose} className="text-blue-600 font-bold hover:underline">
-            Register here
-          </Link>
-        </div>
+        {registrationOpen ? (
+          <div className="mt-6 text-center text-sm text-slate-500">
+            Don't have an account?{' '}
+            <Link to="/register" onClick={onClose} className="text-blue-600 font-bold hover:underline">
+              Register here
+            </Link>
+          </div>
+        ) : (
+          <div className="mt-6 text-center text-sm text-amber-600 font-medium">
+            Registration is currently closed by administration.
+          </div>
+        )}
       </div>
     </div>
   );

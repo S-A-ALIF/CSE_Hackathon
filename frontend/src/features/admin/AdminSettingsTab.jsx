@@ -2,8 +2,10 @@ import { useState, useEffect } from 'react';
 import { API_URL } from '../../config';
 import { toast } from 'sonner';
 import ThemeSelector from '../../components/ThemeSelector';
+import { useAuth } from '../../contexts/AuthContext';
 
 export default function AdminSettingsTab() {
+  const { fetchPlatformSettings } = useAuth();
   const [settings, setSettings] = useState({});
   const [loading, setLoading] = useState(true);
   const [toggling, setToggling] = useState(false);
@@ -58,6 +60,7 @@ export default function AdminSettingsTab() {
           ...prev,
           registration_open: data.data.registration_open
         }));
+        if (fetchPlatformSettings) fetchPlatformSettings();
       } else {
         toast.error(data.message || 'Failed to toggle registration');
       }

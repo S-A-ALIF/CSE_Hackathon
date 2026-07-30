@@ -182,10 +182,16 @@ export const teamService = {
             );
         }
 
-        // 5. Send in-app notification with pending action
+        // 5. Get inviter name and send in-app notification with pending action
+        const inviterRes = await pool.query(
+            'SELECT COALESCE(ui.name, u.email) as sender_name FROM users u LEFT JOIN user_info ui ON u.id = ui.user_id WHERE u.id = $1',
+            [inviterId]
+        );
+        const senderName = inviterRes.rows[0]?.sender_name || inviterEmail;
+
         await notificationService.createNotification(
             inviteeEmail,
-            `You received a team invitation from ${inviterEmail} to join team "${teamName}" [TeamID:${teamId}].`,
+            `You received a team invitation from ${senderName} to join team "${teamName}" [TeamID:${teamId}].`,
             'pending'
         );
 
@@ -510,6 +516,68 @@ export const teamService = {
         );
 
         return { success: true, is_full: updatedRes.rows[0].is_full };
+    },
+
+    /**
+     * Get active sent invitations for a team (Leader only)
+     */
+    async getActiveInvitations(leaderId: string) {
+        const teamRes = await pool.query('SELECT id, name FROM teams WHERE leader_id = $1', [leaderId]);
+        const team = teamRes.rows[0];
+        if (!team) {
+            throw new Error('Only the team leader can view active invitations.');
+        }
+
+        const query = `
+            SELECT ti.id, ti.email, ti.expires_at, ti.created_at, COALESCE(ui.name, ti.email) as invitee_name
+            FROM team_invitations ti
+            LEFT JOIN users u ON LOWER(u.email) = LOWER(ti.email)
+            LEFT JOIN user_info ui ON u.id = ui.user_id
+            WHERE ti.team_id = $1 AND ti.is_used = false AND ti.expires_at > NOW()
+            ORDER BY ti.created_at DESC
+        `;
+        const res = await pool.query(query, [team.id]);
+        return res.rows;
+    },
+
+    /**
+     * Cancel an active sent invitation (Leader only)
+     */
+    async cancelInvitation(leaderId: string, invitationId: string) {
+        const client = await pool.connect();
+        try {
+            await client.query('BEGIN');
+
+            const teamRes = await client.query('SELECT id FROM teams WHERE leader_id = $1', [leaderId]);
+            const team = teamRes.rows[0];
+            if (!team) {
+                throw new Error('Only the team leader can cancel invitations.');
+            }
+
+            const invRes = await client.query(
+                'SELECT * FROM team_invitations WHERE id = $1 AND team_id = $2 AND is_used = false',
+                [invitationId, team.id]
+            );
+            const invitation = invRes.rows[0];
+            if (!invitation) {
+                throw new Error('Active invitation not found.');
+            }
+
+            await client.query('UPDATE team_invitations SET is_used = true WHERE id = $1', [invitationId]);
+
+            await client.query(
+                "DELETE FROM notifications WHERE LOWER(recipient_email) = LOWER($1) AND message LIKE '%' || $2 || '%' AND action_status = 'pending'",
+                [invitation.email, `[TeamID:${team.id}]`]
+            );
+
+            await client.query('COMMIT');
+            return { success: true };
+        } catch (error) {
+            await client.query('ROLLBACK');
+            throw error;
+        } finally {
+            client.release();
+        }
     }
 };
 

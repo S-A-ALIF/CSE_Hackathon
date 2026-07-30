@@ -129,17 +129,19 @@ export const notificationService = {
             }
 
             if (notif.message.includes('team invitation')) {
-                // Invalidate any pending invitation in team_invitations for this email
-                await client.query(
-                    'UPDATE team_invitations SET is_used = true WHERE email = $1 AND is_used = false',
-                    [userEmail]
-                );
-                // Notify leader
+                // Extract TeamID first so we only invalidate the invitation from THIS specific team
                 const match = notif.message.match(/\[TeamID:([a-fA-F0-9-]+)\]/);
                 if (match) {
+                    const teamId = match[1];
+                    // Invalidate ONLY the invitation from this specific team (not all teams)
+                    await client.query(
+                        'UPDATE team_invitations SET is_used = true WHERE LOWER(email) = LOWER($1) AND team_id = $2 AND is_used = false',
+                        [userEmail, teamId]
+                    );
+                    // Notify leader
                     const leaderRes = await client.query(
                         'SELECT t.name, u.email FROM teams t JOIN users u ON t.leader_id = u.id WHERE t.id = $1',
-                        [match[1]]
+                        [teamId]
                     );
                     if (leaderRes.rows[0]) {
                         await client.query(
@@ -147,6 +149,12 @@ export const notificationService = {
                             [leaderRes.rows[0].email, `${userEmail} has declined your invitation to join team "${leaderRes.rows[0].name}".`]
                         );
                     }
+                } else {
+                    // Fallback if no TeamID tag found: only invalidate by email (old behaviour)
+                    await client.query(
+                        'UPDATE team_invitations SET is_used = true WHERE LOWER(email) = LOWER($1) AND is_used = false',
+                        [userEmail]
+                    );
                 }
             } else if (notif.message.includes('requested to join your team')) {
                 const match = notif.message.match(/\[ReqID:([a-fA-F0-9-]+)\]/);
@@ -224,7 +232,7 @@ export const notificationService = {
                 // Check if team is declared full
                 const teamCheckRes = await client.query('SELECT is_full FROM teams WHERE id = $1', [teamId]);
                 if (teamCheckRes.rows[0]?.is_full) {
-                    throw new Error('This team has been declared full by the team leader and is no longer accepting new members.');
+                    throw new Error('This team is already full. You cannot accept this invitation.');
                 }
 
                 // Check if user already in a team
@@ -240,7 +248,7 @@ export const notificationService = {
                 const maxVal = maxRes.rows[0]?.value;
                 const maxMembers = maxVal && maxVal !== 'none' && maxVal !== '' && !isNaN(parseInt(maxVal, 10)) ? parseInt(maxVal, 10) : null;
                 if (maxMembers !== null && count >= maxMembers) {
-                    throw new Error(`This team has already reached the maximum limit of ${maxMembers} members.`);
+                    throw new Error('This team is already full. You cannot accept this invitation.');
                 }
 
                 // Add to team
