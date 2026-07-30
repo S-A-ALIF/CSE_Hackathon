@@ -1,18 +1,19 @@
 import { Request, Response } from 'express';
 import { teamService } from './team.service';
 import { pool } from '../../config/db.config';
+import { sanitizeTeamInput } from './team.sanitizer';
 
 export const createTeam = async (req: Request, res: Response): Promise<void> => {
     try {
         const userId = (req as any).user.id;
-        const { name } = req.body;
+        const { name } = sanitizeTeamInput(req.body);
 
-        if (!name || name.trim() === '') {
+        if (!name || name === '') {
             res.status(400).json({ success: false, message: 'Team name is required' });
             return;
         }
 
-        const teamId = await teamService.createTeam(userId, name.trim());
+        const teamId = await teamService.createTeam(userId, name);
 
         res.status(201).json({ success: true, message: 'Team created successfully!', data: { teamId } });
     } catch (error: any) {
@@ -24,7 +25,7 @@ export const createTeam = async (req: Request, res: Response): Promise<void> => 
 export const inviteToTeam = async (req: Request, res: Response): Promise<void> => {
     try {
         const userId = (req as any).user.id;
-        const { emailToInvite } = req.body;
+        const { emailToInvite } = sanitizeTeamInput(req.body);
 
         if (!emailToInvite) {
             res.status(400).json({ success: false, message: 'Email to invite is required' });
@@ -63,14 +64,14 @@ export const inviteToTeam = async (req: Request, res: Response): Promise<void> =
 export const joinTeam = async (req: Request, res: Response): Promise<void> => {
     try {
         const userId = (req as any).user.id;
-        const { pinCode } = req.body;
+        const { pinCode } = sanitizeTeamInput(req.body);
 
         if (!pinCode || pinCode.length !== 6) {
             res.status(400).json({ success: false, message: 'A valid 6-digit PIN is required' });
             return;
         }
 
-        await teamService.joinTeamWithPin(userId, pinCode.toUpperCase());
+        await teamService.joinTeamWithPin(userId, pinCode);
 
         res.status(200).json({ success: true, message: 'Successfully joined the team!' });
     } catch (error: any) {
@@ -82,9 +83,9 @@ export const joinTeam = async (req: Request, res: Response): Promise<void> => {
 export const requestToJoinByCode = async (req: Request, res: Response): Promise<void> => {
     try {
         const userId = (req as any).user.id;
-        const { teamCode } = req.body;
+        const { teamCode } = sanitizeTeamInput(req.body);
 
-        if (!teamCode || teamCode.trim() === '') {
+        if (!teamCode || teamCode === '') {
             res.status(400).json({ success: false, message: 'Team code is required' });
             return;
         }
@@ -164,7 +165,7 @@ export const disbandTeam = async (req: Request, res: Response): Promise<void> =>
 export const updateTeamName = async (req: Request, res: Response): Promise<void> => {
     try {
         const leaderId = (req as any).user.id;
-        const { name } = req.body;
+        const { name } = sanitizeTeamInput(req.body);
         const updatedTeam = await teamService.updateTeamName(leaderId, name);
 
         res.status(200).json({ success: true, status: 'success', message: 'Team name updated successfully', data: updatedTeam });
@@ -177,7 +178,7 @@ export const updateTeamName = async (req: Request, res: Response): Promise<void>
 export const transferLeadership = async (req: Request, res: Response): Promise<void> => {
     try {
         const leaderId = (req as any).user.id;
-        const { newLeaderId } = req.body;
+        const { newLeaderId } = sanitizeTeamInput(req.body);
         await teamService.transferLeadership(leaderId, newLeaderId);
 
         res.status(200).json({ success: true, status: 'success', message: 'Leadership transferred successfully' });
@@ -195,7 +196,7 @@ export const updateTeamStatus = async (req: Request, res: Response): Promise<voi
             return;
         }
 
-        const { is_full } = req.body;
+        const { is_full } = sanitizeTeamInput(req.body);
         const result = await teamService.updateTeamStatus(userId, Boolean(is_full));
 
         res.status(200).json({ success: true, status: 'success', message: 'Team status updated', is_full: result.is_full });

@@ -2,8 +2,11 @@ import { Router } from 'express';
 import * as userController from './user.controller';
 import { validateRequest } from '../../middlewares/validateRequest';
 import { userProfileSchema } from './user.validator';
+import { authMiddleware } from '../auth/auth.middleware';
 
 const router = Router();
+
+router.use(authMiddleware);
 
 /**
  * @route   GET /api/v1/users/profile

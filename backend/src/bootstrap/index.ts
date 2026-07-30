@@ -40,7 +40,7 @@ app.use(express.urlencoded({ extended: true }));
 app.get('/', (req: Request, res: Response) => {
     res.status(200).json({
         status: 'success',
-        message: 'Tutors Portal API is running successfully on Render!',
+        message: 'GSTU Hackathon API is running successfully!',
         healthCheck: '/health',
         apiEndpoint: '/api/v1'
     });

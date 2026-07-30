@@ -237,8 +237,9 @@ export const notificationService = {
                 const countRes = await client.query('SELECT COUNT(*) as count FROM team_members WHERE team_id = $1', [teamId]);
                 const count = parseInt(countRes.rows[0].count, 10);
                 const maxRes = await client.query("SELECT value FROM platform_settings WHERE key = 'max_team_members'");
-                const maxMembers = parseInt(maxRes.rows[0]?.value || '5', 10);
-                if (count >= maxMembers) {
+                const maxVal = maxRes.rows[0]?.value;
+                const maxMembers = maxVal && maxVal !== 'none' && maxVal !== '' && !isNaN(parseInt(maxVal, 10)) ? parseInt(maxVal, 10) : null;
+                if (maxMembers !== null && count >= maxMembers) {
                     throw new Error(`This team has already reached the maximum limit of ${maxMembers} members.`);
                 }
 
@@ -289,8 +290,9 @@ export const notificationService = {
                 const countRes = await client.query('SELECT COUNT(*) as count FROM team_members WHERE team_id = $1', [joinReq.team_id]);
                 const count = parseInt(countRes.rows[0].count, 10);
                 const maxRes = await client.query("SELECT value FROM platform_settings WHERE key = 'max_team_members'");
-                const maxMembers = parseInt(maxRes.rows[0]?.value || '5', 10);
-                if (count >= maxMembers) {
+                const maxVal = maxRes.rows[0]?.value;
+                const maxMembers = maxVal && maxVal !== 'none' && maxVal !== '' && !isNaN(parseInt(maxVal, 10)) ? parseInt(maxVal, 10) : null;
+                if (maxMembers !== null && count >= maxMembers) {
                     throw new Error(`Your team has reached the maximum limit of ${maxMembers} members.`);
                 }
 

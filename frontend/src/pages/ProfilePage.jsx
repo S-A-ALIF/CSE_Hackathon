@@ -60,6 +60,13 @@ export default function ProfilePage({ inDashboard = false }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (saving) return;
+
+    const studentIdRegex = /^\d{2}[A-Za-z]{2,3}\d{3}$/;
+    if (!studentIdRegex.test(formData.student_id?.trim())) {
+      toast.error('Student ID must be 2 session digits + 2/3 department letters + 3 roll digits (e.g., 22CSE020 or 22CE005)');
+      return;
+    }
+
     setSaving(true);
     
     try {
@@ -86,10 +93,12 @@ export default function ProfilePage({ inDashboard = false }) {
         setProfileData(formData); // Update view mode data
         setIsEditing(false); // Switch back to view mode
       } else {
-        toast.error(data.message || 'Failed to update profile');
+        const errMsg = data.errors ? Object.values(data.errors).flat()[0] : (data.message || 'Failed to update profile');
+        toast.error(errMsg);
       }
     } catch (err) {
       toast.error('Network error occurred.');
+      console.error(err);
     } finally {
       setSaving(false);
     }

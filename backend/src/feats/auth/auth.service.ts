@@ -6,24 +6,27 @@ import { generateToken } from '../../config/jwt.config';
 import { User } from './user.model';
 
 export const registerUser = async (userData: any): Promise<User> => {
-    const { email, password, role } = userData;
+    const { email, password, role, name, student_id, batch_session } = userData;
 
+    const client = await pool.connect();
     try {
+        await client.query('BEGIN');
+
         // 0. Check if registration is open
-        const settingRes = await pool.query("SELECT value FROM platform_settings WHERE key = 'registration_open'");
+        const settingRes = await client.query("SELECT value FROM platform_settings WHERE key = 'registration_open'");
         if (settingRes.rows.length > 0 && settingRes.rows[0].value === 'false') {
             throw new CustomError('Registration is currently closed by administration.', 403);
         }
 
         // 1. Check if user already exists
-        const existingUser = await pool.query('SELECT id FROM users WHERE email = $1', [email]);
+        const existingUser = await client.query('SELECT id FROM users WHERE email = $1', [email]);
         
         if (existingUser.rows.length > 0) {
             throw new CustomError('User with this email already exists', 409);
         }
 
         // 2. Hash the password
-        const hashedPassword = await bcrypt.hash(password, 12);
+        const hashedPassword = await bcrypt.hash(password, 10);
 
         // 3. Generate UUID
         const id = crypto.randomUUID();
@@ -34,20 +37,48 @@ export const registerUser = async (userData: any): Promise<User> => {
             VALUES ($1, $2, $3, $4) 
             RETURNING id, email, role
         `;
-        const result = await pool.query(query, [id, email, hashedPassword, role]);
+        const result = await client.query(query, [id, email, hashedPassword, role]);
+        const user = result.rows[0];
 
-        return result.rows[0];
+        // 5. Insert initial profile data into user_info
+        if (name || student_id || batch_session) {
+            await client.query(
+                `INSERT INTO user_info (user_id, name, student_id, batch_session)
+                 VALUES ($1, $2, $3, $4)`,
+                [id, name || '', student_id || '', batch_session || '']
+            );
+        }
+
+        await client.query('COMMIT');
+        return {
+            ...user,
+            profile: {
+                name: name || '',
+                student_id: student_id || '',
+                batch_session: batch_session || '',
+                phone_number: ''
+            }
+        } as any;
     } catch (error: any) {
+        await client.query('ROLLBACK');
         if (error instanceof CustomError) throw error;
         console.error('Service Error [registerUser]:', error);
         throw new CustomError('Database operation failed during registration', 500);
+    } finally {
+        client.release();
     }
 };
 
 export const loginUser = async (email: string, password: string) => {
     try {
-        // 1. Fetch user by email
-        const result = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
+        // 1. Fetch user by email with user_info in a single JOIN
+        const query = `
+            SELECT u.*, ui.name, ui.student_id, ui.batch_session, ui.phone_number
+            FROM users u
+            LEFT JOIN user_info ui ON u.id = ui.user_id
+            WHERE u.email = $1
+        `;
+        const result = await pool.query(query, [email]);
         const user = result.rows[0];
 
         // 2. Validate user existence
@@ -76,7 +107,12 @@ export const loginUser = async (email: string, password: string) => {
                 id: user.id,
                 email: user.email,
                 role: user.role,
-                // Profile will now be fetched dynamically via /me endpoint
+                profile: {
+                    name: user.name || '',
+                    student_id: user.student_id || '',
+                    batch_session: user.batch_session || '',
+                    phone_number: user.phone_number || ''
+                }
             }
         };
     } catch (error: any) {

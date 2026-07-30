@@ -1,6 +1,8 @@
 import { Router } from 'express';
 import { createTeam, inviteToTeam, joinTeam, requestToJoinByCode, getMyTeam, removeMember, leaveTeam, disbandTeam, updateTeamName, transferLeadership, updateTeamStatus } from './team.controller';
 import { authMiddleware } from '../auth/auth.middleware';
+import { validateRequest } from '../../middlewares/validateRequest';
+import { teamSchemas } from './team.validator';
 
 const router = Router();
 
@@ -8,13 +10,13 @@ const router = Router();
 router.use(authMiddleware);
 
 router.get('/my-team', getMyTeam);
-router.post('/create', createTeam);
-router.post('/invite', inviteToTeam);
-router.post('/join', joinTeam);
-router.post('/join-by-code', requestToJoinByCode);
-router.patch('/name', updateTeamName);
-router.patch('/status', updateTeamStatus);
-router.post('/transfer-leadership', transferLeadership);
+router.post('/create', validateRequest(teamSchemas.create), createTeam);
+router.post('/invite', validateRequest(teamSchemas.invite), inviteToTeam);
+router.post('/join', validateRequest(teamSchemas.joinWithPin), joinTeam);
+router.post('/join-by-code', validateRequest(teamSchemas.requestJoinByCode), requestToJoinByCode);
+router.patch('/name', validateRequest(teamSchemas.updateName), updateTeamName);
+router.patch('/status', validateRequest(teamSchemas.updateStatus), updateTeamStatus);
+router.post('/transfer-leadership', validateRequest(teamSchemas.transferLeadership), transferLeadership);
 router.delete('/members/:userId', removeMember);
 router.post('/leave', leaveTeam);
 router.delete('/', disbandTeam);

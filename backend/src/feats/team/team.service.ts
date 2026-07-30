@@ -23,11 +23,7 @@ export const teamService = {
         
         if (!teamId) return null;
 
-        // 2. Get team details
-        const teamRes = await pool.query('SELECT id, name, team_code, leader_id, COALESCE(is_full, false) as is_full, created_at FROM teams WHERE id = $1', [teamId]);
-        const team = teamRes.rows[0];
-
-        // 3. Get team members
+        // 2. Fetch team details, team members, and platform settings in PARALLEL
         const membersQuery = `
             SELECT u.id, u.email, u.role,
                    COALESCE(ui.name, u.email) as name,
@@ -39,10 +35,15 @@ export const teamService = {
             LEFT JOIN user_info ui ON u.id = ui.user_id
             WHERE tm.team_id = $1
         `;
-        const membersRes = await pool.query(membersQuery, [teamId]);
 
-        // 4. Get min/max team limits from platform_settings
-        const settingsRes = await pool.query("SELECT key, value FROM platform_settings WHERE key IN ('min_team_members', 'max_team_members')");
+        const [teamRes, membersRes, settingsRes] = await Promise.all([
+            pool.query('SELECT id, name, team_code, leader_id, COALESCE(is_full, false) as is_full, created_at FROM teams WHERE id = $1', [teamId]),
+            pool.query(membersQuery, [teamId]),
+            pool.query("SELECT key, value FROM platform_settings WHERE key IN ('min_team_members', 'max_team_members')")
+        ]);
+
+        const team = teamRes.rows[0];
+
         const minVal = settingsRes.rows.find(r => r.key === 'min_team_members')?.value;
         const maxVal = settingsRes.rows.find(r => r.key === 'max_team_members')?.value;
         const parseLimit = (val: string | undefined, def: number | null): number | null => {
@@ -282,6 +283,20 @@ export const teamService = {
             }
 
             const invitation = inviteRes.rows[0];
+
+            // 2.5 Check if team is declared full or reached maximum members limit
+            const teamCheck = await client.query('SELECT name, is_full FROM teams WHERE id = $1', [invitation.team_id]);
+            if (teamCheck.rows[0]?.is_full) {
+                throw new Error('This team has been declared full by the team leader and cannot accept new members.');
+            }
+            const countRes = await client.query('SELECT COUNT(*) as count FROM team_members WHERE team_id = $1', [invitation.team_id]);
+            const count = parseInt(countRes.rows[0].count, 10);
+            const maxRes = await client.query("SELECT value FROM platform_settings WHERE key = 'max_team_members'");
+            const maxVal = maxRes.rows[0]?.value;
+            const maxMembers = maxVal && maxVal !== 'none' && maxVal !== '' && !isNaN(parseInt(maxVal, 10)) ? parseInt(maxVal, 10) : null;
+            if (maxMembers !== null && count >= maxMembers) {
+                throw new Error(`This team has already reached the maximum limit of ${maxMembers} members.`);
+            }
 
             // 3. Add to team
             await client.query(

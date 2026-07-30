@@ -1,5 +1,7 @@
 import { Router } from 'express';
 import { authMiddleware, adminMiddleware } from '../auth/auth.middleware';
+import { validateRequest } from '../../middlewares/validateRequest';
+import { adminSchemas } from './admin.validator';
 import {
     getStats,
     getAllTeams,
@@ -23,17 +25,17 @@ router.get('/stats', getStats);
 
 // Teams Management
 router.get('/teams', getAllTeams);
-router.patch('/teams/:id', updateTeam);
+router.patch('/teams/:id', validateRequest(adminSchemas.updateTeam), updateTeam);
 router.delete('/teams/:id', deleteTeam);
 
 // Members Management
 router.get('/members', getAllMembers);
-router.patch('/members/:id', updateMember);
+router.patch('/members/:id', validateRequest(adminSchemas.updateMember), updateMember);
 router.delete('/members/:id', deleteMember);
 
 // Platform Settings
 router.get('/settings', getSettings);
-router.post('/settings/toggle-registration', toggleRegistration);
-router.post('/settings/team-limits', updateTeamLimits);
+router.post('/settings/toggle-registration', validateRequest(adminSchemas.toggleRegistration), toggleRegistration);
+router.post('/settings/team-limits', validateRequest(adminSchemas.teamLimits), updateTeamLimits);
 
 export default router;

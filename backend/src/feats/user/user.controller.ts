@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import * as userService from './user.service';
 import { verifyToken } from '../../config/jwt.config';
+import { sanitizeUserProfile } from './user.sanitizer';
 
 // Helper to extract user ID from auth token
 const getUserIdFromToken = (req: Request): string | null => {
@@ -17,7 +18,7 @@ const getUserIdFromToken = (req: Request): string | null => {
 
 export const getProfile = async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const userId = getUserIdFromToken(req);
+        const userId = (req as any).user?.id || getUserIdFromToken(req);
         if (!userId) {
             return res.status(401).json({ status: 'error', message: 'Unauthorized' });
         }
@@ -36,19 +37,19 @@ export const getProfile = async (req: Request, res: Response, next: NextFunction
 
 export const updateProfile = async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const userId = getUserIdFromToken(req);
+        const userId = (req as any).user?.id || getUserIdFromToken(req);
         if (!userId) {
             return res.status(401).json({ status: 'error', message: 'Unauthorized' });
         }
 
-        const { name, student_id, batch_session, phone_number } = req.body;
+        const sanitized = sanitizeUserProfile(req.body);
 
         const updatedProfile = await userService.upsertProfile({
             userId,
-            name: name.trim(),
-            studentId: student_id.trim(),
-            batchSession: batch_session.trim(),
-            phoneNumber: phone_number.trim()
+            name: sanitized.name,
+            studentId: sanitized.student_id,
+            batchSession: sanitized.batch_session,
+            phoneNumber: sanitized.phone_number
         });
 
         res.status(200).json({
