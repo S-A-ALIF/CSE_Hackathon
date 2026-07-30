@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { API_URL } from '../../config';
 import { toast } from 'sonner';
+import ThemeSelector from '../../components/ThemeSelector';
 
 export default function AdminSettingsTab() {
   const [settings, setSettings] = useState({});
@@ -61,8 +62,8 @@ export default function AdminSettingsTab() {
         toast.error(data.message || 'Failed to toggle registration');
       }
     } catch (error) {
-      console.error('Error toggling reg:', error);
-      toast.error('Error updating registration status');
+      console.error('Error toggling registration:', error);
+      toast.error('Error toggling registration');
     } finally {
       setToggling(false);
     }
@@ -73,6 +74,9 @@ export default function AdminSettingsTab() {
     setSavingLimits(true);
     try {
       const token = localStorage.getItem('token');
+      const minVal = minTeamSize.trim() === '' ? 'none' : minTeamSize.trim();
+      const maxVal = maxTeamSize.trim() === '' ? 'none' : maxTeamSize.trim();
+
       const res = await fetch(`${API_URL}/api/v1/admin/settings/team-limits`, {
         method: 'POST',
         headers: {
@@ -80,26 +84,30 @@ export default function AdminSettingsTab() {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          min_team_members: minTeamSize.trim() === '' ? 'none' : minTeamSize,
-          max_team_members: maxTeamSize.trim() === '' ? 'none' : maxTeamSize
+          min_team_members: minVal,
+          max_team_members: maxVal
         })
       });
       const data = await res.json();
       if (res.ok && data.success) {
-        toast.success(data.message || 'Team size limits updated successfully');
-        setSettings(data.data);
+        toast.success('Team size limits updated successfully!');
+        setSettings((prev) => ({
+          ...prev,
+          min_team_members: minVal,
+          max_team_members: maxVal
+        }));
       } else {
         toast.error(data.message || 'Failed to update team size limits');
       }
     } catch (error) {
-      console.error('Error saving limits:', error);
-      toast.error('Error updating team size limits');
+      console.error('Error updating team limits:', error);
+      toast.error('Error updating team limits');
     } finally {
       setSavingLimits(false);
     }
   };
 
-  const isRegOpen = settings.registration_open !== 'false';
+  const isRegOpen = settings.registration_open !== false;
 
   if (loading) {
     return (
@@ -115,6 +123,9 @@ export default function AdminSettingsTab() {
         <h1 className="text-3xl font-black text-slate-900 tracking-tight">Platform Settings</h1>
         <p className="text-slate-600 mt-1">Configure global platform rules and event availability.</p>
       </div>
+
+      {/* Theme & Display Settings */}
+      <ThemeSelector />
 
       {/* Registration Open/Close Toggle Card */}
       <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6">

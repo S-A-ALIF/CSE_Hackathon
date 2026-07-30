@@ -242,7 +242,7 @@ export default function NotificationDropdown() {
 
       {/* Dropdown Menu */}
       {isOpen && (
-        <div className="absolute right-0 mt-2 w-80 md:w-96 bg-white rounded-2xl shadow-xl border border-slate-100 py-2 z-50 animate-in fade-in slide-in-from-top-2 duration-200 overflow-hidden">
+        <div className="fixed sm:absolute left-3 right-3 sm:left-auto sm:right-0 top-16 sm:top-auto sm:mt-2 w-auto sm:w-80 md:w-96 bg-white rounded-2xl shadow-2xl border border-slate-200 py-2 z-50 animate-in fade-in slide-in-from-top-2 duration-200 overflow-hidden max-h-[85vh] sm:max-h-none">
           <div className="px-4 py-3 border-b border-slate-100 flex items-center justify-between">
             <h3 className="font-bold text-slate-900">Notifications</h3>
             {unreadCount > 0 && (
@@ -252,7 +252,7 @@ export default function NotificationDropdown() {
             )}
           </div>
 
-          <div className="max-h-96 overflow-y-auto divide-y divide-slate-100">
+          <div className="max-h-72 sm:max-h-96 overflow-y-auto divide-y divide-slate-100">
             {loading ? (
               <div className="p-4 text-center text-sm text-slate-500">Loading...</div>
             ) : notifications.length === 0 ? (
