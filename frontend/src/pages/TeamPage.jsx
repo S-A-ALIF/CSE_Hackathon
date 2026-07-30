@@ -7,12 +7,13 @@ import JoinTeamModal from '../features/team/JoinTeamModal';
 import TeamManagementModal from '../features/team/TeamManagementModal';
 import ConfirmModal from '../components/ConfirmModal';
 import MemberInfoModal from '../features/team/MemberInfoModal';
+import { userCache } from '../utils/userCache';
 
 export default function TeamPage({ inDashboard = false }) {
   const { currentUser } = useAuth();
-  const [team, setTeam] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [invitations, setInvitations] = useState([]);
+  const [team, setTeam] = useState(userCache.team || null);
+  const [loading, setLoading] = useState(!userCache.lastFetched.team);
+  const [invitations, setInvitations] = useState(userCache.invitations || []);
   const [invLoading, setInvLoading] = useState(false);
 
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -21,16 +22,24 @@ export default function TeamPage({ inDashboard = false }) {
   const [isConfirmLeaveOpen, setIsConfirmLeaveOpen] = useState(false);
   const [selectedMember, setSelectedMember] = useState(null);
 
-  const fetchActiveInvitations = async () => {
+  const fetchActiveInvitations = async (force = false) => {
+    if (!force && userCache.isFresh('invitations')) {
+      setInvitations(userCache.invitations || []);
+      setInvLoading(false);
+      return;
+    }
     const token = localStorage.getItem('token');
     if (!token) return;
     try {
-      setInvLoading(true);
+      if (!userCache.lastFetched.invitations || force) {
+        setInvLoading(true);
+      }
       const res = await fetch(`${API_URL}/api/v1/teams/invitations`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const data = await res.json();
       if (res.ok && data.success) {
+        userCache.set('invitations', data.data || []);
         setInvitations(data.data || []);
       }
     } catch (err) {
@@ -40,9 +49,16 @@ export default function TeamPage({ inDashboard = false }) {
     }
   };
 
-  const fetchTeam = async () => {
-    try {
+  const fetchTeam = async (force = false) => {
+    if (!force && userCache.isFresh('team')) {
+      setTeam(userCache.team);
+      setLoading(false);
+      return;
+    }
+    if (!userCache.lastFetched.team || force) {
       setLoading(true);
+    }
+    try {
       const token = localStorage.getItem('token');
       const res = await fetch(API_URL + '/api/v1/teams/my-team', {
         headers: {
@@ -51,8 +67,10 @@ export default function TeamPage({ inDashboard = false }) {
       });
       const data = await res.json();
       if (res.ok && data.success) {
+        userCache.set('team', data.data);
         setTeam(data.data);
       } else {
+        userCache.set('team', null);
         setTeam(null);
       }
     } catch (error) {
@@ -77,7 +95,8 @@ export default function TeamPage({ inDashboard = false }) {
       if (res.ok && data.success) {
         toast.success(data.message || 'Left team successfully');
         setIsConfirmLeaveOpen(false);
-        fetchTeam();
+        userCache.invalidate();
+        fetchTeam(true);
       } else {
         toast.error(data.message || 'Failed to leave team');
       }
@@ -286,23 +305,26 @@ export default function TeamPage({ inDashboard = false }) {
         isOpen={isCreateModalOpen} 
         mode={team ? 'invite' : 'create'}
         onClose={() => setIsCreateModalOpen(false)}
-        onSuccess={() => { fetchTeam(); if (team) fetchActiveInvitations(); }}
+        onSuccess={() => { userCache.invalidate(); fetchTeam(true); if (team) fetchActiveInvitations(true); }}
       />
       <JoinTeamModal 
         isOpen={isJoinModalOpen} 
         onClose={() => setIsJoinModalOpen(false)}
-        onSuccess={fetchTeam}
+        onSuccess={() => { userCache.invalidate(); fetchTeam(true); }}
       />
       <TeamManagementModal
         isOpen={isManageModalOpen}
         onClose={() => setIsManageModalOpen(false)}
         team={team}
         currentUser={currentUser}
-        onTeamUpdated={fetchTeam}
+        onTeamUpdated={() => { userCache.invalidate(); fetchTeam(true); }}
         invitations={invitations}
         invLoading={invLoading}
-        onFetchInvitations={fetchActiveInvitations}
-        onInvitationCancelled={(id) => setInvitations(prev => prev.filter(inv => inv.id !== id))}
+        onFetchInvitations={() => fetchActiveInvitations(true)}
+        onInvitationCancelled={(id) => {
+          userCache.invalidate('invitations');
+          setInvitations(prev => prev.filter(inv => inv.id !== id));
+        }}
       />
       <ConfirmModal
         isOpen={isConfirmLeaveOpen}

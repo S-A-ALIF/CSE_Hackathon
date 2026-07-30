@@ -1,13 +1,21 @@
 import { useState, useEffect } from 'react';
 import { API_URL } from '../../config';
 import { toast } from 'sonner';
+import { adminCache } from './adminCache';
 
 export default function AdminDashboardTab({ setActiveTab }) {
-  const [stats, setStats] = useState({ totalUsers: 0, totalTeams: 0, settings: {} });
-  const [loading, setLoading] = useState(true);
+  const [stats, setStats] = useState(adminCache.stats || { totalUsers: 0, totalTeams: 0, settings: {} });
+  const [loading, setLoading] = useState(!adminCache.stats);
 
-  const fetchStats = async () => {
-    setLoading(true);
+  const fetchStats = async (force = false) => {
+    if (!force && adminCache.isFresh('stats')) {
+      setStats(adminCache.stats);
+      setLoading(false);
+      return;
+    }
+    if (!adminCache.stats || force) {
+      setLoading(true);
+    }
     try {
       const token = localStorage.getItem('token');
       const res = await fetch(`${API_URL}/api/v1/admin/stats`, {
@@ -17,6 +25,7 @@ export default function AdminDashboardTab({ setActiveTab }) {
       });
       const data = await res.json();
       if (res.ok && data.success) {
+        adminCache.set('stats', data.data);
         setStats(data.data);
       } else {
         toast.error(data.message || 'Failed to load dashboard statistics');
@@ -30,7 +39,7 @@ export default function AdminDashboardTab({ setActiveTab }) {
   };
 
   useEffect(() => {
-    fetchStats();
+    fetchStats(false);
   }, []);
 
   const isRegOpen = stats.settings?.registration_open !== 'false';
@@ -51,7 +60,7 @@ export default function AdminDashboardTab({ setActiveTab }) {
           <p className="text-slate-600 mt-1">Live platform statistics and system status for GSTU CSE Hackathon.</p>
         </div>
         <button
-          onClick={fetchStats}
+          onClick={() => fetchStats(true)}
           className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 rounded-xl font-semibold text-sm text-slate-700 hover:bg-slate-50 transition-colors shadow-sm"
         >
           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4">
@@ -117,10 +126,10 @@ export default function AdminDashboardTab({ setActiveTab }) {
             </p>
           </div>
           <button
-            onClick={() => setActiveTab('settings')}
+            onClick={() => setActiveTab('control')}
             className="mt-4 text-sm font-semibold text-slate-700 hover:underline self-start"
           >
-            Platform Settings &rarr;
+            Platform Control Center &rarr;
           </button>
         </div>
       </div>
@@ -132,7 +141,7 @@ export default function AdminDashboardTab({ setActiveTab }) {
           <li>Use the <strong>All Teams</strong> tab to expand any team and view all of its registered members.</li>
           <li>Click on any team or member row to open the <strong>Details Information Modal</strong>.</li>
           <li>Use the <strong>Three-Dot Menu (⋮)</strong> on any row to Edit details, Ban/Unban, or Delete a team/member.</li>
-          <li>Toggle registration open or closed globally from the <strong>Settings</strong> tab.</li>
+          <li>Toggle registration open or closed globally from the <strong>Control</strong> tab.</li>
         </ul>
       </div>
     </div>

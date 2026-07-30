@@ -1,6 +1,8 @@
 import { API_URL } from '../config';
 import { createContext, useContext, useState, useEffect } from 'react';
 import { toast } from 'sonner';
+import { adminCache } from '../features/admin/adminCache';
+import { userCache } from '../utils/userCache';
 
 const AuthContext = createContext();
 
@@ -141,6 +143,8 @@ export function AuthProvider({ children }) {
   };
 
   const logout = () => {
+    adminCache.clear();
+    userCache.clear();
     setCurrentUser(null);
     setUserProfile(null);
     localStorage.removeItem('currentUser');

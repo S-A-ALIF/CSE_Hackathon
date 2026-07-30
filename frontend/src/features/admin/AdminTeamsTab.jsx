@@ -4,10 +4,11 @@ import { toast } from 'sonner';
 import DetailsInfoModal from './DetailsInfoModal';
 import EditModal from './EditModal';
 import ConfirmModal from '../../components/ConfirmModal';
+import { adminCache } from './adminCache';
 
 export default function AdminTeamsTab() {
-  const [teams, setTeams] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [teams, setTeams] = useState(adminCache.teams || []);
+  const [loading, setLoading] = useState(!adminCache.teams);
   const [expandedTeams, setExpandedTeams] = useState({});
   const [searchTerm, setSearchTerm] = useState('');
   const [confirmConfig, setConfirmConfig] = useState({
@@ -28,8 +29,15 @@ export default function AdminTeamsTab() {
   // Menu open state
   const [openMenuId, setOpenMenuId] = useState(null);
 
-  const fetchTeams = async () => {
-    setLoading(true);
+  const fetchTeams = async (force = false) => {
+    if (!force && adminCache.isFresh('teams')) {
+      setTeams(adminCache.teams);
+      setLoading(false);
+      return;
+    }
+    if (!adminCache.teams || force) {
+      setLoading(true);
+    }
     try {
       const token = localStorage.getItem('token');
       const res = await fetch(`${API_URL}/api/v1/admin/teams`, {
@@ -39,6 +47,7 @@ export default function AdminTeamsTab() {
       });
       const data = await res.json();
       if (res.ok && data.success) {
+        adminCache.set('teams', data.data);
         setTeams(data.data);
       } else {
         toast.error(data.message || 'Failed to fetch teams');
@@ -52,7 +61,7 @@ export default function AdminTeamsTab() {
   };
 
   useEffect(() => {
-    fetchTeams();
+    fetchTeams(false);
   }, []);
 
   const toggleExpand = (teamId) => {
@@ -127,7 +136,8 @@ export default function AdminTeamsTab() {
       const data = await res.json();
       if (res.ok && data.success) {
         toast.success(nextBan ? 'Team has been banned' : 'Team is unbanned');
-        fetchTeams();
+        adminCache.invalidate();
+        fetchTeams(true);
       } else {
         toast.error(data.message || 'Failed to update ban status');
       }
@@ -150,7 +160,8 @@ export default function AdminTeamsTab() {
       if (res.ok && data.success) {
         toast.success('Member deleted successfully');
         setConfirmConfig(prev => ({ ...prev, isOpen: false }));
-        fetchTeams();
+        adminCache.invalidate();
+        fetchTeams(true);
       } else {
         toast.error(data.message || 'Failed to delete member');
       }
@@ -163,35 +174,55 @@ export default function AdminTeamsTab() {
   const handleDeleteMember = (memberId, memberEmail) => {
     setConfirmConfig({
       isOpen: true,
-      title: "Delete Member?",
-      message: `Are you sure you want to permanently delete user "${memberEmail}"? This action cannot be undone.`,
-      confirmText: "Delete Member",
-      variant: "danger",
+      title: 'Delete Member',
+      message: `Are you sure you want to remove user "${memberEmail}" from their team?`,
+      confirmText: 'Remove Member',
+      variant: 'danger',
       onConfirm: () => executeDeleteMember(memberId)
     });
   };
 
-  const filteredTeams = teams.filter(t =>
-    t.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (t.leader_email && t.leader_email.toLowerCase().includes(searchTerm.toLowerCase()))
-  );
+  const handleEditTeam = (team) => {
+    setEditModalData(team);
+    setEditModalType('team');
+  };
+
+  const handleEditMember = (member) => {
+    setEditModalData(member);
+    setEditModalType('member');
+  };
+
+  const handleSaveEdit = () => {
+    fetchTeams(true);
+  };
+
+  const filteredTeams = teams.filter((t) => {
+    const s = searchTerm.toLowerCase();
+    const nameMatch = t.name && t.name.toLowerCase().includes(s);
+    const leaderMatch = t.leader_email && t.leader_email.toLowerCase().includes(s);
+    return nameMatch || leaderMatch;
+  });
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+      {/* Top action bar */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
         <div>
-          <h1 className="text-3xl font-black text-slate-900 tracking-tight">All Teams ({teams.length})</h1>
-          <p className="text-slate-600 mt-1">Manage hackathon teams, view members, and apply moderation rules.</p>
+          <h2 className="text-2xl font-black text-slate-900 tracking-tight">Teams Management</h2>
+          <p className="text-slate-600 text-sm mt-1">
+            Total Teams: <span className="font-bold text-slate-900">{teams.length}</span>
+          </p>
         </div>
+
         <div className="flex items-center gap-3">
           <button
             onClick={toggleExpandAll}
-            className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-sm transition-colors"
+            className="px-4 py-2 bg-slate-100 text-slate-700 hover:bg-slate-200 font-bold rounded-xl text-sm transition-colors"
           >
             {Object.keys(expandedTeams).length === teams.length ? 'Collapse All' : 'Expand All'}
           </button>
           <button
-            onClick={fetchTeams}
+            onClick={() => fetchTeams(true)}
             className="px-4 py-2 bg-blue-50 text-blue-600 hover:bg-blue-100 font-bold rounded-xl text-sm transition-colors"
           >
             Refresh
@@ -224,14 +255,15 @@ export default function AdminTeamsTab() {
             const isExpanded = Boolean(expandedTeams[team.id]);
             const teamMenuKey = `team-${team.id}`;
             const isMenuOpen = openMenuId === teamMenuKey;
+            const hasOpenMenu = isMenuOpen || (team.members && team.members.some(m => openMenuId === `member-${m.id}`));
 
             return (
               <div
                 key={team.id}
-                className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden transition-all"
+                className={`bg-white rounded-2xl border border-slate-200 shadow-sm transition-all ${hasOpenMenu ? 'relative z-30' : 'relative z-10'}`}
               >
                 {/* Team Header Row */}
-                <div className="p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:bg-slate-50/50 transition-colors">
+                <div className={`p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:bg-slate-50/50 transition-colors ${isExpanded ? 'rounded-t-2xl' : 'rounded-2xl'}`}>
                   <div className="flex items-center gap-4 flex-1 cursor-pointer" onClick={() => toggleExpand(team.id)}>
                     <span className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center font-bold text-lg shrink-0">
                       {isExpanded ? '▼' : '▶'}
@@ -314,7 +346,7 @@ export default function AdminTeamsTab() {
 
                 {/* Expanded Member List */}
                 {isExpanded && (
-                  <div className="border-t border-slate-100 bg-slate-50/70 p-4 space-y-2">
+                  <div className="border-t border-slate-100 bg-slate-50/70 p-4 space-y-2 rounded-b-2xl">
                     <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2 px-2">
                       Registered Team Members
                     </h4>
@@ -327,7 +359,7 @@ export default function AdminTeamsTab() {
                         return (
                           <div
                             key={member.id}
-                            className="p-3 bg-white rounded-xl border border-slate-200 flex items-center justify-between gap-4"
+                            className={`p-3 bg-white rounded-xl border border-slate-200 flex items-center justify-between gap-4 ${isMemberMenuOpen ? 'relative z-30' : 'relative z-0'}`}
                           >
                             <div
                               className="flex items-center gap-3 cursor-pointer flex-1"

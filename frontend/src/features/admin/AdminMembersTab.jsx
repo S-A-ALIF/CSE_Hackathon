@@ -4,10 +4,11 @@ import { toast } from 'sonner';
 import DetailsInfoModal from './DetailsInfoModal';
 import EditModal from './EditModal';
 import ConfirmModal from '../../components/ConfirmModal';
+import { adminCache } from './adminCache';
 
 export default function AdminMembersTab() {
-  const [members, setMembers] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [members, setMembers] = useState(adminCache.members || []);
+  const [loading, setLoading] = useState(!adminCache.members);
   const [searchTerm, setSearchTerm] = useState('');
   const [roleFilter, setRoleFilter] = useState('all');
   const [confirmConfig, setConfirmConfig] = useState({
@@ -26,8 +27,15 @@ export default function AdminMembersTab() {
   // Menu open state
   const [openMenuId, setOpenMenuId] = useState(null);
 
-  const fetchMembers = async () => {
-    setLoading(true);
+  const fetchMembers = async (force = false) => {
+    if (!force && adminCache.isFresh('members')) {
+      setMembers(adminCache.members);
+      setLoading(false);
+      return;
+    }
+    if (!adminCache.members || force) {
+      setLoading(true);
+    }
     try {
       const token = localStorage.getItem('token');
       const res = await fetch(`${API_URL}/api/v1/admin/members`, {
@@ -37,6 +45,7 @@ export default function AdminMembersTab() {
       });
       const data = await res.json();
       if (res.ok && data.success) {
+        adminCache.set('members', data.data);
         setMembers(data.data);
       } else {
         toast.error(data.message || 'Failed to fetch members');
@@ -50,7 +59,7 @@ export default function AdminMembersTab() {
   };
 
   useEffect(() => {
-    fetchMembers();
+    fetchMembers(false);
   }, []);
 
   const handleBanToggleMember = async (member) => {
@@ -71,7 +80,8 @@ export default function AdminMembersTab() {
       const data = await res.json();
       if (res.ok && data.success) {
         toast.success(nextBan ? 'Member has been banned' : 'Member is unbanned');
-        fetchMembers();
+        adminCache.invalidate();
+        fetchMembers(true);
       } else {
         toast.error(data.message || 'Failed to update ban status');
       }
@@ -94,7 +104,8 @@ export default function AdminMembersTab() {
       if (res.ok && data.success) {
         toast.success('Member deleted successfully');
         setConfirmConfig(prev => ({ ...prev, isOpen: false }));
-        fetchMembers();
+        adminCache.invalidate();
+        fetchMembers(true);
       } else {
         toast.error(data.message || 'Failed to delete member');
       }
@@ -138,7 +149,7 @@ export default function AdminMembersTab() {
           </p>
         </div>
         <button
-          onClick={fetchMembers}
+          onClick={() => fetchMembers(true)}
           className="px-4 py-2 bg-blue-50 text-blue-600 hover:bg-blue-100 font-bold rounded-xl text-sm transition-colors"
         >
           Refresh Members

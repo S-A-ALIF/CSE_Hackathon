@@ -5,6 +5,7 @@ import AdminSidebar from '../features/admin/AdminSidebar';
 import AdminDashboardTab from '../features/admin/AdminDashboardTab';
 import AdminTeamsTab from '../features/admin/AdminTeamsTab';
 import AdminMembersTab from '../features/admin/AdminMembersTab';
+import AdminControlTab from '../features/admin/AdminControlTab';
 import AdminSettingsTab from '../features/admin/AdminSettingsTab';
 import NotificationDropdown from '../components/NotificationDropdown';
 import ProfilePage from './ProfilePage';
@@ -12,8 +13,13 @@ import ProfilePage from './ProfilePage';
 export default function AdminPage() {
   const { currentUser, logout } = useAuth();
   const [activeTab, setActiveTab] = useState('dashboard');
+  const [visitedTabs, setVisitedTabs] = useState({ dashboard: true });
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const menuRef = useRef(null);
+
+  useEffect(() => {
+    setVisitedTabs(prev => ({ ...prev, [activeTab]: true }));
+  }, [activeTab]);
 
   useEffect(() => {
     function handleClickOutside(event) {
@@ -96,6 +102,15 @@ export default function AdminPage() {
                   <p className="text-xs text-slate-400 font-semibold">Signed in as Admin</p>
                   <p className="text-sm font-bold text-slate-800 truncate">{currentUser.email}</p>
                 </div>
+                <button 
+                  onClick={() => { setActiveTab('control'); setIsMenuOpen(false); }}
+                  className="w-full text-left px-4 py-2 text-slate-700 hover:bg-slate-50 transition-colors flex items-center gap-2 font-medium"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5 text-slate-500">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 6h9.75M10.5 6a1.5 1.5 0 1 1-3 0m3 0a1.5 1.5 0 1 0-3 0M3.75 6H7.5m3 12h9.75m-9.75 0a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m-3.75 0H7.5m9-6h3.75m-3.75 0a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m-9.75 0h9.75" />
+                  </svg>
+                  Control Center
+                </button>
 
                 <button 
                   onClick={() => { setActiveTab('settings'); setIsMenuOpen(false); }}
@@ -106,18 +121,6 @@ export default function AdminPage() {
                     <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
                   </svg>
                   Settings
-                </button>
-                
-                <div className="h-px bg-slate-100 my-2"></div>
-                
-                <button 
-                  onClick={logout}
-                  className="w-full text-left px-4 py-2 text-red-600 hover:bg-red-50 transition-colors flex items-center gap-2 font-medium"
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5 text-red-500">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 9V5.25A2.25 2.25 0 0 1 10.5 3h6a2.25 2.25 0 0 1 2.25 2.25v13.5A2.25 2.25 0 0 1 16.5 21h-6a2.25 2.25 0 0 1-2.25-2.25V15m-3 0-3-3m0 0 3-3m-3 3H15" />
-                  </svg>
-                  Log Out
                 </button>
               </div>
             )}
@@ -130,16 +133,40 @@ export default function AdminPage() {
         <AdminSidebar
           activeTab={activeTab}
           setActiveTab={setActiveTab}
-          onLogout={logout}
         />
 
         <main className="flex-1 p-6 sm:p-10 overflow-y-auto w-full h-full">
           <div className="max-w-7xl mx-auto">
-            {activeTab === 'dashboard' && <AdminDashboardTab setActiveTab={setActiveTab} />}
-            {activeTab === 'teams' && <AdminTeamsTab />}
-            {activeTab === 'members' && <AdminMembersTab />}
-            {activeTab === 'settings' && <AdminSettingsTab />}
-            {activeTab === 'profile' && <ProfilePage inDashboard={true} />}
+            {visitedTabs.dashboard && (
+              <div className={activeTab === 'dashboard' ? 'block' : 'hidden'}>
+                <AdminDashboardTab setActiveTab={setActiveTab} />
+              </div>
+            )}
+            {visitedTabs.teams && (
+              <div className={activeTab === 'teams' ? 'block' : 'hidden'}>
+                <AdminTeamsTab />
+              </div>
+            )}
+            {visitedTabs.members && (
+              <div className={activeTab === 'members' ? 'block' : 'hidden'}>
+                <AdminMembersTab />
+              </div>
+            )}
+            {visitedTabs.control && (
+              <div className={activeTab === 'control' ? 'block' : 'hidden'}>
+                <AdminControlTab />
+              </div>
+            )}
+            {visitedTabs.settings && (
+              <div className={activeTab === 'settings' ? 'block' : 'hidden'}>
+                <AdminSettingsTab />
+              </div>
+            )}
+            {visitedTabs.profile && (
+              <div className={activeTab === 'profile' ? 'block' : 'hidden'}>
+                <ProfilePage inDashboard={true} />
+              </div>
+            )}
           </div>
         </main>
       </div>
