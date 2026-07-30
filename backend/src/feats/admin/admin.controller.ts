@@ -354,6 +354,61 @@ export const toggleRegistration = async (req: Request, res: Response) => {
 };
 
 /**
+ * POST /api/v1/admin/settings/toggle-workspace
+ * Toggle workspace_open open/close
+ */
+export const toggleWorkspace = async (req: Request, res: Response) => {
+    try {
+        const currentRes = await pool.query("SELECT value FROM platform_settings WHERE key = 'workspace_open'");
+        const currentVal = currentRes.rows.length > 0 ? currentRes.rows[0].value : 'false';
+        const newVal = currentVal === 'true' ? 'false' : 'true';
+
+        await pool.query(
+            "INSERT INTO platform_settings (key, value) VALUES ('workspace_open', $1) ON CONFLICT (key) DO UPDATE SET value = $1",
+            [newVal]
+        );
+
+        res.status(200).json({
+            status: 'success',
+            success: true,
+            data: { workspace_open: newVal },
+            message: `Project Workspace is now ${newVal === 'true' ? 'OPEN' : 'CLOSED'}`
+        });
+    } catch (error) {
+        console.error('Error toggling workspace:', error);
+        res.status(500).json({ status: 'error', success: false, message: 'Failed to toggle workspace access' });
+    }
+};
+
+/**
+ * POST /api/v1/admin/settings/toggle-problems
+ * Toggle problems_open open/close
+ */
+export const toggleProblems = async (req: Request, res: Response) => {
+    try {
+        const currentRes = await pool.query("SELECT value FROM platform_settings WHERE key = 'problems_open'");
+        const currentVal = currentRes.rows.length > 0 ? currentRes.rows[0].value : 'false';
+        const newVal = currentVal === 'true' ? 'false' : 'true';
+
+        await pool.query(
+            "INSERT INTO platform_settings (key, value) VALUES ('problems_open', $1) ON CONFLICT (key) DO UPDATE SET value = $1",
+            [newVal]
+        );
+
+        res.status(200).json({
+            status: 'success',
+            success: true,
+            data: { problems_open: newVal },
+            message: `Problem Statements are now ${newVal === 'true' ? 'OPEN' : 'CLOSED'}`
+        });
+    } catch (error) {
+        console.error('Error toggling problems:', error);
+        res.status(500).json({ status: 'error', success: false, message: 'Failed to toggle problems access' });
+    }
+};
+
+
+/**
  * POST /api/v1/admin/settings/team-limits
  * Update min_team_members and max_team_members
  */

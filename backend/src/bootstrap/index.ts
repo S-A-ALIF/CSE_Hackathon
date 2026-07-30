@@ -97,6 +97,8 @@ const server = app.listen(PORT, () => {
             value TEXT NOT NULL
         );
         INSERT INTO platform_settings (key, value) VALUES ('registration_open', 'true') ON CONFLICT (key) DO NOTHING;
+        INSERT INTO platform_settings (key, value) VALUES ('workspace_open', 'false') ON CONFLICT (key) DO NOTHING;
+        INSERT INTO platform_settings (key, value) VALUES ('problems_open', 'false') ON CONFLICT (key) DO NOTHING;
         INSERT INTO platform_settings (key, value) VALUES ('min_team_members', '3') ON CONFLICT (key) DO NOTHING;
         INSERT INTO platform_settings (key, value) VALUES ('max_team_members', '5') ON CONFLICT (key) DO NOTHING;
     `).catch(err => {

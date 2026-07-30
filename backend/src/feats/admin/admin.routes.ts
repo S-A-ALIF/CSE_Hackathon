@@ -12,6 +12,8 @@ import {
     deleteMember,
     getSettings,
     toggleRegistration,
+    toggleWorkspace,
+    toggleProblems,
     updateTeamLimits
 } from './admin.controller';
 
@@ -36,6 +38,8 @@ router.delete('/members/:id', deleteMember);
 // Platform Settings
 router.get('/settings', getSettings);
 router.post('/settings/toggle-registration', toggleRegistration);
+router.post('/settings/toggle-workspace', toggleWorkspace);
+router.post('/settings/toggle-problems', toggleProblems);
 router.post('/settings/team-limits', validateRequest(adminSchemas.teamLimits), updateTeamLimits);
 
 export default router;

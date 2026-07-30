@@ -2,8 +2,8 @@ const rules = [
   {
     id: '01',
     category: 'Development',
-    title: 'Any Language or Framework Allowed',
-    desc: 'Any programming language, framework, or development tool may be used. There is no restriction on the tech stack.',
+    title: 'Required Stack & Architecture',
+    desc: 'Projects must be built using the MERN or PERN stack (Next.js is permitted instead of React). Your codebase must be strictly divided into a separate frontend and backend that communicate exclusively via APIs.',
   },
   {
     id: '02',

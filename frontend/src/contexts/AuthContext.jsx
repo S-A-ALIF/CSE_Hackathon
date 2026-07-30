@@ -15,14 +15,21 @@ export function AuthProvider({ children }) {
   const [userProfile, setUserProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [registrationOpen, setRegistrationOpen] = useState(true);
+  const [workspaceOpen, setWorkspaceOpen] = useState(false);
+  const [problemsOpen, setProblemsOpen] = useState(false);
 
   const fetchPlatformSettings = async () => {
     try {
       const res = await fetch(`${API_URL}/api/v1/settings`);
       const data = await res.json();
       if (res.ok && data.success && data.data) {
-        const isOpen = data.data.registration_open !== 'false' && data.data.registration_open !== false;
-        setRegistrationOpen(isOpen);
+        const isRegOpen = data.data.registration_open !== 'false' && data.data.registration_open !== false;
+        const isWorkOpen = data.data.workspace_open === 'true' || data.data.workspace_open === true;
+        const isProbOpen = data.data.problems_open === 'true' || data.data.problems_open === true;
+        
+        setRegistrationOpen(isRegOpen);
+        setWorkspaceOpen(isWorkOpen);
+        setProblemsOpen(isProbOpen);
       }
     } catch (err) {
       console.error('Error fetching platform settings:', err);
@@ -156,7 +163,7 @@ export function AuthProvider({ children }) {
   }
 
   return (
-    <AuthContext.Provider value={{ currentUser, userProfile, setUserProfile, login, register, logout, registrationOpen, fetchPlatformSettings }}>
+    <AuthContext.Provider value={{ currentUser, userProfile, setUserProfile, login, register, logout, registrationOpen, workspaceOpen, problemsOpen, fetchPlatformSettings }}>
       {children}
     </AuthContext.Provider>
   );

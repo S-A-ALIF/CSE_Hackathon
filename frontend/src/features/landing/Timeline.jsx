@@ -1,13 +1,42 @@
-const timeline = [
-  { title: 'Registration Opens', desc: 'Teams register via the portal. Each team must have 3–4 members.' },
-  { title: 'Registration Closes', desc: 'All registrations must be completed before this deadline.' },
-  { title: 'Problem Statement Released', desc: 'The hackathon problem set is published to all registered teams.' },
-  { title: 'Hackathon Day', desc: '24-hour coding begins. Teams build, present, and compete.' },
-  { title: 'Final Presentations', desc: 'Teams present their projects to the judging panel.' },
-  { title: 'Results & Awards', desc: 'Winners announced and prizes distributed.' },
-];
+import { useState, useEffect } from 'react';
+import { API_URL } from '../../config';
 
 export default function Timeline() {
+  const [minSize, setMinSize] = useState(3);
+  const [maxSize, setMaxSize] = useState(4);
+
+  useEffect(() => {
+    const fetchSettings = async () => {
+      try {
+        const res = await fetch(`${API_URL}/api/v1/settings`);
+        const data = await res.json();
+        if (res.ok && data.success && data.data) {
+          const minVal = data.data.min_team_members;
+          const maxVal = data.data.max_team_members;
+          
+          const minNum = minVal && minVal !== 'none' && !isNaN(parseInt(minVal, 10)) ? parseInt(minVal, 10) : 3;
+          const maxNum = maxVal && maxVal !== 'none' && !isNaN(parseInt(maxVal, 10)) ? parseInt(maxVal, 10) : 4;
+          
+          setMinSize(minNum);
+          setMaxSize(maxNum);
+        }
+      } catch (err) {
+        console.error('Error fetching settings:', err);
+      }
+    };
+    fetchSettings();
+  }, []);
+
+  const timeline = [
+    { title: 'Registration Opens', desc: `Teams register via the portal. Each team must have ${minSize}–${maxSize} members.` },
+    { title: 'Registration Closes', desc: 'All registrations must be completed before this deadline.' },
+    { title: 'Problem Statement Released', desc: 'The hackathon problem set is published to all registered teams withing 3 to 6 hours after the registration begins.' },
+    { title: 'Hackathon starts', desc: '48 to 52 hour coding begins. Teams build, present, and compete.' },
+    { title: 'Registration closure', desc: 'The registration system will be closed 12hour before the finalized hackathon deadline.' },
+    { title: 'Final Presentations', desc: 'Teams present their projects to the judging panel.' },
+    { title: 'Results & Awards', desc: 'Winners announced and prizes distributed.' },
+  ];
+
   return (
     <section id="timeline" className="bg-slate-950 py-28 text-white">
       <div className="container mx-auto px-6 lg:px-16">

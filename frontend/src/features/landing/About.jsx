@@ -3,59 +3,43 @@ export default function About() {
     <section id="about" className="bg-slate-900 py-28 text-white">
       <div className="container mx-auto px-6 lg:px-16">
         {/* Section Header */}
-        <div className="max-w-3xl mx-auto text-center mb-20">
+        <div className="max-w-3xl mx-auto text-center mb-16">
           <span className="inline-block text-xs font-bold tracking-widest text-blue-400 uppercase border border-blue-400/20 bg-blue-400/10 px-4 py-1.5 rounded-full mb-5">
-            About the Event
+            Overview of the Event
           </span>
           <h2 className="text-4xl md:text-5xl font-black tracking-tight mb-6">
-            An Intra-Department Hackathon
+            Intra-Department Hackathon July, 2026
           </h2>
           <p className="text-slate-400 text-lg leading-relaxed">
             The GSTU CSE Hackathon is an annual programming competition organized by the Department of Computer Science & Engineering. It brings together students to solve real-world problems, collaborate in teams, and demonstrate their technical skills.
           </p>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {[
-            {
-              icon: (
-                <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
-                </svg>
-              ),
-              title: 'Innovation',
-              desc: 'Build creative software solutions for real-world or community-facing problems using any tech stack.',
-              color: 'from-blue-500 to-blue-700',
-            },
-            {
-              icon: (
-                <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-                </svg>
-              ),
-              title: 'Teamwork',
-              desc: 'Collaborate with peers across different batches. Every team must include senior batch participants.',
-              color: 'from-indigo-500 to-purple-700',
-            },
-            {
-              icon: (
-                <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
-                </svg>
-              ),
-              title: 'Recognition',
-              desc: 'Top teams are awarded certificates, prizes, and recognition from the department faculty.',
-              color: 'from-emerald-500 to-teal-700',
-            },
-          ].map((item) => (
-            <div key={item.title} className="relative bg-slate-800/50 border border-slate-700/50 p-8 rounded-2xl hover:border-slate-600 transition-all group">
-              <div className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${item.color} flex items-center justify-center mb-6 text-white shadow-lg`}>
-                {item.icon}
-              </div>
-              <h3 className="text-xl font-bold text-white mb-3">{item.title}</h3>
-              <p className="text-slate-400 leading-relaxed">{item.desc}</p>
+        {/* Hackathon Goal */}
+        <div className="max-w-4xl mx-auto bg-slate-800/50 border border-slate-700/50 p-8 md:p-12 rounded-3xl relative overflow-hidden">
+          <div className="absolute top-0 right-0 p-8 opacity-10 pointer-events-none">
+            <svg className="w-32 h-32 text-blue-500" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+            </svg>
+          </div>
+          
+          <h3 className="text-2xl font-bold text-white mb-4 flex items-center gap-3">
+            <span className="w-10 h-10 rounded-xl bg-blue-500/20 text-blue-400 flex items-center justify-center">🎯</span>
+            Contestant Goal
+          </h3>
+          <p className="text-slate-300 text-lg leading-relaxed mb-6">
+            The primary objective of this hackathon is to build a full-stack <strong>Auction Web Application</strong>. The exact problem set and specific feature requirements will be revealed only after the hackathon officially starts. Contestants must develop a complete solution featuring a distinct frontend and backend connected via APIs.
+          </p>
+          <div className="flex flex-col sm:flex-row gap-4">
+            <div className="flex-1 bg-slate-900/50 rounded-2xl p-5 border border-slate-700/50">
+              <div className="text-blue-400 font-bold mb-1">Tech Stack</div>
+              <div className="text-sm text-slate-400">Strictly MERN or PERN stack. Next.js is permitted as an alternative to React.</div>
             </div>
-          ))}
+            <div className="flex-1 bg-slate-900/50 rounded-2xl p-5 border border-slate-700/50">
+              <div className="text-emerald-400 font-bold mb-1">Architecture</div>
+              <div className="text-sm text-slate-400">The frontend and backend must be separated codebases communicating exclusively via APIs.</div>
+            </div>
+          </div>
         </div>
       </div>
     </section>

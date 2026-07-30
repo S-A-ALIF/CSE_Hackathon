@@ -8,7 +8,7 @@ export default function AdminControlTab() {
   const { fetchPlatformSettings } = useAuth();
   const [settings, setSettings] = useState(adminCache.settings || {});
   const [loading, setLoading] = useState(!adminCache.settings);
-  const [toggling, setToggling] = useState(false);
+  const [togglingAction, setTogglingAction] = useState(null); // Tracks 'registration', 'workspace', or 'problems'
   const [minTeamSize, setMinTeamSize] = useState(
     adminCache.settings ? (adminCache.settings.min_team_members === 'none' ? '' : (adminCache.settings.min_team_members || '3')) : ''
   );
@@ -57,7 +57,7 @@ export default function AdminControlTab() {
   }, []);
 
   const handleToggleRegistration = async () => {
-    setToggling(true);
+    setTogglingAction('registration');
     try {
       const token = localStorage.getItem('token');
       const res = await fetch(`${API_URL}/api/v1/admin/settings/toggle-registration`, {
@@ -85,7 +85,71 @@ export default function AdminControlTab() {
       console.error('Error toggling registration:', error);
       toast.error('Error toggling registration');
     } finally {
-      setToggling(false);
+      setTogglingAction(null);
+    }
+  };
+
+  const handleToggleWorkspace = async () => {
+    setTogglingAction('workspace');
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch(`${API_URL}/api/v1/admin/settings/toggle-workspace`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        toast.success(data.message);
+        const updated = {
+          ...settings,
+          workspace_open: data.data.workspace_open
+        };
+        adminCache.set('settings', updated);
+        setSettings(updated);
+        if (fetchPlatformSettings) fetchPlatformSettings();
+      } else {
+        toast.error(data.message || 'Failed to toggle workspace');
+      }
+    } catch (error) {
+      console.error('Error toggling workspace:', error);
+      toast.error('Error toggling workspace');
+    } finally {
+      setTogglingAction(null);
+    }
+  };
+
+  const handleToggleProblems = async () => {
+    setTogglingAction('problems');
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch(`${API_URL}/api/v1/admin/settings/toggle-problems`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        toast.success(data.message);
+        const updated = {
+          ...settings,
+          problems_open: data.data.problems_open
+        };
+        adminCache.set('settings', updated);
+        setSettings(updated);
+        if (fetchPlatformSettings) fetchPlatformSettings();
+      } else {
+        toast.error(data.message || 'Failed to toggle problems');
+      }
+    } catch (error) {
+      console.error('Error toggling problems:', error);
+      toast.error('Error toggling problems');
+    } finally {
+      setTogglingAction(null);
     }
   };
 
@@ -130,7 +194,21 @@ export default function AdminControlTab() {
     }
   };
 
-  const isRegOpen = settings.registration_open !== false;
+  const [confirmModal, setConfirmModal] = useState({ isOpen: false, type: null, actionStr: null });
+
+  const executeToggle = () => {
+    const { type } = confirmModal;
+    setConfirmModal({ isOpen: false, type: null, actionStr: null });
+    if (type === 'registration') handleToggleRegistration();
+    else if (type === 'workspace') handleToggleWorkspace();
+    else if (type === 'problems') handleToggleProblems();
+  };
+
+  const requestToggle = (type, actionStr) => {
+    setConfirmModal({ isOpen: true, type, actionStr });
+  };
+
+  const isRegOpen = settings.registration_open !== 'false' && settings.registration_open !== false;
 
   if (loading) {
     return (
@@ -176,19 +254,93 @@ export default function AdminControlTab() {
         </div>
 
         <button
-          onClick={handleToggleRegistration}
-          disabled={toggling}
+          onClick={() => requestToggle('registration', isRegOpen ? 'Close Registration' : 'Open Registration')}
+          disabled={togglingAction !== null}
           className={`px-6 py-3 rounded-xl font-bold text-sm text-white transition-all shadow-lg ${
             isRegOpen
               ? 'bg-red-600 hover:bg-red-700 shadow-red-600/30'
               : 'bg-emerald-600 hover:bg-emerald-700 shadow-emerald-600/30'
           }`}
         >
-          {toggling
+          {togglingAction === 'registration'
             ? 'Updating...'
             : isRegOpen
             ? '🔴 Close Registration'
             : '🟢 Open Registration'}
+        </button>
+      </div>
+
+      {/* Project Workspace Toggle Card */}
+      <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6">
+        <div>
+          <div className="flex items-center gap-3">
+            <h3 className="text-xl font-black text-slate-900">Project Workspace</h3>
+            <span
+              className={`px-3 py-1 rounded-full text-xs font-bold uppercase ${
+                settings.workspace_open === 'true' || settings.workspace_open === true
+                  ? 'bg-emerald-100 text-emerald-800'
+                  : 'bg-red-100 text-red-800'
+              }`}
+            >
+              {settings.workspace_open === 'true' || settings.workspace_open === true ? 'OPEN' : 'CLOSED'}
+            </span>
+          </div>
+          <p className="text-slate-600 text-sm mt-1">
+            When closed, users cannot access the Project Workspace dashboard tab.
+          </p>
+        </div>
+
+        <button
+          onClick={() => requestToggle('workspace', (settings.workspace_open === 'true' || settings.workspace_open === true) ? 'Close Workspace' : 'Open Workspace')}
+          disabled={togglingAction !== null}
+          className={`px-6 py-3 rounded-xl font-bold text-sm text-white transition-all shadow-lg ${
+            settings.workspace_open === 'true' || settings.workspace_open === true
+              ? 'bg-red-600 hover:bg-red-700 shadow-red-600/30'
+              : 'bg-emerald-600 hover:bg-emerald-700 shadow-emerald-600/30'
+          }`}
+        >
+          {togglingAction === 'workspace'
+            ? 'Updating...'
+            : settings.workspace_open === 'true' || settings.workspace_open === true
+            ? '🔴 Close Workspace'
+            : '🟢 Open Workspace'}
+        </button>
+      </div>
+
+      {/* Problem Statements Toggle Card */}
+      <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6">
+        <div>
+          <div className="flex items-center gap-3">
+            <h3 className="text-xl font-black text-slate-900">Problem Statements</h3>
+            <span
+              className={`px-3 py-1 rounded-full text-xs font-bold uppercase ${
+                settings.problems_open === 'true' || settings.problems_open === true
+                  ? 'bg-emerald-100 text-emerald-800'
+                  : 'bg-red-100 text-red-800'
+              }`}
+            >
+              {settings.problems_open === 'true' || settings.problems_open === true ? 'OPEN' : 'CLOSED'}
+            </span>
+          </div>
+          <p className="text-slate-600 text-sm mt-1">
+            When closed, users cannot view the problem statements.
+          </p>
+        </div>
+
+        <button
+          onClick={() => requestToggle('problems', (settings.problems_open === 'true' || settings.problems_open === true) ? 'Close Problems' : 'Open Problems')}
+          disabled={togglingAction !== null}
+          className={`px-6 py-3 rounded-xl font-bold text-sm text-white transition-all shadow-lg ${
+            settings.problems_open === 'true' || settings.problems_open === true
+              ? 'bg-red-600 hover:bg-red-700 shadow-red-600/30'
+              : 'bg-emerald-600 hover:bg-emerald-700 shadow-emerald-600/30'
+          }`}
+        >
+          {togglingAction === 'problems'
+            ? 'Updating...'
+            : settings.problems_open === 'true' || settings.problems_open === true
+            ? '🔴 Close Problems'
+            : '🟢 Open Problems'}
         </button>
       </div>
 
@@ -275,6 +427,32 @@ export default function AdminControlTab() {
           </div>
         </form>
       </div>
+
+      {/* Confirmation Modal */}
+      {confirmModal.isOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in">
+          <div className="bg-slate-900 border border-slate-700 rounded-2xl p-6 max-w-sm w-full shadow-2xl">
+            <h3 className="text-xl font-bold text-white mb-2">Confirm Action</h3>
+            <p className="text-slate-300 mb-6">
+              Are you sure you want to <strong>{confirmModal.actionStr}</strong>?
+            </p>
+            <div className="flex justify-end gap-3">
+              <button
+                onClick={() => setConfirmModal({ isOpen: false, type: null, actionStr: null })}
+                className="px-4 py-2 rounded-xl text-slate-300 hover:text-white hover:bg-slate-800 transition-colors font-medium text-sm"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={executeToggle}
+                className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm shadow-lg shadow-blue-600/30 transition-colors"
+              >
+                Confirm
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
