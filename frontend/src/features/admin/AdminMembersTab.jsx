@@ -27,6 +27,10 @@ export default function AdminMembersTab() {
   // Menu open state
   const [openMenuId, setOpenMenuId] = useState(null);
 
+  // Selection mode state
+  const [isSelectionMode, setIsSelectionMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState([]);
+
   const fetchMembers = async (force = false) => {
     if (!force && adminCache.isFresh('members')) {
       setMembers(adminCache.members);
@@ -144,6 +148,48 @@ export default function AdminMembersTab() {
     });
   };
 
+  const executeBulkDelete = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch(`${API_URL}/api/v1/admin/members/bulk-delete`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ ids: selectedIds })
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        toast.success(data.message || 'Members deleted successfully');
+        setConfirmConfig(prev => ({ ...prev, isOpen: false }));
+        setIsSelectionMode(false);
+        setSelectedIds([]);
+        adminCache.invalidate();
+        fetchMembers(true);
+      } else {
+        toast.error(data.message || 'Failed to delete members');
+      }
+    } catch (err) {
+      console.error('Error in bulk delete:', err);
+      toast.error('Error deleting members');
+    }
+  };
+
+  const handleBulkDelete = () => {
+    if (selectedIds.length === 0) return;
+    setConfirmConfig({
+      isOpen: true,
+      title: "Delete Selected Members?",
+      message: `Are you sure you want to permanently delete ${selectedIds.length} members? This action cannot be undone.`,
+      confirmText: `Delete ${selectedIds.length} Members`,
+      variant: "danger",
+      requireInput: true,
+      requireInputText: "delete",
+      onConfirm: () => executeBulkDelete()
+    });
+  };
+
   const [sortOption, setSortOption] = useState('ascending');
 
   const filteredMembers = members.filter((m) => {
@@ -152,9 +198,7 @@ export default function AdminMembersTab() {
       (m.name && m.name.toLowerCase().includes(searchTerm.toLowerCase())) ||
       (m.student_id && m.student_id.toLowerCase().includes(searchTerm.toLowerCase()));
 
-    const matchesRole = roleFilter === 'all' || m.role === roleFilter;
-
-    return matchesSearch && matchesRole;
+    return matchesSearch;
   });
 
   const sortedMembers = [...filteredMembers].sort((a, b) => {
@@ -189,12 +233,43 @@ export default function AdminMembersTab() {
             Browse all user accounts, view profiles, and manage permissions.
           </p>
         </div>
-        <button
-          onClick={() => fetchMembers(true)}
-          className="px-4 py-2 bg-blue-50 text-blue-600 hover:bg-blue-100 font-bold rounded-xl text-sm transition-colors"
-        >
-          Refresh Members
-        </button>
+        <div className="flex gap-2">
+          {isSelectionMode ? (
+            <>
+              <button
+                onClick={() => {
+                  setIsSelectionMode(false);
+                  setSelectedIds([]);
+                }}
+                className="px-4 py-2 bg-slate-100 text-slate-600 hover:bg-slate-200 font-bold rounded-xl text-sm transition-colors"
+              >
+                Cancel Selection
+              </button>
+              <button
+                onClick={handleBulkDelete}
+                disabled={selectedIds.length === 0}
+                className="px-4 py-2 bg-red-600 text-white hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed font-bold rounded-xl text-sm transition-colors"
+              >
+                Confirm Delete ({selectedIds.length})
+              </button>
+            </>
+          ) : (
+            <>
+              <button
+                onClick={() => setIsSelectionMode(true)}
+                className="px-4 py-2 bg-red-50 text-red-600 hover:bg-red-100 font-bold rounded-xl text-sm transition-colors"
+              >
+                Delete Multiple
+              </button>
+              <button
+                onClick={() => fetchMembers(true)}
+                className="px-4 py-2 bg-blue-50 text-blue-600 hover:bg-blue-100 font-bold rounded-xl text-sm transition-colors"
+              >
+                Refresh Members
+              </button>
+            </>
+          )}
+        </div>
       </div>
 
       {/* Filter and Search Bar */}
@@ -206,15 +281,6 @@ export default function AdminMembersTab() {
           onChange={(e) => setSearchTerm(e.target.value)}
           className="flex-1 px-4 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-blue-500 font-semibold text-sm"
         />
-        <select
-          value={roleFilter}
-          onChange={(e) => setRoleFilter(e.target.value)}
-          className="px-4 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-blue-500 font-semibold text-sm bg-white"
-        >
-          <option value="all">All Roles</option>
-          <option value="student">Student Only</option>
-          <option value="admin">Admin Only</option>
-        </select>
         <select
           value={sortOption}
           onChange={(e) => setSortOption(e.target.value)}
@@ -241,11 +307,26 @@ export default function AdminMembersTab() {
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="border-b border-slate-200 bg-slate-50 text-slate-500 uppercase text-[11px] font-bold tracking-wider">
+                  {isSelectionMode && (
+                    <th className="py-3 px-4 w-12 text-center">
+                      <input
+                        type="checkbox"
+                        checked={selectedIds.length === sortedMembers.length && sortedMembers.length > 0}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setSelectedIds(sortedMembers.map(m => m.id));
+                          } else {
+                            setSelectedIds([]);
+                          }
+                        }}
+                        className="rounded border-slate-300 text-blue-600 focus:ring-blue-500 w-4 h-4 cursor-pointer"
+                      />
+                    </th>
+                  )}
                   <th className="py-3 px-4">Member Name & Email</th>
                   <th className="py-3 px-4">Student ID</th>
                   <th className="py-3 px-4">Session</th>
                   <th className="py-3 px-4">Team</th>
-                  <th className="py-3 px-4">Role</th>
                   <th className="py-3 px-4">Status</th>
                   <th className="py-3 px-4 text-right">Actions</th>
                 </tr>
@@ -260,6 +341,22 @@ export default function AdminMembersTab() {
                       key={m.id}
                       className="hover:bg-slate-50/70 transition-colors"
                     >
+                      {isSelectionMode && (
+                        <td className="py-3 px-4 w-12 text-center" onClick={(e) => e.stopPropagation()}>
+                          <input
+                            type="checkbox"
+                            checked={selectedIds.includes(m.id)}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setSelectedIds(prev => [...prev, m.id]);
+                              } else {
+                                setSelectedIds(prev => prev.filter(id => id !== m.id));
+                              }
+                            }}
+                            className="rounded border-slate-300 text-blue-600 focus:ring-blue-500 w-4 h-4 cursor-pointer"
+                          />
+                        </td>
+                      )}
                       <td
                         className="py-3 px-4 cursor-pointer"
                         onClick={() => setDetailsModalData(m)}
@@ -277,11 +374,6 @@ export default function AdminMembersTab() {
                         ) : (
                           <span className="text-slate-400 text-xs italic">No Team</span>
                         )}
-                      </td>
-                      <td className="py-3 px-4">
-                        <span className="px-2.5 py-1 rounded-md bg-slate-100 text-slate-700 font-bold text-xs uppercase">
-                          {m.role}
-                        </span>
                       </td>
                       <td className="py-3 px-4">
                         {m.is_banned ? (

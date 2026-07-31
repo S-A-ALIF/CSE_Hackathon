@@ -1,51 +1,81 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-
-const PROBLEMS = [
-  {
-    id: 1,
-    track: 'AI & Data Analytics',
-    title: 'Smart Campus AI Assistant & Analytics Platform',
-    difficulty: 'Advanced',
-    description: 'Design and develop an intelligent AI agent system that helps university students navigate coursework, campus facilities, and academic counseling while providing real-time analytics to administration.',
-    criteria: ['Real-time LLM integration', 'Data visualization dashboard', 'Role-based access control (Student, Tutor, Admin)'],
-    prize: 'Gold Award'
-  },
-  {
-    id: 2,
-    track: 'Healthcare Tech',
-    title: 'Telemedicine & Rural Healthcare Accessibility App',
-    difficulty: 'Intermediate',
-    description: 'Create an offline-first telemedicine web application that enables rural patients to schedule consultations, track prescriptions, and receive automated diagnostic follow-ups.',
-    criteria: ['Offline caching capability', 'HIPAA-compliant data handling', 'Low-bandwidth video/voice consultation fallback'],
-    prize: 'Silver Award'
-  },
-  {
-    id: 3,
-    track: 'EdTech',
-    title: 'Adaptive Learning & Mentorship Portal',
-    difficulty: 'Intermediate',
-    description: 'Build a personalized mentorship platform that connects students with tutors based on learning styles, schedule availability, and mastery of specific course topics.',
-    criteria: ['Algorithmic mentor-student matching', 'Interactive collaborative whiteboard', 'Gamified progress tracking'],
-    prize: 'Silver Award'
-  },
-  {
-    id: 4,
-    track: 'Sustainable Energy',
-    title: 'IoT Energy Efficiency & Carbon Footprint Monitor',
-    difficulty: 'Advanced',
-    description: 'Develop an IoT sensor telemetry dashboard that monitors campus electricity consumption in real time and suggests automated power-saving interventions.',
-    criteria: ['Time-series telemetry ingestion', 'Anomaly detection alerts', 'Predictive carbon savings reports'],
-    prize: 'Gold Award'
-  }
-];
+import jsPDF from 'jspdf';
+import { API_URL } from '../config';
 
 export default function ProblemsPage({ inDashboard = false }) {
   const [selectedTrack, setSelectedTrack] = useState('All');
+  const [problems, setProblems] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchProblems = async () => {
+      try {
+        const res = await fetch(`${API_URL}/api/v1/problems`, {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+          }
+        });
+        const data = await res.json();
+        if (data.success) {
+          setProblems(data.data);
+        }
+      } catch (error) {
+        console.error('Failed to load problems', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchProblems();
+  }, []);
+
+  const downloadPDF = (problem) => {
+    const doc = new jsPDF();
+    let y = 20;
+
+    doc.setFontSize(20);
+    doc.setFont("helvetica", "bold");
+    const titleLines = doc.splitTextToSize(problem.title, 170);
+    doc.text(titleLines, 20, y);
+    y += (titleLines.length * 10) + 10;
+
+    doc.setFontSize(12);
+    doc.setFont("helvetica", "normal");
+    doc.text(`Track: ${problem.track}`, 20, y);
+    y += 8;
+    doc.text(`Difficulty: ${problem.difficulty}`, 20, y);
+    y += 15;
+
+    doc.setFont("helvetica", "bold");
+    doc.text("Description:", 20, y);
+    y += 8;
+    doc.setFont("helvetica", "normal");
+    const descLines = doc.splitTextToSize(problem.description, 170);
+    doc.text(descLines, 20, y);
+    y += (descLines.length * 7) + 10;
+
+    doc.setFont("helvetica", "bold");
+    doc.text("Evaluation Criteria:", 20, y);
+    y += 8;
+    doc.setFont("helvetica", "normal");
+    problem.criteria.forEach((item) => {
+      const criteriaLines = doc.splitTextToSize(`• ${item}`, 170);
+      doc.text(criteriaLines, 25, y);
+      y += (criteriaLines.length * 7);
+    });
+    
+    y += 10;
+    doc.setFont("helvetica", "bold");
+    doc.text(`Prize: ${problem.prize}`, 20, y);
+
+    doc.save(`Problem_${problem.id}_${problem.title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.pdf`);
+  };
 
   const filteredProblems = selectedTrack === 'All'
-    ? PROBLEMS
-    : PROBLEMS.filter(p => p.track === selectedTrack);
+    ? problems
+    : problems.filter(p => p.track === selectedTrack);
+
+  const uniqueTracks = ['All', ...new Set(problems.map(p => p.track))];
 
   return (
     <div className={inDashboard ? 'py-2' : 'min-h-screen bg-slate-50 py-12 px-4 sm:px-6 lg:px-8'}>
@@ -63,27 +93,33 @@ export default function ProblemsPage({ inDashboard = false }) {
           <p className="mt-2 text-base sm:text-lg text-slate-600">Select a problem statement for your team and build a winning solution.</p>
         </div>
 
-        {/* Filters */}
-        <div className="flex flex-wrap gap-2">
-          {['All', 'AI & Data Analytics', 'Healthcare Tech', 'EdTech', 'Sustainable Energy'].map((track) => (
-            <button
-              key={track}
-              onClick={() => setSelectedTrack(track)}
-              className={`px-4 py-2 rounded-xl text-sm font-bold transition-all ${
-                selectedTrack === track
-                  ? 'bg-blue-600 text-white shadow-md shadow-blue-500/30'
-                  : 'bg-white text-slate-700 hover:bg-slate-100 border border-slate-200'
-              }`}
-            >
-              {track}
-            </button>
-          ))}
-        </div>
+        {loading ? (
+          <div className="flex justify-center py-20">
+            <div className="animate-spin rounded-full h-12 w-12 border-4 border-blue-600 border-t-transparent"></div>
+          </div>
+        ) : (
+          <>
+            {/* Filters */}
+            <div className="flex flex-wrap gap-2">
+              {uniqueTracks.map((track) => (
+                <button
+                  key={track}
+                  onClick={() => setSelectedTrack(track)}
+                  className={`px-4 py-2 rounded-xl text-sm font-bold transition-all ${
+                    selectedTrack === track
+                      ? 'bg-blue-600 text-white shadow-md shadow-blue-500/30'
+                      : 'bg-white text-slate-700 hover:bg-slate-100 border border-slate-200'
+                  }`}
+                >
+                  {track}
+                </button>
+              ))}
+            </div>
 
-        {/* Problems Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {filteredProblems.map((problem) => (
-            <div key={problem.id} className="bg-white rounded-3xl p-5 sm:p-8 border border-slate-200 shadow-sm hover:shadow-md transition-all flex flex-col justify-between">
+            {/* Problems Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {filteredProblems.map((problem) => (
+                <div key={problem.id} className="bg-white rounded-3xl p-5 sm:p-8 border border-slate-200 shadow-sm hover:shadow-md transition-all flex flex-col justify-between">
               <div>
                 <div className="flex items-center justify-between mb-4">
                   <span className="px-3 py-1 bg-blue-100 text-blue-700 font-bold text-xs rounded-full uppercase tracking-wider">
@@ -114,16 +150,32 @@ export default function ProblemsPage({ inDashboard = false }) {
                 <span className="text-sm font-bold text-amber-600 flex items-center gap-1">
                   <span>🏆</span> {problem.prize}
                 </span>
-                <Link
-                  to="/project"
-                  className="px-5 py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-bold text-sm rounded-xl transition-colors"
-                >
-                  Select Problem
-                </Link>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => downloadPDF(problem)}
+                    className="px-4 py-2.5 bg-blue-50 hover:bg-blue-100 text-blue-700 font-bold text-sm rounded-xl transition-colors flex items-center gap-2"
+                  >
+                    <span>📄</span> PDF
+                  </button>
+                  <Link
+                    to="/project"
+                    className="px-5 py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-bold text-sm rounded-xl transition-colors"
+                  >
+                    Select
+                  </Link>
+                </div>
               </div>
             </div>
           ))}
+          {filteredProblems.length === 0 && (
+            <div className="col-span-full text-center py-20 bg-white rounded-3xl border border-slate-200">
+              <h3 className="text-xl font-bold text-slate-800">No problem statements found</h3>
+              <p className="text-slate-500 mt-2">The administrators haven't published any problems for this track yet.</p>
+            </div>
+          )}
         </div>
+        </>
+        )}
       </div>
     </div>
   );

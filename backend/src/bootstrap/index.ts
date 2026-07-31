@@ -92,6 +92,16 @@ const server = app.listen(PORT, () => {
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             UNIQUE(team_id, user_id)
         );
+        CREATE TABLE IF NOT EXISTS problems (
+            id SERIAL PRIMARY KEY,
+            track VARCHAR(255) NOT NULL,
+            title VARCHAR(255) NOT NULL,
+            difficulty VARCHAR(50) NOT NULL,
+            description TEXT NOT NULL,
+            criteria JSONB NOT NULL,
+            prize VARCHAR(255) NOT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
         CREATE TABLE IF NOT EXISTS platform_settings (
             key VARCHAR(50) PRIMARY KEY,
             value TEXT NOT NULL

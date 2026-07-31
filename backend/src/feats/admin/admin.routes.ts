@@ -15,7 +15,9 @@ import {
     toggleWorkspace,
     toggleProblems,
     updateTeamLimits,
-    updateRegistrationTimeline
+    updateRegistrationTimeline,
+    deleteMultipleMembers,
+    deleteMultipleTeams
 } from './admin.controller';
 
 const router = Router();
@@ -28,11 +30,13 @@ router.get('/stats', getStats);
 
 // Teams Management
 router.get('/teams', getAllTeams);
+router.post('/teams/bulk-delete', deleteMultipleTeams);
 router.patch('/teams/:id', validateRequest(adminSchemas.updateTeam), updateTeam);
 router.delete('/teams/:id', deleteTeam);
 
 // Members Management
 router.get('/members', getAllMembers);
+router.post('/members/bulk-delete', deleteMultipleMembers);
 router.patch('/members/:id', validateRequest(adminSchemas.updateMember), updateMember);
 router.delete('/members/:id', deleteMember);
 

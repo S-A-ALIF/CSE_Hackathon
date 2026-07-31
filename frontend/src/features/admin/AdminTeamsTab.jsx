@@ -29,6 +29,10 @@ export default function AdminTeamsTab() {
   // Menu open state
   const [openMenuId, setOpenMenuId] = useState(null);
 
+  // Selection mode state
+  const [isSelectionMode, setIsSelectionMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState([]);
+
   const fetchTeams = async (force = false) => {
     if (!force && adminCache.isFresh('teams')) {
       setTeams(adminCache.teams);
@@ -117,6 +121,48 @@ export default function AdminTeamsTab() {
       requireInput: true,
       requireInputText: "delete",
       onConfirm: () => executeDeleteTeam(teamId)
+    });
+  };
+
+  const executeBulkDelete = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch(`${API_URL}/api/v1/admin/teams/bulk-delete`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ ids: selectedIds })
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        toast.success(data.message || 'Teams deleted successfully');
+        setConfirmConfig(prev => ({ ...prev, isOpen: false }));
+        setIsSelectionMode(false);
+        setSelectedIds([]);
+        adminCache.invalidate();
+        fetchTeams(true);
+      } else {
+        toast.error(data.message || 'Failed to delete teams');
+      }
+    } catch (err) {
+      console.error('Error in bulk delete:', err);
+      toast.error('Error deleting teams');
+    }
+  };
+
+  const handleBulkDelete = () => {
+    if (selectedIds.length === 0) return;
+    setConfirmConfig({
+      isOpen: true,
+      title: "Delete Selected Teams?",
+      message: `Are you sure you want to permanently delete ${selectedIds.length} teams? This action cannot be undone.`,
+      confirmText: `Delete ${selectedIds.length} Teams`,
+      variant: "danger",
+      requireInput: true,
+      requireInputText: "delete",
+      onConfirm: () => executeBulkDelete()
     });
   };
 
@@ -235,18 +281,59 @@ export default function AdminTeamsTab() {
         </div>
 
         <div className="flex items-center gap-3">
-          <button
-            onClick={toggleExpandAll}
-            className="px-4 py-2 bg-slate-100 text-slate-700 hover:bg-slate-200 font-bold rounded-xl text-sm transition-colors"
-          >
-            {Object.keys(expandedTeams).length === teams.length ? 'Collapse All' : 'Expand All'}
-          </button>
-          <button
-            onClick={() => fetchTeams(true)}
-            className="px-4 py-2 bg-blue-50 text-blue-600 hover:bg-blue-100 font-bold rounded-xl text-sm transition-colors"
-          >
-            Refresh
-          </button>
+          {isSelectionMode ? (
+            <>
+              <button
+                onClick={() => {
+                  if (selectedIds.length === filteredTeams.length) {
+                    setSelectedIds([]);
+                  } else {
+                    setSelectedIds(filteredTeams.map(t => t.id));
+                  }
+                }}
+                className="px-4 py-2 bg-blue-50 text-blue-600 hover:bg-blue-100 font-bold rounded-xl text-sm transition-colors"
+              >
+                {selectedIds.length === filteredTeams.length && filteredTeams.length > 0 ? 'Deselect All' : 'Select All'}
+              </button>
+              <button
+                onClick={() => {
+                  setIsSelectionMode(false);
+                  setSelectedIds([]);
+                }}
+                className="px-4 py-2 bg-slate-100 text-slate-600 hover:bg-slate-200 font-bold rounded-xl text-sm transition-colors"
+              >
+                Cancel Selection
+              </button>
+              <button
+                onClick={handleBulkDelete}
+                disabled={selectedIds.length === 0}
+                className="px-4 py-2 bg-red-600 text-white hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed font-bold rounded-xl text-sm transition-colors"
+              >
+                Confirm Delete ({selectedIds.length})
+              </button>
+            </>
+          ) : (
+            <>
+              <button
+                onClick={() => setIsSelectionMode(true)}
+                className="px-4 py-2 bg-red-50 text-red-600 hover:bg-red-100 font-bold rounded-xl text-sm transition-colors"
+              >
+                Delete Multiple
+              </button>
+              <button
+                onClick={toggleExpandAll}
+                className="px-4 py-2 bg-slate-100 text-slate-700 hover:bg-slate-200 font-bold rounded-xl text-sm transition-colors"
+              >
+                {Object.keys(expandedTeams).length === teams.length ? 'Collapse All' : 'Expand All'}
+              </button>
+              <button
+                onClick={() => fetchTeams(true)}
+                className="px-4 py-2 bg-blue-50 text-blue-600 hover:bg-blue-100 font-bold rounded-xl text-sm transition-colors"
+              >
+                Refresh
+              </button>
+            </>
+          )}
         </div>
       </div>
 
@@ -284,11 +371,29 @@ export default function AdminTeamsTab() {
               >
                 {/* Team Header Row */}
                 <div className={`p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:bg-slate-50/50 transition-colors ${isExpanded ? 'rounded-t-2xl' : 'rounded-2xl'}`}>
-                  <div className="flex items-center gap-4 flex-1 cursor-pointer" onClick={() => toggleExpand(team.id)}>
-                    <span className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center font-bold text-lg shrink-0">
-                      {isExpanded ? '▼' : '▶'}
-                    </span>
-                    <div className="min-w-0">
+                  <div className="flex items-center gap-4 flex-1 cursor-pointer" onClick={() => !isSelectionMode && toggleExpand(team.id)}>
+                    {isSelectionMode ? (
+                      <div className="shrink-0 pl-1 pr-2 flex items-center justify-center">
+                        <input
+                          type="checkbox"
+                          checked={selectedIds.includes(team.id)}
+                          onChange={(e) => {
+                            e.stopPropagation();
+                            if (e.target.checked) {
+                              setSelectedIds(prev => [...prev, team.id]);
+                            } else {
+                              setSelectedIds(prev => prev.filter(id => id !== team.id));
+                            }
+                          }}
+                          className="rounded border-slate-300 text-blue-600 focus:ring-blue-500 w-5 h-5 cursor-pointer"
+                        />
+                      </div>
+                    ) : (
+                      <span className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center font-bold text-lg shrink-0">
+                        {isExpanded ? '▼' : '▶'}
+                      </span>
+                    )}
+                    <div className="min-w-0" onClick={(e) => isSelectionMode && toggleExpand(team.id)}>
                       <div className="flex items-center gap-2 flex-wrap">
                         <h3 className="font-black text-slate-900 text-base sm:text-lg truncate">{team.name}</h3>
                         {team.is_banned && (

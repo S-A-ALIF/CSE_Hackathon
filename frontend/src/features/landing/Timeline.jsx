@@ -30,9 +30,9 @@ export default function Timeline() {
   const timeline = [
     { title: 'Registration Opens', desc: `Teams register via the portal. Each team must have ${minSize}–${maxSize} members.` },
     { title: 'Registration Closes', desc: 'All registrations must be completed before this deadline.' },
-    { title: 'Problem Statement Released', desc: 'The hackathon problem set is published to all registered teams withing 3 to 6 hours after the registration begins.' },
+    { title: 'Problem Statement Released', desc: 'The hackathon problem set is published to all registered teams within 3 to 6 hours after the registration begins.' },
     { title: 'Hackathon starts', desc: '48 to 52 hour coding begins. Teams build, present, and compete.' },
-    { title: 'Registration closure', desc: 'The registration system will be closed 12hour before the finalized hackathon deadline.' },
+    { title: 'Registration closure', desc: 'The registration system will be closed 12 hour before the finalized hackathon deadline.' },
     { title: 'Final Presentations', desc: 'Teams present their projects to the judging panel.' },
     { title: 'Results & Awards', desc: 'Winners announced and prizes distributed.' },
   ];

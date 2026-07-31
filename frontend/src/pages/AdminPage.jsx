@@ -7,6 +7,7 @@ import AdminTeamsTab from '../features/admin/AdminTeamsTab';
 import AdminMembersTab from '../features/admin/AdminMembersTab';
 import AdminControlTab from '../features/admin/AdminControlTab';
 import AdminSettingsTab from '../features/admin/AdminSettingsTab';
+import AdminProblemsTab from '../features/admin/AdminProblemsTab';
 import NotificationDropdown from '../components/NotificationDropdown';
 import ProfilePage from './ProfilePage';
 
@@ -159,6 +160,11 @@ export default function AdminPage() {
             {visitedTabs.control && (
               <div className={activeTab === 'control' ? 'block' : 'hidden'}>
                 <AdminControlTab />
+              </div>
+            )}
+            {visitedTabs.problemsets && (
+              <div className={activeTab === 'problemsets' ? 'block' : 'hidden'}>
+                <AdminProblemsTab />
               </div>
             )}
             {visitedTabs.settings && (

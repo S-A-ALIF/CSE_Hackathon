@@ -5,6 +5,7 @@ import userRoutes from '../feats/user/user.routes';
 import notificationRoutes from '../feats/notification/notification.routes';
 import teamRoutes from '../feats/team/team.routes';
 import adminRoutes from '../feats/admin/admin.routes';
+import problemRoutes from '../feats/problem/problem.routes';
 
 const router = Router();
 
@@ -38,5 +39,6 @@ router.use('/users', userRoutes);
 router.use('/notifications', notificationRoutes);
 router.use('/teams', teamRoutes);
 router.use('/admin', adminRoutes);
+router.use('/problems', problemRoutes);
 
 export default router;

@@ -1,32 +1,52 @@
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 
 export default function Home() {
   const { registrationOpen, regStartTime, regEndTime } = useAuth();
 
-  const formatTime = (timeString) => {
-    if (!timeString) return '';
-    return new Date(timeString).toLocaleString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      hour: 'numeric',
-      minute: '2-digit'
-    });
+  const [now, setNow] = useState(new Date().getTime());
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setNow(new Date().getTime());
+    }, 1000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const getCountdown = (targetTime) => {
+    const distance = new Date(targetTime).getTime() - now;
+    if (distance <= 0) return null;
+
+    const d = Math.floor(distance / (1000 * 60 * 60 * 24));
+    const h = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+    const m = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+    const s = Math.floor((distance % (1000 * 60)) / 1000);
+
+    const pad = (num) => String(num).padStart(2, '0');
+    
+    if (d > 0) {
+      return `${d}d ${pad(h)}h ${pad(m)}m ${pad(s)}s`;
+    }
+    return `${pad(h)}h ${pad(m)}m ${pad(s)}s`;
   };
 
   const getTimelineMessage = () => {
-    if (regStartTime && regEndTime) {
-      return `Registration: ${formatTime(regStartTime)} - ${formatTime(regEndTime)}`;
+    const startTimeTime = regStartTime ? new Date(regStartTime).getTime() : 0;
+    const endTimeTime = regEndTime ? new Date(regEndTime).getTime() : 0;
+
+    if (regStartTime && startTimeTime > now) {
+      return `Registration opens in: ${getCountdown(regStartTime)}`;
     }
-    if (regStartTime) {
-      return `Registration starts on ${formatTime(regStartTime)}`;
+    
+    if (regEndTime && endTimeTime > now) {
+      return `Registration closes in: ${getCountdown(regEndTime)}`;
     }
-    if (regEndTime) {
-      return `Registration ends on ${formatTime(regEndTime)}`;
-    }
+
     if (!registrationOpen) {
       return "Registration closed for now";
     }
+    
     return null;
   };
 

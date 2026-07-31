@@ -185,6 +185,7 @@ export const getAllMembers = async (req: Request, res: Response) => {
             LEFT JOIN user_info ui ON u.id = ui.user_id
             LEFT JOIN team_members tm ON u.id = tm.user_id
             LEFT JOIN teams t ON tm.team_id = t.id
+            WHERE u.role != 'admin'
             ORDER BY u.created_at DESC
         `;
         const result = await pool.query(query);
@@ -474,5 +475,65 @@ export const updateRegistrationTimeline = async (req: Request, res: Response) =>
     } catch (error) {
         console.error('Error updating registration timeline:', error);
         res.status(500).json({ status: 'error', success: false, message: 'Failed to update registration timeline' });
+    }
+};
+
+/**
+ * DELETE /api/v1/admin/members/bulk-delete
+ * Bulk delete members with admin protection
+ */
+export const deleteMultipleMembers = async (req: Request, res: Response) => {
+    const { ids } = req.body;
+    
+    if (!Array.isArray(ids) || ids.length === 0) {
+        throw new CustomError('No members selected', 400);
+    }
+
+    try {
+        const result = await pool.query("DELETE FROM users WHERE id = ANY($1) AND role != 'admin' RETURNING id", [ids]);
+        
+        res.status(200).json({
+            status: 'success',
+            success: true,
+            message: `Successfully deleted ${result.rowCount} member(s).`,
+            deletedCount: result.rowCount
+        });
+    } catch (error: any) {
+        console.error('Error in bulk delete members:', error);
+        res.status(error.statusCode || 500).json({
+            status: 'error',
+            success: false,
+            message: error.message || 'Failed to bulk delete members'
+        });
+    }
+};
+
+/**
+ * DELETE /api/v1/admin/teams/bulk-delete
+ * Bulk delete teams
+ */
+export const deleteMultipleTeams = async (req: Request, res: Response) => {
+    const { ids } = req.body;
+    
+    if (!Array.isArray(ids) || ids.length === 0) {
+        throw new CustomError('No teams selected', 400);
+    }
+
+    try {
+        const result = await pool.query('DELETE FROM teams WHERE id = ANY($1) RETURNING id', [ids]);
+        
+        res.status(200).json({
+            status: 'success',
+            success: true,
+            message: `Successfully deleted ${result.rowCount} team(s).`,
+            deletedCount: result.rowCount
+        });
+    } catch (error: any) {
+        console.error('Error in bulk delete teams:', error);
+        res.status(error.statusCode || 500).json({
+            status: 'error',
+            success: false,
+            message: error.message || 'Failed to bulk delete teams'
+        });
     }
 };

@@ -19,6 +19,7 @@ export default function AdminControlTab() {
   const [regEndTime, setRegEndTime] = useState(adminCache.settings?.reg_end_time || '');
   const [savingLimits, setSavingLimits] = useState(false);
   const [savingTimeline, setSavingTimeline] = useState(false);
+  const [clearModal, setClearModal] = useState({ isOpen: false, target: null });
 
   const fetchSettings = async (force = false) => {
     if (!force && adminCache.isFresh('settings')) {
@@ -342,7 +343,7 @@ export default function AdminControlTab() {
                 {regStartTime && (
                   <button
                     type="button"
-                    onClick={() => setRegStartTime('')}
+                    onClick={() => setClearModal({ isOpen: true, target: 'start' })}
                     className="absolute right-12 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400 hover:text-red-500"
                   >
                     Clear
@@ -365,7 +366,7 @@ export default function AdminControlTab() {
                 {regEndTime && (
                   <button
                     type="button"
-                    onClick={() => setRegEndTime('')}
+                    onClick={() => setClearModal({ isOpen: true, target: 'end' })}
                     className="absolute right-12 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400 hover:text-red-500"
                   >
                     Clear
@@ -573,6 +574,39 @@ export default function AdminControlTab() {
                 className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm shadow-lg shadow-blue-600/30 transition-colors"
               >
                 Confirm
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Clear Time Confirmation Modal */}
+      {clearModal.isOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in">
+          <div className="bg-slate-900 border border-slate-700 rounded-2xl p-6 max-w-sm w-full shadow-2xl">
+            <h3 className="text-xl font-bold text-white mb-2">Confirm Clear</h3>
+            <p className="text-slate-300 mb-6">
+              Are you sure you want to clear the registration {clearModal.target === 'start' ? 'start' : 'end'} time?
+            </p>
+            <div className="flex justify-end gap-3">
+              <button
+                onClick={() => setClearModal({ isOpen: false, target: null })}
+                className="px-4 py-2 rounded-xl text-slate-300 hover:text-white hover:bg-slate-800 transition-colors font-medium text-sm"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  if (clearModal.target === 'start') {
+                    setRegStartTime('');
+                  } else {
+                    setRegEndTime('');
+                  }
+                  setClearModal({ isOpen: false, target: null });
+                }}
+                className="px-4 py-2 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-sm shadow-lg shadow-red-600/30 transition-colors"
+              >
+                Clear Time
               </button>
             </div>
           </div>

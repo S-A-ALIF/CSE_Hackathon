@@ -126,10 +126,15 @@ export const teamService = {
     async inviteMember(inviterId: string, inviterEmail: string, teamId: string, inviteeEmail: string) {
         const cleanEmail = inviteeEmail.trim();
         // 1. Check if invitee is registered and whether they are already in a team
-        const targetUserRes = await pool.query('SELECT id, email FROM users WHERE LOWER(email) = LOWER($1)', [cleanEmail]);
+        const targetUserRes = await pool.query("SELECT id, email, role FROM users WHERE LOWER(email) = LOWER($1)", [cleanEmail]);
         if (targetUserRes.rows.length === 0) {
             throw new Error(`No user found with email "${cleanEmail}". They must register an account first.`);
         }
+        
+        if (targetUserRes.rows[0].role === 'admin') {
+            throw new Error(`You cannot invite an administrator to your team.`);
+        }
+        
         const inviteeUserId = targetUserRes.rows[0].id;
         const actualEmail = targetUserRes.rows[0].email;
 
