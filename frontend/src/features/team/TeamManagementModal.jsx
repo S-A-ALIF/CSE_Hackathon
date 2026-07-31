@@ -31,6 +31,7 @@ export default function TeamManagementModal({ isOpen, onClose, team, currentUser
   if (!isOpen || !team) return null;
 
   const isLeader = team.leader_id === currentUser?.id;
+  const pendingInvitations = invitations.filter(inv => inv.status === 'pending');
 
   const executeCancelInvitation = async (invitationId) => {
     const token = localStorage.getItem('token');
@@ -430,9 +431,9 @@ export default function TeamManagementModal({ isOpen, onClose, team, currentUser
             <div className="flex items-center justify-between mb-3">
               <h3 className="text-sm font-bold text-slate-700 uppercase tracking-wider">
                 Pending Invitations
-                {invitations.length > 0 && (
+                {pendingInvitations.length > 0 && (
                   <span className="ml-2 inline-flex items-center justify-center w-5 h-5 bg-blue-100 text-blue-700 text-[10px] font-black rounded-full">
-                    {invitations.length}
+                    {pendingInvitations.length}
                   </span>
                 )}
               </h3>
@@ -451,13 +452,13 @@ export default function TeamManagementModal({ isOpen, onClose, team, currentUser
             </div>
             {invLoading ? (
               <div className="text-center py-4 text-slate-400 text-sm">Loading...</div>
-            ) : invitations.length === 0 ? (
+            ) : pendingInvitations.length === 0 ? (
               <div className="text-center py-4 text-slate-400 text-xs border border-dashed border-slate-200 rounded-xl">
                 No active pending invitations.
               </div>
             ) : (
               <div className="divide-y divide-slate-100 border border-slate-200 rounded-xl overflow-hidden">
-                {invitations.map((inv) => (
+                {pendingInvitations.map((inv) => (
                   <div key={inv.id} className="p-3 bg-slate-50/50 flex items-center justify-between gap-2">
                     <div className="flex-1 min-w-0">
                       <p className="font-semibold text-slate-800 text-sm truncate">

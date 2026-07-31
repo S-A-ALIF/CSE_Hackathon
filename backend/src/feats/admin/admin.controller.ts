@@ -444,6 +444,35 @@ export const updateTeamLimits = async (req: Request, res: Response) => {
         });
     } catch (error) {
         console.error('Error updating team limits:', error);
-        res.status(500).json({ status: 'error', success: false, message: 'Failed to update team limits' });
+        res.status(500).json({ status: 'error', success: false, message: 'Failed to update team size limits' });
+    }
+};
+
+/**
+ * POST /api/v1/admin/settings/registration-timeline
+ * Update reg_start_time and reg_end_time
+ */
+export const updateRegistrationTimeline = async (req: Request, res: Response) => {
+    try {
+        const { reg_start_time, reg_end_time } = req.body;
+
+        await pool.query(
+            "INSERT INTO platform_settings (key, value) VALUES ('reg_start_time', $1) ON CONFLICT (key) DO UPDATE SET value = $1",
+            [reg_start_time || '']
+        );
+        await pool.query(
+            "INSERT INTO platform_settings (key, value) VALUES ('reg_end_time', $1) ON CONFLICT (key) DO UPDATE SET value = $1",
+            [reg_end_time || '']
+        );
+
+        res.status(200).json({
+            status: 'success',
+            success: true,
+            data: { reg_start_time: reg_start_time || '', reg_end_time: reg_end_time || '' },
+            message: 'Registration timeline updated successfully'
+        });
+    } catch (error) {
+        console.error('Error updating registration timeline:', error);
+        res.status(500).json({ status: 'error', success: false, message: 'Failed to update registration timeline' });
     }
 };

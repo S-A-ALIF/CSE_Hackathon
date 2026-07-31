@@ -117,16 +117,12 @@ export default function LoginModal({ isOpen, onClose }) {
           </button>
         </form>
 
-        {registrationOpen ? (
+        {registrationOpen && (
           <div className="mt-6 text-center text-sm text-slate-500">
             Don't have an account?{' '}
             <Link to="/register" onClick={onClose} className="text-blue-600 font-bold hover:underline">
               Register here
             </Link>
-          </div>
-        ) : (
-          <div className="mt-6 text-center text-sm text-amber-600 font-medium">
-            Registration is currently closed by administration.
           </div>
         )}
       </div>

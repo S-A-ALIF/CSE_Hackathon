@@ -17,19 +17,38 @@ export function AuthProvider({ children }) {
   const [registrationOpen, setRegistrationOpen] = useState(true);
   const [workspaceOpen, setWorkspaceOpen] = useState(false);
   const [problemsOpen, setProblemsOpen] = useState(false);
+  const [regStartTime, setRegStartTime] = useState('');
+  const [regEndTime, setRegEndTime] = useState('');
 
   const fetchPlatformSettings = async () => {
     try {
       const res = await fetch(`${API_URL}/api/v1/settings`);
       const data = await res.json();
       if (res.ok && data.success && data.data) {
-        const isRegOpen = data.data.registration_open !== 'false' && data.data.registration_open !== false;
+        let isRegOpen = data.data.registration_open !== 'false' && data.data.registration_open !== false;
+        
+        const startTime = data.data.reg_start_time;
+        const endTime = data.data.reg_end_time;
+        const now = new Date();
+        
+        if (startTime && endTime) {
+          isRegOpen = now >= new Date(startTime) && now <= new Date(endTime);
+        } else if (startTime) {
+          isRegOpen = now >= new Date(startTime);
+        } else if (endTime) {
+          // If only end time is set, it's open until that time
+          // (or false if it was manually closed? Usually timeline overrides, but if manually closed, maybe keep it closed. Let's make it open until end time to be consistent).
+          isRegOpen = now <= new Date(endTime);
+        }
+
         const isWorkOpen = data.data.workspace_open === 'true' || data.data.workspace_open === true;
         const isProbOpen = data.data.problems_open === 'true' || data.data.problems_open === true;
         
         setRegistrationOpen(isRegOpen);
         setWorkspaceOpen(isWorkOpen);
         setProblemsOpen(isProbOpen);
+        setRegStartTime(startTime || '');
+        setRegEndTime(endTime || '');
       }
     } catch (err) {
       console.error('Error fetching platform settings:', err);
@@ -163,7 +182,7 @@ export function AuthProvider({ children }) {
   }
 
   return (
-    <AuthContext.Provider value={{ currentUser, userProfile, setUserProfile, login, register, logout, registrationOpen, workspaceOpen, problemsOpen, fetchPlatformSettings }}>
+    <AuthContext.Provider value={{ currentUser, userProfile, setUserProfile, login, register, logout, registrationOpen, workspaceOpen, problemsOpen, regStartTime, regEndTime, fetchPlatformSettings }}>
       {children}
     </AuthContext.Provider>
   );

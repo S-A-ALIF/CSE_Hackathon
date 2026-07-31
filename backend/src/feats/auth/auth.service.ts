@@ -12,9 +12,24 @@ export const registerUser = async (userData: any): Promise<User> => {
     try {
         await client.query('BEGIN');
 
-        // 0. Check if registration is open
-        const settingRes = await client.query("SELECT value FROM platform_settings WHERE key = 'registration_open'");
-        if (settingRes.rows.length > 0 && settingRes.rows[0].value === 'false') {
+        // 0. Check if registration is open and within timeline
+        const settingsRes = await client.query("SELECT key, value FROM platform_settings WHERE key IN ('registration_open', 'reg_start_time', 'reg_end_time')");
+        const settings = settingsRes.rows.reduce((acc, row) => ({ ...acc, [row.key]: row.value }), {} as Record<string, string>);
+        
+        let isRegOpen = settings.registration_open !== 'false';
+        const startTime = settings.reg_start_time;
+        const endTime = settings.reg_end_time;
+        const now = new Date();
+
+        if (startTime && endTime) {
+            isRegOpen = now >= new Date(startTime) && now <= new Date(endTime);
+        } else if (startTime) {
+            isRegOpen = now >= new Date(startTime);
+        } else if (endTime) {
+            isRegOpen = now <= new Date(endTime);
+        }
+
+        if (!isRegOpen) {
             throw new CustomError('Registration is currently closed by administration.', 403);
         }
 

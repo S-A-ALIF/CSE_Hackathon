@@ -15,13 +15,18 @@ export default function AdminControlTab() {
   const [maxTeamSize, setMaxTeamSize] = useState(
     adminCache.settings ? (adminCache.settings.max_team_members === 'none' ? '' : (adminCache.settings.max_team_members || '5')) : ''
   );
+  const [regStartTime, setRegStartTime] = useState(adminCache.settings?.reg_start_time || '');
+  const [regEndTime, setRegEndTime] = useState(adminCache.settings?.reg_end_time || '');
   const [savingLimits, setSavingLimits] = useState(false);
+  const [savingTimeline, setSavingTimeline] = useState(false);
 
   const fetchSettings = async (force = false) => {
     if (!force && adminCache.isFresh('settings')) {
       setSettings(adminCache.settings);
       setMinTeamSize(adminCache.settings.min_team_members === 'none' ? '' : (adminCache.settings.min_team_members || '3'));
       setMaxTeamSize(adminCache.settings.max_team_members === 'none' ? '' : (adminCache.settings.max_team_members || '5'));
+      setRegStartTime(adminCache.settings.reg_start_time || '');
+      setRegEndTime(adminCache.settings.reg_end_time || '');
       setLoading(false);
       return;
     }
@@ -41,6 +46,8 @@ export default function AdminControlTab() {
         setSettings(data.data);
         setMinTeamSize(data.data.min_team_members === 'none' ? '' : (data.data.min_team_members || '3'));
         setMaxTeamSize(data.data.max_team_members === 'none' ? '' : (data.data.max_team_members || '5'));
+        setRegStartTime(data.data.reg_start_time || '');
+        setRegEndTime(data.data.reg_end_time || '');
       } else {
         toast.error(data.message || 'Failed to load control settings');
       }
@@ -194,6 +201,44 @@ export default function AdminControlTab() {
     }
   };
 
+  const handleSaveRegistrationTimeline = async (e) => {
+    e.preventDefault();
+    setSavingTimeline(true);
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch(`${API_URL}/api/v1/admin/settings/registration-timeline`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          reg_start_time: regStartTime,
+          reg_end_time: regEndTime
+        })
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        toast.success('Registration timeline updated successfully!');
+        const updated = {
+          ...settings,
+          reg_start_time: data.data.reg_start_time,
+          reg_end_time: data.data.reg_end_time
+        };
+        adminCache.set('settings', updated);
+        setSettings(updated);
+        if (fetchPlatformSettings) fetchPlatformSettings();
+      } else {
+        toast.error(data.message || 'Failed to update registration timeline');
+      }
+    } catch (error) {
+      console.error('Error updating registration timeline:', error);
+      toast.error('Error updating registration timeline');
+    } finally {
+      setSavingTimeline(false);
+    }
+  };
+
   const [confirmModal, setConfirmModal] = useState({ isOpen: false, type: null, actionStr: null });
 
   const executeToggle = () => {
@@ -268,6 +313,86 @@ export default function AdminControlTab() {
             ? '🔴 Close Registration'
             : '🟢 Open Registration'}
         </button>
+      </div>
+
+      {/* Registration Timeline Card */}
+      <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+          <div>
+            <h3 className="text-xl font-black text-slate-900">Registration Timeline</h3>
+            <p className="text-slate-600 text-sm mt-1">
+              Set the exact start and end dates/times for registration. This will be publicly displayed on the landing page. Leave blank to hide.
+            </p>
+          </div>
+        </div>
+
+        <form onSubmit={handleSaveRegistrationTimeline} className="space-y-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+            <div>
+              <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-2">
+                Registration Starts At
+              </label>
+              <div className="relative">
+                <input
+                  type="datetime-local"
+                  value={regStartTime}
+                  onChange={(e) => setRegStartTime(e.target.value)}
+                  className="w-full px-4 py-3 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent text-slate-800 font-bold"
+                />
+                {regStartTime && (
+                  <button
+                    type="button"
+                    onClick={() => setRegStartTime('')}
+                    className="absolute right-12 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400 hover:text-red-500"
+                  >
+                    Clear
+                  </button>
+                )}
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-2">
+                Registration Ends At
+              </label>
+              <div className="relative">
+                <input
+                  type="datetime-local"
+                  value={regEndTime}
+                  onChange={(e) => setRegEndTime(e.target.value)}
+                  className="w-full px-4 py-3 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent text-slate-800 font-bold"
+                />
+                {regEndTime && (
+                  <button
+                    type="button"
+                    onClick={() => setRegEndTime('')}
+                    className="absolute right-12 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400 hover:text-red-500"
+                  >
+                    Clear
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+
+          <div className="pt-4 border-t border-slate-100 flex justify-end">
+            <button
+              type="submit"
+              disabled={savingTimeline}
+              className="px-6 py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-bold rounded-xl text-sm transition-all flex items-center gap-2"
+            >
+              {savingTimeline ? (
+                <>
+                  <svg className="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  Saving...
+                </>
+              ) : 'Save Timeline'}
+            </button>
+          </div>
+        </form>
       </div>
 
       {/* Project Workspace Toggle Card */}

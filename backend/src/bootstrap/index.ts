@@ -101,6 +101,8 @@ const server = app.listen(PORT, () => {
         INSERT INTO platform_settings (key, value) VALUES ('problems_open', 'false') ON CONFLICT (key) DO NOTHING;
         INSERT INTO platform_settings (key, value) VALUES ('min_team_members', '3') ON CONFLICT (key) DO NOTHING;
         INSERT INTO platform_settings (key, value) VALUES ('max_team_members', '5') ON CONFLICT (key) DO NOTHING;
+        INSERT INTO platform_settings (key, value) VALUES ('reg_start_time', '') ON CONFLICT (key) DO NOTHING;
+        INSERT INTO platform_settings (key, value) VALUES ('reg_end_time', '') ON CONFLICT (key) DO NOTHING;
     `).catch(err => {
         console.error('Migration error during startup:', err);
     });

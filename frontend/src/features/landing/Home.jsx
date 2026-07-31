@@ -2,7 +2,35 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 
 export default function Home() {
-  const { registrationOpen } = useAuth();
+  const { registrationOpen, regStartTime, regEndTime } = useAuth();
+
+  const formatTime = (timeString) => {
+    if (!timeString) return '';
+    return new Date(timeString).toLocaleString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit'
+    });
+  };
+
+  const getTimelineMessage = () => {
+    if (regStartTime && regEndTime) {
+      return `Registration: ${formatTime(regStartTime)} - ${formatTime(regEndTime)}`;
+    }
+    if (regStartTime) {
+      return `Registration starts on ${formatTime(regStartTime)}`;
+    }
+    if (regEndTime) {
+      return `Registration ends on ${formatTime(regEndTime)}`;
+    }
+    if (!registrationOpen) {
+      return "Registration closed for now";
+    }
+    return null;
+  };
+
+  const timelineMessage = getTimelineMessage();
 
   return (
     <section id="home" className="relative min-h-screen flex flex-col justify-center bg-slate-950 text-white overflow-hidden">
@@ -14,6 +42,16 @@ export default function Home() {
       <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-indigo-600/10 rounded-full blur-3xl pointer-events-none" />
 
       <div className="relative container mx-auto px-6 lg:px-16 z-10 text-center pt-24 pb-16">
+        {/* Timeline Banner */}
+        {timelineMessage && (
+          <div className="flex justify-center mb-4">
+            <div className="inline-flex items-center gap-2 bg-gradient-to-r from-purple-500/10 via-fuchsia-500/10 to-pink-500/10 border border-fuchsia-500/20 text-fuchsia-300 text-sm font-bold tracking-wide px-6 py-2.5 rounded-full shadow-lg shadow-fuchsia-500/5 backdrop-blur-sm animate-pulse-slow">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+              {timelineMessage}
+            </div>
+          </div>
+        )}
+
         {/* Badge */}
         <div className="inline-flex items-center gap-2 bg-blue-500/10 border border-blue-500/20 text-blue-400 text-xs font-bold tracking-widest uppercase px-4 py-2 rounded-full mb-8">
           <span className="w-2 h-2 bg-blue-400 rounded-full animate-pulse" />
