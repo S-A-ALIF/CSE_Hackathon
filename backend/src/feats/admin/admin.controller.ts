@@ -9,7 +9,7 @@ import { CustomError } from '../../error/customErrors';
 export const getStats = async (req: Request, res: Response) => {
     try {
         const [usersCountRes, teamsCountRes, settingsRes] = await Promise.all([
-            pool.query('SELECT COUNT(*) FROM users'),
+            pool.query("SELECT COUNT(*) FROM users WHERE role != 'admin'"),
             pool.query('SELECT COUNT(*) FROM teams'),
             pool.query('SELECT key, value FROM platform_settings')
         ]);

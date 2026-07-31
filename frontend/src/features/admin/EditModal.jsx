@@ -43,15 +43,15 @@ export default function EditModal({ isOpen, onClose, data, type, onSaved }) {
       : `${API_URL}/api/v1/admin/members/${data.id}`;
 
     const bodyData = isTeam
-      ? { name, is_banned: isBanned, ban_reason: isBanned ? banReason : null }
+      ? { name, is_banned: isBanned, ban_reason: isBanned ? banReason : undefined }
       : {
           name,
           role,
-          student_id: studentId,
-          batch_session: batchSession,
-          phone_number: phoneNumber,
+          student_id: studentId || undefined,
+          batch_session: batchSession || undefined,
+          phone_number: phoneNumber || undefined,
           is_banned: isBanned,
-          ban_reason: isBanned ? banReason : null
+          ban_reason: isBanned ? banReason : undefined
         };
 
     try {
@@ -128,15 +128,21 @@ export default function EditModal({ isOpen, onClose, data, type, onSaved }) {
                 </div>
                 <div>
                   <label className="block text-xs font-bold uppercase text-slate-600 mb-1">
-                    Batch / Session
+                    Session
                   </label>
-                  <input
-                    type="text"
+                  <select
                     value={batchSession}
                     onChange={(e) => setBatchSession(e.target.value)}
-                    placeholder="e.g. 2022-23"
-                    className="w-full px-4 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-blue-500 font-semibold text-sm"
-                  />
+                    className="w-full px-4 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-blue-500 font-semibold text-sm bg-white"
+                  >
+                    <option value="" disabled>Select Session</option>
+                    <option value="2020-21">2020-21</option>
+                    <option value="2021-22">2021-22</option>
+                    <option value="2022-23">2022-23</option>
+                    <option value="2023-24">2023-24</option>
+                    <option value="2024-25">2024-25</option>
+                    <option value="2025-26">2025-26</option>
+                  </select>
                 </div>
               </div>
 

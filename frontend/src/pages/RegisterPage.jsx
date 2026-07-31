@@ -147,14 +147,21 @@ export default function RegisterPage() {
               </div>
 
               <div>
-                <label className="block text-xs sm:text-sm font-semibold text-slate-700 mb-1.5">Batch / Session</label>
-                <input 
-                  type="text" 
+                <label className="block text-xs sm:text-sm font-semibold text-slate-700 mb-1.5">Session</label>
+                <select
                   name="batch_session"
                   value={formData.batch_session}
                   onChange={handleChange}
-                  className="w-full px-3.5 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 outline-none text-sm sm:text-base" 
-                />
+                  className="w-full px-3.5 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 outline-none text-sm sm:text-base bg-white"
+                >
+                  <option value="" disabled>Select Session</option>
+                  <option value="2020-21">2020-21</option>
+                  <option value="2021-22">2021-22</option>
+                  <option value="2022-23">2022-23</option>
+                  <option value="2023-24">2023-24</option>
+                  <option value="2024-25">2024-25</option>
+                  <option value="2025-26">2025-26</option>
+                </select>
               </div>
             </div>
 
