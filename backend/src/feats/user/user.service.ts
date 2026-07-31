@@ -80,10 +80,11 @@ export const searchUsers = async (searchQuery: string) => {
                 COALESCE(ui.student_id, '') as student_id
             FROM users u
             LEFT JOIN user_info ui ON u.id = ui.user_id
+            LEFT JOIN team_members tm ON u.id = tm.user_id
             WHERE 
-                u.email ILIKE $1 
-                OR ui.name ILIKE $1 
-                OR ui.student_id ILIKE $1
+                u.role NOT IN ('mentor', 'admin')
+                AND tm.team_id IS NULL
+                AND (u.email ILIKE $1 OR ui.name ILIKE $1 OR ui.student_id ILIKE $1)
             LIMIT 10;
         `;
         const result = await pool.query(query, [`%${searchQuery}%`]);

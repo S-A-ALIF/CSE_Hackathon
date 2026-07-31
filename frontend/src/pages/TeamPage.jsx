@@ -4,7 +4,6 @@ import { useAuth } from '../contexts/AuthContext';
 import { toast } from 'sonner';
 import CreateTeamModal from '../features/team/CreateTeamModal';
 import JoinTeamModal from '../features/team/JoinTeamModal';
-import TeamManagementModal from '../features/team/TeamManagementModal';
 import ConfirmModal from '../components/ConfirmModal';
 import MemberInfoModal from '../features/team/MemberInfoModal';
 import InviteMentorModal from '../features/team/InviteMentorModal';
@@ -19,7 +18,6 @@ export default function TeamPage({ inDashboard = false }) {
 
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isJoinModalOpen, setIsJoinModalOpen] = useState(false);
-  const [isManageModalOpen, setIsManageModalOpen] = useState(false);
   const [isInviteMentorOpen, setIsInviteMentorOpen] = useState(false);
   const [isConfirmLeaveOpen, setIsConfirmLeaveOpen] = useState(false);
   const [selectedMember, setSelectedMember] = useState(null);
@@ -327,16 +325,7 @@ export default function TeamPage({ inDashboard = false }) {
                       )}
                     </span>
                   </div>
-                  {team.leader_id === currentUser?.id ? (
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => setIsManageModalOpen(true)}
-                        className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white font-bold rounded-xl text-xs sm:text-sm transition-colors shadow-sm"
-                      >
-                        Manage Team
-                      </button>
-                    </div>
-                  ) : (
+                  {team.leader_id !== currentUser?.id && (
                     <button
                       onClick={handleLeaveTeam}
                       className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-bold rounded-xl text-xs sm:text-sm transition-colors shadow-sm"
@@ -469,20 +458,6 @@ export default function TeamPage({ inDashboard = false }) {
         isOpen={isJoinModalOpen} 
         onClose={() => setIsJoinModalOpen(false)}
         onSuccess={() => { userCache.invalidate(); fetchTeam(true); }}
-      />
-      <TeamManagementModal
-        isOpen={isManageModalOpen}
-        onClose={() => setIsManageModalOpen(false)}
-        team={team}
-        currentUser={currentUser}
-        onTeamUpdated={() => { userCache.invalidate(); fetchTeam(true); }}
-        invitations={invitations}
-        invLoading={invLoading}
-        onFetchInvitations={() => fetchActiveInvitations(true)}
-        onInvitationCancelled={(id) => {
-          userCache.invalidate('invitations');
-          setInvitations(prev => prev.filter(inv => inv.id !== id));
-        }}
       />
       <InviteMentorModal
         isOpen={isInviteMentorOpen}
