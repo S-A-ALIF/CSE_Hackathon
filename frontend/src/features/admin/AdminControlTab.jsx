@@ -15,8 +15,21 @@ export default function AdminControlTab() {
   const [maxTeamSize, setMaxTeamSize] = useState(
     adminCache.settings ? (adminCache.settings.max_team_members === 'none' ? '' : (adminCache.settings.max_team_members || '5')) : ''
   );
-  const [regStartTime, setRegStartTime] = useState(adminCache.settings?.reg_start_time || '');
-  const [regEndTime, setRegEndTime] = useState(adminCache.settings?.reg_end_time || '');
+  const toLocalDatetimeString = (isoString) => {
+    if (!isoString) return '';
+    if (!isoString.includes('Z')) return isoString; // fallback if not ISO
+    const date = new Date(isoString);
+    const offset = date.getTimezoneOffset() * 60000;
+    return new Date(date.getTime() - offset).toISOString().slice(0, 16);
+  };
+
+  const toUTCString = (localString) => {
+    if (!localString) return '';
+    return new Date(localString).toISOString();
+  };
+
+  const [regStartTime, setRegStartTime] = useState(toLocalDatetimeString(adminCache.settings?.reg_start_time) || '');
+  const [regEndTime, setRegEndTime] = useState(toLocalDatetimeString(adminCache.settings?.reg_end_time) || '');
   const [savingLimits, setSavingLimits] = useState(false);
   const [savingTimeline, setSavingTimeline] = useState(false);
   const [clearModal, setClearModal] = useState({ isOpen: false, target: null });
@@ -42,13 +55,13 @@ export default function AdminControlTab() {
         }
       });
       const data = await res.json();
-      if (res.ok && data.success) {
-        adminCache.set('settings', data.data);
+      if (res.ok && data.success && data.data) {
         setSettings(data.data);
+        adminCache.set('settings', data.data);
         setMinTeamSize(data.data.min_team_members === 'none' ? '' : (data.data.min_team_members || '3'));
         setMaxTeamSize(data.data.max_team_members === 'none' ? '' : (data.data.max_team_members || '5'));
-        setRegStartTime(data.data.reg_start_time || '');
-        setRegEndTime(data.data.reg_end_time || '');
+        setRegStartTime(toLocalDatetimeString(data.data.reg_start_time) || '');
+        setRegEndTime(toLocalDatetimeString(data.data.reg_end_time) || '');
       } else {
         toast.error(data.message || 'Failed to load control settings');
       }
@@ -214,8 +227,8 @@ export default function AdminControlTab() {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          reg_start_time: regStartTime,
-          reg_end_time: regEndTime
+          reg_start_time: toUTCString(regStartTime),
+          reg_end_time: toUTCString(regEndTime)
         })
       });
       const data = await res.json();
