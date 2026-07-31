@@ -28,13 +28,26 @@ export default function Timeline() {
   }, []);
 
   const timeline = [
-    { title: 'Registration Opens', desc: `Teams register via the portal. Each team must have ${minSize}–${maxSize} members.` },
-    { title: 'Registration Closes', desc: 'All registrations must be completed before this deadline.' },
-    { title: 'Problem Statement Released', desc: 'The hackathon problem set is published to all registered teams within 3 to 6 hours after the registration begins.' },
-    { title: 'Hackathon starts', desc: '48 to 52 hour coding begins. Teams build, present, and compete.' },
-    { title: 'Registration closure', desc: 'The registration system will be closed 12 hour before the finalized hackathon deadline.' },
-    { title: 'Final Presentations', desc: 'Teams present their projects to the judging panel.' },
-    { title: 'Results & Awards', desc: 'Winners announced and prizes distributed.' },
+    { 
+      title: 'Registration Window', 
+      desc: `Opens July 31st at 6:00 PM. Late registration remains open until August 1st at 11:59 PM. Teams must have ${minSize}–${maxSize} members. Registration is free. Note: Late registrations receive no time extensions.` 
+    },
+    { 
+      title: 'Phase 1: The Core MVP', 
+      desc: 'July 31, 9:00 PM to August 2, 9:00 PM (48 Hours). The absolute deadline for the core MVP build.' 
+    },
+    { 
+      title: 'Phase 2: The "Steal the Meta" Sprint', 
+      desc: 'August 3, 11:00 AM to August 4, 11:00 AM (24 Hours).' 
+    },
+    { 
+      title: 'Demo Day (Physical Mandatory)', 
+      desc: 'August 4th. Teams must arrive at the venue by 10:00 AM for environment setup. Final presentations begin at 11:00 AM.' 
+    },
+    { 
+      title: 'Results, Prizes & Awards', 
+      desc: "1st Place wins prize money, medals, exclusive certificates, and platform deployment for the department's tournament. All participants receive certificates and snacks!" 
+    },
   ];
 
   return (
