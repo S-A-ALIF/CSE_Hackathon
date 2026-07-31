@@ -2,8 +2,10 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import jsPDF from 'jspdf';
 import { API_URL } from '../config';
+import { useAuth } from '../contexts/AuthContext';
 
 export default function ProblemsPage({ inDashboard = false }) {
+  const { workspaceOpen } = useAuth();
   const [selectedTrack, setSelectedTrack] = useState('All');
   const [problems, setProblems] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -157,12 +159,22 @@ export default function ProblemsPage({ inDashboard = false }) {
                   >
                     <span>📄</span> PDF
                   </button>
-                  <Link
-                    to="/project"
-                    className="px-5 py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-bold text-sm rounded-xl transition-colors"
-                  >
-                    Select
-                  </Link>
+                  {workspaceOpen ? (
+                    <Link
+                      to="/project"
+                      className="px-5 py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-bold text-sm rounded-xl transition-colors"
+                    >
+                      Select
+                    </Link>
+                  ) : (
+                    <button
+                      disabled
+                      className="px-5 py-2.5 bg-slate-100 border border-slate-200 text-slate-400 font-bold text-sm rounded-xl cursor-not-allowed flex items-center gap-1.5"
+                      title="Workspace is currently locked by admin"
+                    >
+                      <span>🔒</span> Locked
+                    </button>
+                  )}
                 </div>
               </div>
             </div>
