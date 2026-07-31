@@ -3,19 +3,19 @@ const rules = [
     id: '01',
     category: 'Development',
     title: 'Required Stack & Architecture',
-    desc: 'Projects must be built using the MERN or PERN stack (Next.js is permitted instead of React). Your codebase must be strictly divided into a separate frontend and backend that communicate exclusively via APIs.',
+    desc: 'Projects must use MERN/PERN stack (Next.js permitted). Codebase must strictly separate frontend and backend. Strictly use Cloudinary for image storage. Open-source libraries (e.g., Socket.io, Prisma, Tailwind) are permitted.',
   },
   {
     id: '02',
     category: 'Tools',
-    title: 'AI Tools & Documentation Permitted',
-    desc: 'AI tools (such as ChatGPT, GitHub Copilot) and online documentation are allowed unless explicitly stated otherwise for a specific challenge.',
+    title: 'AI & Code Comprehension',
+    desc: 'AI tools (ChatGPT, Copilot) and boilerplate templates are allowed. However, Code Comprehension is heavily weighted. If you cannot explain the routing logic or database queries to the judges, your score will be gutted.',
   },
   {
     id: '03',
     category: 'Integrity',
-    title: 'No Code Copying',
-    desc: 'Copying code from another team or participant is strictly prohibited. All code must be written during the hackathon by your own team.',
+    title: 'Intra-Hackathon Plagiarism',
+    desc: 'Copying code from rival teams is strictly prohibited. However, during Phase 2, you are encouraged to conceptually learn from best features showcased by other teams and write that implementation into your own codebase.',
   },
   {
     id: '04',
@@ -46,6 +46,12 @@ const rules = [
     category: 'Presentation',
     title: 'Presence During Judging',
     desc: 'At least one team member must be physically present during the judging phase to present and demo the project.',
+  },
+  {
+    id: '09',
+    category: 'Conduct',
+    title: 'Malicious Sabotage Penalty',
+    desc: 'Organizers will actively audit all peer-to-peer marking. Intentionally giving artificially low marks to a rival to tank their average will result in severe point deductions or disqualification.',
   },
 ];
 

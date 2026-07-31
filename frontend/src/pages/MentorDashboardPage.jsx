@@ -1,15 +1,31 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import { useNavigate, Link } from 'react-router-dom';
 import { API_URL } from '../config';
 import { useAuth } from '../contexts/AuthContext';
 import { toast } from 'sonner';
-import Navbar from '../components/Navbar';
+import NotificationDropdown from '../components/NotificationDropdown';
+import ProfilePage from './ProfilePage';
+import SettingsPage from './SettingsPage';
 
 export default function MentorDashboardPage() {
-  const { currentUser } = useAuth();
+  const { currentUser, logout } = useAuth();
+  const navigate = useNavigate();
+  const [activeTab, setActiveTab] = useState('dashboard');
   const [invitations, setInvitations] = useState([]);
   const [teams, setTeams] = useState([]);
   const [loading, setLoading] = useState(true);
   const [processingId, setProcessingId] = useState(null);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const menuRef = useRef(null);
+
+  // Rejection modal state
+  const [rejectModalState, setRejectModalState] = useState({
+    isOpen: false,
+    invitationId: null,
+    teamName: '',
+    message: ''
+  });
 
   useEffect(() => {
     fetchData();
@@ -36,7 +52,25 @@ export default function MentorDashboardPage() {
     }
   };
 
-  const handleRespond = async (id, accept) => {
+  // Close menu when clicking outside
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (menuRef.current && !menuRef.current.contains(event.target)) {
+        setIsMenuOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [menuRef]);
+
+  const handleLogout = () => {
+    logout();
+    navigate('/');
+  };
+
+  const handleRespond = async (id, accept, message = '') => {
     setProcessingId(id);
     try {
       const token = localStorage.getItem('token');
@@ -46,12 +80,15 @@ export default function MentorDashboardPage() {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ accept })
+        body: JSON.stringify({ accept, message })
       });
       const data = await res.json();
       if (res.ok && data.success) {
         toast.success(data.message || (accept ? 'Invitation accepted' : 'Invitation rejected'));
         fetchData(); // Refresh to update teams list and remove invite
+        if (!accept) {
+          setRejectModalState({ isOpen: false, invitationId: null, teamName: '', message: '' });
+        }
       } else {
         toast.error(data.message || 'Failed to respond to invitation');
       }
@@ -63,15 +100,45 @@ export default function MentorDashboardPage() {
     }
   };
 
+  const openRejectModal = (invId, teamName) => {
+    setRejectModalState({
+      isOpen: true,
+      invitationId: invId,
+      teamName: teamName,
+      message: ''
+    });
+  };
+
   const handleLeaveTeam = async (teamId) => {
     // Optional: Let mentor leave team (implemented if backend supports it, for now we will just show a toast or leave it out as the backend doesn't have an endpoint for mentors leaving teams yet)
     toast.info("Leaving teams as a mentor must be requested through admin currently.");
   };
 
+  const navItems = [
+    {
+      id: 'dashboard',
+      label: 'Dashboard',
+      icon: (
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6A2.25 2.25 0 0 1 6 3.75h2.25A2.25 2.25 0 0 1 10.5 6v2.25a2.25 2.25 0 0 1-2.25 2.25H6a2.25 2.25 0 0 1-2.25-2.25V6ZM3.75 15.75A2.25 2.25 0 0 1 6 13.5h2.25a2.25 2.25 0 0 1 2.25 2.25V18a2.25 2.25 0 0 1-2.25 2.25H6A2.25 2.25 0 0 1 3.75 18v-2.25ZM13.5 6a2.25 2.25 0 0 1 2.25-2.25H18A2.25 2.25 0 0 1 20.25 6v2.25A2.25 2.25 0 0 1 18 10.5h-2.25a2.25 2.25 0 0 1-2.25-2.25V6ZM13.5 15.75a2.25 2.25 0 0 1 2.25-2.25H18a2.25 2.25 0 0 1 2.25 2.25V18A2.25 2.25 0 0 1 18 20.25h-2.25A2.25 2.25 0 0 1 13.5 18v-2.25Z" />
+        </svg>
+      )
+    },
+    {
+      id: 'settings',
+      label: 'Settings',
+      icon: (
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M10.343 3.94c.09-.542.56-.94 1.11-.94h1.093c.55 0 1.02.398 1.11.94l.149.894c.07.424.384.764.78.93.398.164.855.142 1.205-.108l.737-.527a1.125 1.125 0 0 1 1.45.12l.773.774c.39.389.44 1.002.12 1.45l-.527.737c-.25.35-.272.806-.107 1.204.165.397.505.71.93.78l.893.15c.543.09.94.56.94 1.109v1.094c0 .55-.397 1.02-.94 1.11l-.893.149c-.425.07-.765.383-.93.78-.165.398-.143.854.107 1.204l.527.738c.32.447.269 1.06-.12 1.45l-.774.773a1.125 1.125 0 0 1-1.449.12l-.738-.527c-.35-.25-.806-.272-1.203-.107-.397.165-.71.505-.781.929l-.149.894c-.09.542-.56.94-1.11.94h-1.094c-.55 0-1.019-.398-1.11-.94l-.148-.894c-.071-.424-.384-.764-.781-.93-.398-.164-.854-.142-1.204.108l-.738.527c-.447.32-1.06.269-1.45-.12l-.773-.774a1.125 1.125 0 0 1-.12-1.45l.527-.737c.25-.35.273-.806.108-1.204-.165-.397-.505-.71-.93-.78l-.894-.15c-.542-.09-.94-.56-.94-1.109v-1.094c0-.55.398-1.02.94-1.11l.894-.149c.424-.07.765-.383.93-.78.165-.398.143-.854-.107-1.204l-.527-.738a1.125 1.125 0 0 1 .12-1.45l.773-.773a1.125 1.125 0 0 1 1.45-.12l.737.527c.35.25.807.272 1.204.107.397-.165.71-.505.78-.929l.15-.894Z" />
+          <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
+        </svg>
+      )
+    }
+  ];
+
   if (loading) {
     return (
       <div className="min-h-screen bg-slate-50 flex flex-col">
-        <Navbar />
         <div className="flex flex-1 items-center justify-center">
           <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
         </div>
@@ -80,14 +147,138 @@ export default function MentorDashboardPage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      <Navbar />
-      <div className="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8 space-y-12">
-        {/* Header */}
-        <div>
-          <h1 className="text-4xl font-black tracking-tight text-slate-900">Mentor Dashboard</h1>
-          <p className="mt-2 text-lg text-slate-600">Manage your mentorship invitations and view your assigned teams.</p>
+    <div className="min-h-screen bg-slate-50 flex flex-col h-screen overflow-hidden">
+      {/* Top Navbar with Logo on Left, Notif/Profile/Hamburger on Right */}
+      <nav className="bg-slate-900 text-white py-4 px-6 lg:px-12 flex justify-between items-center shadow-md relative z-50 shrink-0">
+        <Link to="/" className="text-2xl font-black tracking-tighter hover:opacity-80 transition-opacity">
+          GSTU<span className="text-blue-500">Hackathon</span>
+        </Link>
+        
+        <div className="flex items-center space-x-4">
+          <NotificationDropdown />
+          
+          <div className="relative flex items-center space-x-4" ref={menuRef}>
+            <button 
+              onClick={() => setActiveTab('profile')}
+              className={`w-10 h-10 rounded-full bg-slate-800 hover:bg-slate-700 border-2 transition-colors flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                activeTab === 'profile' ? 'border-blue-500 bg-slate-700' : 'border-slate-700'
+              }`}
+              title="Profile"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5 text-slate-300">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" />
+              </svg>
+            </button>
+
+            {/* Hamburger Menu */}
+            <button 
+              onClick={() => setIsMenuOpen(!isMenuOpen)}
+              className="p-2 rounded-lg text-slate-300 hover:bg-slate-800 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
+              </svg>
+            </button>
+
+            {isMenuOpen && (
+              <div className="absolute top-full right-0 mt-2 w-56 bg-white text-slate-900 rounded-xl shadow-xl py-2 border border-slate-200 animate-in fade-in slide-in-from-top-2 z-50">
+                <div className="px-4 py-2 border-b border-slate-100 mb-1">
+                  <p className="text-xs text-slate-400 font-semibold">Signed in as Mentor</p>
+                  <p className="text-sm font-bold text-slate-800 truncate">{currentUser?.email}</p>
+                </div>
+                
+                <button 
+                  onClick={() => { setActiveTab('settings'); setIsMenuOpen(false); }}
+                  className="w-full text-left px-4 py-2 text-slate-700 hover:bg-slate-50 transition-colors flex items-center gap-2 font-medium mt-1"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5 text-slate-500">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M10.343 3.94c.09-.542.56-.94 1.11-.94h1.093c.55 0 1.02.398 1.11.94l.149.894c.07.424.384.764.78.93.398.164.855.142 1.205-.108l.737-.527a1.125 1.125 0 0 1 1.45.12l.773.774c.39.389.44 1.002.12 1.45l-.527.737c-.25.35-.272.806-.107 1.204.165.397.505.71.93.78l.893.15c.543.09.94.56.94 1.109v1.094c0 .55-.397 1.02-.94 1.11l-.893.149c-.425.07-.765.383-.93.78-.165.398-.143.854.107 1.204l.527.738c.32.447.269 1.06-.12 1.45l-.774.773a1.125 1.125 0 0 1-1.449.12l-.738-.527c-.35-.25-.806-.272-1.203-.107-.397.165-.71.505-.781.929l-.149.894c-.09.542-.56.94-1.11.94h-1.094c-.55 0-1.019-.398-1.11-.94l-.148-.894c-.071-.424-.384-.764-.781-.93-.398-.164-.854-.142-1.204.108l-.738.527c-.447.32-1.06.269-1.45-.12l-.773-.774a1.125 1.125 0 0 1-.12-1.45l.527-.737c.25-.35.273-.806.108-1.204-.165-.397-.505-.71-.93-.78l-.894-.15c-.542-.09-.94-.56-.94-1.109v-1.094c0-.55.398-1.02.94-1.11l.894-.149c.424-.07.765-.383.93-.78.165-.398.143-.854-.107-1.204l-.527-.738a1.125 1.125 0 0 1 .12-1.45l.773-.773a1.125 1.125 0 0 1 1.45-.12l.737.527c.35.25.807.272 1.204.107.397-.165.71-.505.78-.929l.15-.894Z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
+                  </svg>
+                  Settings
+                </button>
+                
+                <div className="h-px bg-slate-100 my-2"></div>
+
+                <button 
+                  onClick={handleLogout}
+                  className="w-full text-left px-4 py-2 text-red-600 hover:bg-red-50 transition-colors flex items-center gap-2 font-medium mt-1"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5 text-red-500">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 9V5.25A2.25 2.25 0 0 1 10.5 3h6a2.25 2.25 0 0 1 2.25 2.25v13.5A2.25 2.25 0 0 1 16.5 21h-6a2.25 2.25 0 0 1-2.25-2.25V15m-3 0-3-3m0 0 3-3m-3 3H15" />
+                  </svg>
+                  Log Out
+                </button>
+              </div>
+            )}
+          </div>
         </div>
+      </nav>
+
+      {/* Main Body: Left Sidebar + Right Active Tab Content */}
+      <div className="flex-grow flex flex-col md:flex-row h-[calc(100vh-73px)] overflow-hidden">
+        {/* Left Fixed Sidebar */}
+        <aside 
+          className={`bg-slate-900 text-white border-b md:border-b-0 md:border-r border-slate-800 p-2 md:p-4 flex flex-col justify-between shrink-0 relative transition-all duration-300 md:h-full w-full ${
+            isSidebarOpen ? 'md:w-64' : 'md:w-20'
+          }`}
+        >
+          {/* Toggle Button */}
+          <button
+            onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+            className="hidden md:flex absolute -right-3.5 top-6 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 w-7 h-7 rounded-full items-center justify-center shadow-lg transition-transform focus:outline-none z-50"
+            title={isSidebarOpen ? "Collapse Sidebar" : "Expand Sidebar"}
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className={`w-3.5 h-3.5 transition-transform duration-300 ${!isSidebarOpen ? 'rotate-180' : ''}`}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5 8.25 12l7.5-7.5" />
+            </svg>
+          </button>
+
+          <div className="space-y-4 md:space-y-6 overflow-hidden">
+            <div className="hidden md:flex px-2 h-6 items-center">
+              {isSidebarOpen ? (
+                <span className="text-xs uppercase tracking-widest text-slate-400 font-bold block truncate">
+                  Mentor Workspace
+                </span>
+              ) : (
+                <span className="text-xs font-black text-blue-500 mx-auto">MW</span>
+              )}
+            </div>
+
+            <nav className="grid grid-cols-2 gap-1 md:flex md:flex-col md:space-y-2">
+              {navItems.map((item) => {
+                const isActive = activeTab === item.id;
+                return (
+                  <button
+                    key={item.id}
+                    onClick={() => setActiveTab(item.id)}
+                    title={!isSidebarOpen ? item.label : undefined}
+                    className={`flex flex-col md:flex-row items-center justify-center md:justify-start gap-1 md:gap-3 px-2 py-2 md:px-4 md:py-3 rounded-xl font-semibold text-xs md:text-sm transition-all ${
+                      isActive
+                        ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/30'
+                        : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
+                    } ${!isSidebarOpen ? 'md:justify-center md:px-2' : ''}`}
+                  >
+                    <span className="shrink-0">{item.icon}</span>
+                    <span className={`truncate text-[10px] sm:text-xs md:text-sm ${!isSidebarOpen ? 'md:hidden' : ''}`}>{item.label}</span>
+                  </button>
+                );
+              })}
+            </nav>
+          </div>
+          
+          {isSidebarOpen && (
+            <div className="hidden md:block pt-6 border-t border-slate-800 mt-6 px-2">
+              <p className="text-xs text-slate-400 truncate">GSTU CSE Hackathon</p>
+              <p className="text-xs font-bold text-slate-300 mt-0.5 truncate">2026 Edition</p>
+            </div>
+          )}
+        </aside>
+
+        {/* Right Content Area */}
+        <main className="flex-grow p-4 sm:p-6 lg:p-12 overflow-y-auto w-full h-full">
+          {activeTab === 'dashboard' && (
+            <div className="max-w-7xl mx-auto space-y-12">
 
         {/* Pending Invitations Section */}
         <section>
@@ -121,7 +312,7 @@ export default function MentorDashboardPage() {
                     </button>
                     <button
                       disabled={processingId === inv.id}
-                      onClick={() => handleRespond(inv.id, false)}
+                      onClick={() => openRejectModal(inv.id, inv.team_name)}
                       className="flex-1 bg-slate-100 hover:bg-slate-200 disabled:bg-slate-50 text-slate-700 font-bold py-2 rounded-xl border border-slate-200 transition-colors"
                     >
                       Reject
@@ -187,7 +378,65 @@ export default function MentorDashboardPage() {
             </div>
           )}
         </section>
+            </div>
+          )}
+          {activeTab === 'profile' && <ProfilePage inDashboard={true} />}
+          {activeTab === 'settings' && <SettingsPage />}
+        </main>
       </div>
+
+      {/* Reject Modal */}
+      {rejectModalState.isOpen && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+            <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
+              <h3 className="text-lg font-bold text-slate-900">Decline Invitation</h3>
+              <button 
+                onClick={() => setRejectModalState({ isOpen: false, invitationId: null, teamName: '', message: '' })}
+                className="text-slate-400 hover:text-slate-600 transition-colors"
+              >
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+              </button>
+            </div>
+            <div className="p-6">
+              <p className="text-sm text-slate-600 mb-4">
+                You are declining the mentorship invitation from <span className="font-bold text-slate-900">{rejectModalState.teamName}</span>.
+              </p>
+              <div className="mb-4">
+                <label className="block text-sm font-bold text-slate-700 mb-2">Message to team (Optional)</label>
+                <textarea
+                  value={rejectModalState.message}
+                  onChange={(e) => setRejectModalState(prev => ({ ...prev, message: e.target.value }))}
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none h-24"
+                  placeholder="Explain why you are declining this invitation..."
+                ></textarea>
+              </div>
+              <div className="flex gap-3 justify-end mt-6">
+                <button
+                  onClick={() => setRejectModalState({ isOpen: false, invitationId: null, teamName: '', message: '' })}
+                  className="px-4 py-2 text-slate-600 hover:bg-slate-100 font-bold rounded-xl transition-colors"
+                  disabled={processingId === rejectModalState.invitationId}
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => handleRespond(rejectModalState.invitationId, false, rejectModalState.message)}
+                  className="px-6 py-2 bg-red-600 hover:bg-red-700 text-white font-bold rounded-xl transition-colors disabled:opacity-50 flex items-center gap-2"
+                  disabled={processingId === rejectModalState.invitationId}
+                >
+                  {processingId === rejectModalState.invitationId && (
+                    <svg className="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                  )}
+                  Confirm Decline
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

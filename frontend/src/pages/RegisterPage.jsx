@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
+import LoginModal from '../features/authentication/LoginModal';
 import { useAuth } from '../contexts/AuthContext';
 
 export default function RegisterPage() {
@@ -31,6 +32,7 @@ export default function RegisterPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [isLoginOpen, setIsLoginOpen] = useState(false);
 
   if (!registrationOpen) {
     return (
@@ -262,11 +264,26 @@ export default function RegisterPage() {
 
         <div className="mt-6 text-center text-sm">
           <span className="text-slate-600">Already have an account? </span>
-          <Link to="/" className="text-blue-600 font-medium hover:underline">
-            Go to Home to Login
+          <button 
+            type="button"
+            onClick={() => setIsLoginOpen(true)} 
+            className="text-blue-600 font-medium hover:underline focus:outline-none"
+          >
+            Go to login
+          </button>
+        </div>
+        
+        <div className="mt-6 text-center">
+          <Link to="/" className="text-sm font-semibold text-slate-500 hover:text-slate-800 transition-colors inline-flex items-center gap-1.5">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18" />
+            </svg>
+            Back to Landing Page
           </Link>
         </div>
       </div>
+      
+      <LoginModal isOpen={isLoginOpen} onClose={() => setIsLoginOpen(false)} />
     </div>
   );
 }

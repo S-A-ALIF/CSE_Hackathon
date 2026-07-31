@@ -9,7 +9,7 @@ import { CustomError } from '../../error/customErrors';
 export const getStats = async (req: Request, res: Response) => {
     try {
         const [usersCountRes, teamsCountRes, settingsRes] = await Promise.all([
-            pool.query("SELECT COUNT(*) FROM users WHERE role != 'admin'"),
+            pool.query("SELECT role, COUNT(*) FROM users GROUP BY role"),
             pool.query('SELECT COUNT(*) FROM teams'),
             pool.query('SELECT key, value FROM platform_settings')
         ]);
@@ -19,11 +19,23 @@ export const getStats = async (req: Request, res: Response) => {
             settingsMap[r.key] = r.value;
         });
 
+        let totalUsers = 0, totalAdmins = 0, totalMentors = 0, totalStudents = 0;
+        usersCountRes.rows.forEach(r => {
+            const count = parseInt(r.count, 10) || 0;
+            totalUsers += count;
+            if (r.role === 'admin') totalAdmins = count;
+            if (r.role === 'mentor') totalMentors = count;
+            if (r.role === 'student') totalStudents = count;
+        });
+
         res.status(200).json({
             status: 'success',
             success: true,
             data: {
-                totalUsers: parseInt(usersCountRes.rows[0].count, 10) || 0,
+                totalUsers,
+                totalAdmins,
+                totalMentors,
+                totalStudents,
                 totalTeams: parseInt(teamsCountRes.rows[0].count, 10) || 0,
                 settings: settingsMap
             }
@@ -48,8 +60,11 @@ export const getAllTeams = async (req: Request, res: Response) => {
                 t.created_at,
                 t.is_banned,
                 t.ban_reason,
+                t.mentor_id,
                 u.email as leader_email,
                 ui.name as leader_name,
+                m.email as mentor_email,
+                mi.name as mentor_name,
                 COALESCE(
                     (
                         SELECT json_agg(
@@ -73,6 +88,8 @@ export const getAllTeams = async (req: Request, res: Response) => {
             FROM teams t
             LEFT JOIN users u ON t.leader_id = u.id
             LEFT JOIN user_info ui ON u.id = ui.user_id
+            LEFT JOIN users m ON t.mentor_id = m.id
+            LEFT JOIN user_info mi ON m.id = mi.user_id
             ORDER BY t.created_at DESC
         `;
         const result = await pool.query(query);

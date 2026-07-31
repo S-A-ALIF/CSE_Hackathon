@@ -15,7 +15,7 @@ export default function Navbar() {
   const [isLoginOpen, setIsLoginOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
-  const { currentUser, logout } = useAuth();
+  const { currentUser, logout, registrationOpen } = useAuth();
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 20);
@@ -81,14 +81,22 @@ export default function Navbar() {
                 </Link>
               )
             ) : (
-              <>
+              <div className="flex items-center gap-3 ml-6">
                 <button
                   onClick={() => setIsLoginOpen(true)}
-                  className="ml-6 bg-blue-600 hover:bg-blue-500 text-white font-semibold py-2 px-5 rounded-lg shadow-lg shadow-blue-500/30 transition-all text-sm"
+                  className="text-slate-300 hover:text-white font-semibold py-2 px-3 transition-colors text-sm"
                 >
                   Sign In
                 </button>
-              </>
+                {registrationOpen && (
+                  <Link
+                    to="/register"
+                    className="bg-blue-600 hover:bg-blue-500 text-white font-semibold py-2 px-5 rounded-lg shadow-lg shadow-blue-500/30 transition-all text-sm"
+                  >
+                    Register
+                  </Link>
+                )}
+              </div>
             )}
           </div>
 
@@ -122,22 +130,38 @@ export default function Navbar() {
             <div className="pt-3 border-t border-white/5 flex gap-3">
               {currentUser ? (
                 <div className="flex flex-col gap-2 w-full">
-                  <Link to="/dashboard" className="w-full text-center bg-blue-600 text-white font-semibold py-2 rounded-lg text-sm">
-                    Dashboard
-                  </Link>
-                  {currentUser.role === 'mentor' && (
+                  {currentUser.role === 'admin' ? (
+                    <Link to="/admin" className="w-full text-center bg-red-600 text-white font-semibold py-2 rounded-lg text-sm">
+                      Admin Panel
+                    </Link>
+                  ) : currentUser.role === 'mentor' ? (
                     <Link to="/mentor" className="w-full text-center bg-indigo-600 text-white font-semibold py-2 rounded-lg text-sm">
                       Mentor Dashboard
+                    </Link>
+                  ) : (
+                    <Link to="/dashboard" className="w-full text-center bg-blue-600 text-white font-semibold py-2 rounded-lg text-sm">
+                      Dashboard
                     </Link>
                   )}
                 </div>
               ) : (
-                <button 
-                  onClick={() => { setIsLoginOpen(true); setMobileOpen(false); }} 
-                  className="w-full text-center bg-blue-600 hover:bg-blue-500 text-white font-semibold py-2 rounded-lg text-sm shadow-lg shadow-blue-500/30 transition-all"
-                >
-                  Sign In
-                </button>
+                <div className="flex flex-col gap-2 w-full">
+                  <button 
+                    onClick={() => { setIsLoginOpen(true); setMobileOpen(false); }} 
+                    className="w-full text-center border border-slate-700 text-slate-300 hover:text-white hover:bg-slate-800 font-semibold py-2 rounded-lg text-sm transition-all"
+                  >
+                    Sign In
+                  </button>
+                  {registrationOpen && (
+                    <Link 
+                      to="/register"
+                      onClick={() => setMobileOpen(false)}
+                      className="w-full text-center bg-blue-600 hover:bg-blue-500 text-white font-semibold py-2 rounded-lg text-sm shadow-lg shadow-blue-500/30 transition-all"
+                    >
+                      Register
+                    </Link>
+                  )}
+                </div>
               )}
             </div>
           </div>

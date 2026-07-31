@@ -102,85 +102,7 @@ export default function TeamManagementModal({ isOpen, onClose, team, currentUser
     }
   };
 
-  const executeTransferLeadership = async (memberId) => {
-    setTransferLoading(prev => ({ ...prev, [memberId]: true }));
-    try {
-      const token = localStorage.getItem('token');
-      const res = await fetch(`${API_URL}/api/v1/teams/transfer-leadership`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ newLeaderId: memberId })
-      });
-      const data = await res.json();
-      if (res.ok && data.success) {
-        toast.success(data.message || 'Leadership transferred successfully');
-        setConfirmConfig(prev => ({ ...prev, isOpen: false }));
-        onTeamUpdated();
-      } else {
-        toast.error(data.message || 'Failed to transfer leadership');
-      }
-    } catch (error) {
-      console.error('Error transferring leadership:', error);
-      toast.error('Network error transferring leadership');
-    } finally {
-      setTransferLoading(prev => {
-        const next = { ...prev };
-        delete next[memberId];
-        return next;
-      });
-    }
-  };
 
-  const handleTransferLeadership = (memberId, memberEmail) => {
-    setConfirmConfig({
-      isOpen: true,
-      title: "Transfer Leadership?",
-      message: `Are you sure you want to transfer leadership to ${memberEmail}? You will become a regular member.`,
-      confirmText: "Transfer Leadership",
-      variant: "warning",
-      onConfirm: () => executeTransferLeadership(memberId)
-    });
-  };
-
-  const executeRemoveMember = async (memberId) => {
-    setLoading(true);
-    try {
-      const token = localStorage.getItem('token');
-      const res = await fetch(`${API_URL}/api/v1/teams/members/${memberId}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-      const data = await res.json();
-      if (res.ok && data.success) {
-        toast.success(data.message || 'Member removed');
-        setConfirmConfig(prev => ({ ...prev, isOpen: false }));
-        onTeamUpdated();
-      } else {
-        toast.error(data.message || 'Failed to remove member');
-      }
-    } catch (error) {
-      console.error('Error removing member:', error);
-      toast.error('Network error removing member');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleRemoveMember = (memberId, memberEmail) => {
-    setConfirmConfig({
-      isOpen: true,
-      title: "Remove Member?",
-      message: `Are you sure you want to remove ${memberEmail} from the team?`,
-      confirmText: "Remove",
-      variant: "danger",
-      onConfirm: () => executeRemoveMember(memberId)
-    });
-  };
 
   const executeLeaveTeam = async () => {
     setLoading(true);
@@ -358,7 +280,7 @@ export default function TeamManagementModal({ isOpen, onClose, team, currentUser
 
         <div className="space-y-4 mb-8">
           <div className="flex items-center justify-between">
-            <h3 className="text-sm font-bold text-slate-700 uppercase tracking-wider">Members ({team.members?.length || 0})</h3>
+            <h3 className="text-sm font-bold text-slate-700 uppercase tracking-wider">Team Status</h3>
             {isLeader && (
               <button
                 type="button"
@@ -374,54 +296,12 @@ export default function TeamManagementModal({ isOpen, onClose, team, currentUser
               </button>
             )}
           </div>
-          <div className="divide-y divide-slate-100 border border-slate-200 rounded-xl overflow-hidden">
-            {team.members?.map((member) => (
-              <div key={member.id} className="p-3.5 bg-slate-50/50 flex items-center justify-between hover:bg-slate-100/70 transition-colors">
-                <div 
-                  onClick={() => setSelectedMember(member)}
-                  className="cursor-pointer group flex-1 mr-2"
-                  title="Click to view member profile"
-                >
-                  <div className="flex items-center gap-2">
-                    <p className="font-bold text-slate-800 text-sm group-hover:text-blue-600 transition-colors">
-                      {member.name || member.email}
-                    </p>
-                    {member.id === team.leader_id && (
-                      <span className="px-2 py-0.5 bg-amber-100 text-amber-700 text-[10px] font-bold rounded uppercase">
-                        Leader
-                      </span>
-                    )}
-                  </div>
-                  <p className="text-xs text-slate-500 font-semibold mt-0.5">
-                    Student ID: <span className="text-slate-700">{member.student_id && member.student_id !== 'N/A' ? member.student_id : 'Not provided'}</span>
-                  </p>
-                </div>
-                {isLeader && member.id !== team.leader_id && (
-                  <div className="flex items-center gap-2">
-                    <button
-                      disabled={loading || !!transferLoading[member.id]}
-                      onClick={() => handleTransferLeadership(member.id, member.email)}
-                      className="text-amber-600 hover:text-amber-700 text-xs font-semibold px-2.5 py-1 rounded border border-amber-200 hover:bg-amber-50 transition-colors flex items-center gap-1 disabled:opacity-50"
-                    >
-                      {transferLoading[member.id] && (
-                        <svg className="animate-spin h-3 w-3 text-current" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                        </svg>
-                      )}
-                      Make Leader
-                    </button>
-                    <button
-                      disabled={loading || !!transferLoading[member.id]}
-                      onClick={() => handleRemoveMember(member.id, member.email)}
-                      className="text-red-500 hover:text-red-700 text-xs font-semibold px-2 py-1 rounded border border-red-200 hover:bg-red-50 transition-colors disabled:opacity-50"
-                    >
-                      Remove
-                    </button>
-                  </div>
-                )}
-              </div>
-            ))}
+          <div className="p-4 bg-slate-50 border border-slate-200 rounded-xl">
+            <p className="text-sm text-slate-600">
+              {team.is_full 
+                ? "Your team is currently marked as FULL. No one else can join your team, even if they have the invite code." 
+                : "Your team is OPEN. Anyone with the invite code can join until you reach the maximum member limit."}
+            </p>
           </div>
         </div>
 
@@ -524,7 +404,7 @@ export default function TeamManagementModal({ isOpen, onClose, team, currentUser
         message={confirmConfig.message}
         confirmText={confirmConfig.confirmText}
         variant={confirmConfig.variant}
-        loading={loading || Object.values(transferLoading).some(Boolean) || Object.values(cancelLoading).some(Boolean)}
+        loading={loading || Object.values(cancelLoading).some(Boolean)}
       />
       <MemberInfoModal
         isOpen={!!selectedMember}

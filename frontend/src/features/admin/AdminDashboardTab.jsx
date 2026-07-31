@@ -98,7 +98,21 @@ export default function AdminDashboardTab({ setActiveTab }) {
                 👤
               </span>
             </div>
-            <div className="text-4xl font-black text-slate-900">{stats.totalUsers}</div>
+            <div className="text-4xl font-black text-slate-900">{stats.totalUsers || 0}</div>
+            <div className="mt-4 grid grid-cols-3 gap-2">
+              <div className="bg-slate-50 rounded-xl p-2 text-center border border-slate-100">
+                <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-0.5">Admins</div>
+                <div className="text-lg font-black text-slate-800 leading-none">{stats.totalAdmins || 0}</div>
+              </div>
+              <div className="bg-slate-50 rounded-xl p-2 text-center border border-slate-100">
+                <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-0.5">Mentors</div>
+                <div className="text-lg font-black text-slate-800 leading-none">{stats.totalMentors || 0}</div>
+              </div>
+              <div className="bg-slate-50 rounded-xl p-2 text-center border border-slate-100">
+                <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-0.5">Students</div>
+                <div className="text-lg font-black text-slate-800 leading-none">{stats.totalStudents || 0}</div>
+              </div>
+            </div>
           </div>
           <button
             onClick={() => setActiveTab('members')}

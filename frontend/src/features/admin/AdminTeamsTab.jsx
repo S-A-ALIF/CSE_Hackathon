@@ -472,6 +472,32 @@ export default function AdminTeamsTab() {
                 {/* Expanded Member List */}
                 {isExpanded && (
                   <div className="border-t border-slate-100 bg-slate-50/70 p-4 space-y-2 rounded-b-2xl">
+                    {team.mentor_id && (
+                      <div className="mb-5">
+                        <h4 className="text-xs font-bold uppercase tracking-wider text-purple-500 mb-2 px-2">
+                          Team Mentor
+                        </h4>
+                        <div className="p-3 bg-white rounded-xl border border-purple-100 shadow-sm flex items-center justify-between gap-4">
+                          <div className="flex items-center gap-3">
+                            <span className="w-8 h-8 rounded-lg bg-purple-50 text-purple-600 flex items-center justify-center font-bold text-xs">
+                              🎓
+                            </span>
+                            <div>
+                              <div className="font-bold text-slate-900 text-sm">
+                                {team.mentor_name || 'Unnamed Mentor'}
+                              </div>
+                              <div className="text-xs text-slate-500">
+                                {team.mentor_email}
+                              </div>
+                            </div>
+                          </div>
+                          <span className="px-2.5 py-1 rounded-md bg-purple-50 text-purple-700 text-xs font-bold uppercase">
+                            Mentor
+                          </span>
+                        </div>
+                      </div>
+                    )}
+
                     <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2 px-2">
                       Registered Team Members
                     </h4>

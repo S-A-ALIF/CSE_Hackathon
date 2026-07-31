@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import { API_URL } from '../../config';
 
+
 export default function AdminProblemsTab() {
   const [problems, setProblems] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -165,18 +166,20 @@ export default function AdminProblemsTab() {
     <div className="space-y-6">
       <div className="flex justify-between items-center bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
         <div>
-          <h2 className="text-2xl font-black text-slate-900 tracking-tight">Problemsets</h2>
+          <h2 className="text-2xl font-black text-slate-900 tracking-tight">Problem Statement</h2>
           <p className="text-slate-500 mt-1">Manage hackathon problem statements for users.</p>
         </div>
-        <button
-          onClick={() => handleOpenModal()}
-          className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl shadow-lg shadow-blue-200 transition-colors flex items-center gap-2"
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-          </svg>
-          Publish Problemset
-        </button>
+        {problems.length === 0 && (
+          <button
+            onClick={() => handleOpenModal()}
+            className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl shadow-lg shadow-blue-200 transition-colors flex items-center gap-2"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+            </svg>
+            Publish Problem Statement
+          </button>
+        )}
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -199,7 +202,7 @@ export default function AdminProblemsTab() {
                   onClick={() => confirmDelete(problem.id)}
                   className="px-3 py-1.5 bg-red-50 hover:bg-red-100 text-red-600 font-bold text-xs rounded-lg transition-colors"
                 >
-                  Delete
+                  Clear
                 </button>
               </div>
             </div>
@@ -207,8 +210,8 @@ export default function AdminProblemsTab() {
         ))}
         {problems.length === 0 && (
           <div className="col-span-full py-16 text-center border-2 border-dashed border-slate-200 rounded-3xl">
-            <h3 className="text-xl font-bold text-slate-400">No problems published yet</h3>
-            <p className="text-slate-500 mt-2">Click the button above to publish your first problemset.</p>
+            <h3 className="text-xl font-bold text-slate-400">No problem statement published yet</h3>
+            <p className="text-slate-500 mt-2">Click the button above to publish the hackathon problem statement.</p>
           </div>
         )}
       </div>
@@ -219,7 +222,7 @@ export default function AdminProblemsTab() {
             <div className="p-6 sm:p-8">
               <div className="flex justify-between items-center mb-6">
                 <h3 className="text-2xl font-black text-slate-900">
-                  {editingProblem ? 'Edit Problemset' : 'Publish Problemset'}
+                  {editingProblem ? 'Edit Problem Statement' : 'Publish Problem Statement'}
                 </h3>
                 <button onClick={handleCloseModal} className="text-slate-400 hover:text-slate-600 transition-colors">
                   <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-6 h-6">
@@ -230,16 +233,14 @@ export default function AdminProblemsTab() {
 
               <form onSubmit={handleSubmit} className="space-y-5">
                 <div>
-                  <label className="block text-sm font-bold text-slate-700 mb-1.5">Problem Statement</label>
-                  <textarea
-                    name="description"
-                    value={formData.description}
-                    onChange={handleChange}
-                    required
-                    rows="15"
-                    className="w-full bg-slate-50 border border-slate-200 text-slate-900 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 block p-3 transition-colors resize-y"
-                    placeholder="Paste the complete problem statement here..."
-                  ></textarea>
+                  <label className="block text-sm font-bold text-slate-700 mb-2">Problem Statement</label>
+                  <textarea 
+                    value={formData.description || ''}
+                    onChange={(e) => setFormData({...formData, description: e.target.value})}
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl p-4 text-slate-900 min-h-[300px] focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono text-sm"
+                    placeholder="Enter problem statement using Markdown format..."
+                  />
+                  <p className="text-xs text-slate-500 mt-2 font-medium">Supports Markdown for formatting (e.g. **bold**, *italic*, - lists)</p>
                 </div>
 
                 <div className="pt-4 flex gap-3">
@@ -277,9 +278,9 @@ export default function AdminProblemsTab() {
                 <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
               </svg>
             </div>
-            <h3 className="text-xl font-bold text-slate-900 mb-2">Delete Problemset?</h3>
+            <h3 className="text-xl font-bold text-slate-900 mb-2">Clear Problem Statement?</h3>
             <p className="text-slate-500 mb-6 text-sm">
-              Are you sure you want to delete this problem statement? This action cannot be undone.
+              Are you sure you want to clear the problem statement? This action cannot be undone.
             </p>
             <div className="flex gap-3">
               <button
@@ -302,7 +303,7 @@ export default function AdminProblemsTab() {
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                   </svg>
                 )}
-                Delete
+                Clear
               </button>
             </div>
           </div>

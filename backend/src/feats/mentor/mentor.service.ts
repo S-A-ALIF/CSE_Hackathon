@@ -84,7 +84,7 @@ export const mentorService = {
         return res.rows;
     },
 
-    async respondToInvitation(mentorId: string, invitationId: string, accept: boolean) {
+    async respondToInvitation(mentorId: string, invitationId: string, accept: boolean, message?: string) {
         const client = await pool.connect();
         try {
             await client.query('BEGIN');
@@ -94,10 +94,19 @@ export const mentorService = {
             if (!inv) throw new Error('Invitation not found');
             if (inv.status !== 'pending') throw new Error('Invitation already processed');
 
+            // Fetch team to get leader email
+            const teamRes = await client.query('SELECT mentor_id, name, leader_id FROM teams WHERE id = $1', [inv.team_id]);
+            const team = teamRes.rows[0];
+            if (!team) throw new Error('Team not found');
+
+            const leaderEmailRes = await client.query('SELECT email FROM users WHERE id = $1', [team.leader_id]);
+            const leaderEmail = leaderEmailRes.rows[0]?.email;
+            
+            const mentorUserRes = await client.query('SELECT COALESCE(ui.name, u.email) as name FROM users u LEFT JOIN user_info ui ON u.id = ui.user_id WHERE u.id = $1', [mentorId]);
+            const mentorName = mentorUserRes.rows[0]?.name || 'A mentor';
+
             if (accept) {
                 // Verify team doesn't have a mentor already
-                const teamRes = await client.query('SELECT mentor_id, name, leader_id FROM teams WHERE id = $1', [inv.team_id]);
-                const team = teamRes.rows[0];
                 if (team.mentor_id) {
                     await client.query('UPDATE mentor_invitations SET status = $1 WHERE id = $2', ['rejected', invitationId]);
                     throw new Error('Team already has a mentor');
@@ -117,18 +126,28 @@ export const mentorService = {
                 await client.query('UPDATE mentor_invitations SET status = $1 WHERE team_id = $2 AND status = $3', ['rejected', inv.team_id, 'pending']);
 
                 // Notify team leader
-                const leaderEmailRes = await client.query('SELECT email FROM users WHERE id = $1', [team.leader_id]);
-                if (leaderEmailRes.rows[0]) {
-                    const mentorUserRes = await client.query('SELECT COALESCE(ui.name, u.email) as name FROM users u LEFT JOIN user_info ui ON u.id = ui.user_id WHERE u.id = $1', [mentorId]);
-                    const mentorName = mentorUserRes.rows[0]?.name || 'A mentor';
+                if (leaderEmail) {
                     await notificationService.createNotification(
-                        leaderEmailRes.rows[0].email,
+                        leaderEmail,
                         `${mentorName} has accepted your invitation to mentor "${team.name}"`,
                         null
                     );
                 }
             } else {
                 await client.query('UPDATE mentor_invitations SET status = $1 WHERE id = $2', ['rejected', invitationId]);
+                
+                // Notify team leader on rejection
+                if (leaderEmail) {
+                    const notifMsg = message 
+                        ? `${mentorName} has declined your invitation to mentor "${team.name}". Message: ${message}`
+                        : `${mentorName} has declined your invitation to mentor "${team.name}".`;
+                        
+                    await notificationService.createNotification(
+                        leaderEmail,
+                        notifMsg,
+                        null
+                    );
+                }
             }
 
             await client.query('COMMIT');

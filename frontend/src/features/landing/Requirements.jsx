@@ -80,6 +80,12 @@ export default function Requirements() {
       highlight: 'Portal-Based Only',
       desc: 'All registrations must be completed through this portal. Walk-in registrations on hackathon day will not be accepted.',
     },
+    {
+      icon: '🎓',
+      title: 'Team Mentor',
+      highlight: 'Senior Student Mentor',
+      desc: 'Each team must have one mentor from the senior club students. One mentor can guide up to 3 teams.',
+    },
   ];
 
   return (

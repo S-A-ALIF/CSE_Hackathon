@@ -10,7 +10,7 @@ export default function ProblemSet() {
             Problem Set
           </h2>
           <p className="text-slate-400 text-lg">
-            The problem statements will be released to all registered teams before the event begins. Stay registered and check back here.
+            The problem statement will be released to all registered teams before the event begins. Stay registered and check back here.
           </p>
         </div>
 
@@ -24,7 +24,7 @@ export default function ProblemSet() {
             </div>
             <h3 className="text-2xl font-black text-white mb-4">Problem Set Not Yet Released</h3>
             <p className="text-slate-400 text-base leading-relaxed mb-8">
-              The hackathon problem statements will be published here and shared with registered teams prior to the event. Register now to be notified immediately.
+              The hackathon problem statement will be published here and shared with registered teams prior to the event. Register now to be notified immediately.
             </p>
             <div className="flex items-center justify-center gap-3 p-4 bg-slate-800/60 border border-slate-700 rounded-xl text-sm text-slate-400">
               <svg className="w-5 h-5 text-emerald-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">

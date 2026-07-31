@@ -4,6 +4,7 @@ import About from '../features/landing/About';
 import Requirements from '../features/landing/Requirements';
 import Timeline from '../features/landing/Timeline';
 import Rules from '../features/landing/Rules';
+import Prizes from '../features/landing/Prizes';
 import Footer from '../features/landing/Footer';
 
 export default function LandingPage() {
@@ -14,6 +15,7 @@ export default function LandingPage() {
       <About />
       <Requirements />
       <Timeline />
+      <Prizes />
       <Rules />
       <Footer />
     </div>

@@ -242,26 +242,26 @@ export default function NotificationDropdown() {
 
       {/* Dropdown Menu */}
       {isOpen && (
-        <div className="fixed sm:absolute left-3 right-3 sm:left-auto sm:right-0 top-16 sm:top-auto sm:mt-2 w-auto sm:w-80 md:w-96 bg-white rounded-2xl shadow-2xl border border-slate-200 py-2 z-50 animate-in fade-in slide-in-from-top-2 duration-200 overflow-hidden max-h-[85vh] sm:max-h-none">
-          <div className="px-4 py-3 border-b border-slate-100 flex items-center justify-between">
-            <h3 className="font-bold text-slate-900">Notifications</h3>
+        <div className="fixed sm:absolute left-3 right-3 sm:left-auto sm:right-0 top-16 sm:top-auto sm:mt-2 w-auto sm:w-80 md:w-96 bg-slate-900 rounded-2xl shadow-2xl border border-slate-800 py-2 z-50 animate-in fade-in slide-in-from-top-2 duration-200 overflow-hidden max-h-[85vh] sm:max-h-none">
+          <div className="px-4 py-3 border-b border-slate-800 flex items-center justify-between">
+            <h3 className="font-bold text-white">Notifications</h3>
             {unreadCount > 0 && (
-              <span className="text-xs bg-blue-100 text-blue-700 font-bold px-2.5 py-0.5 rounded-full">
+              <span className="text-xs bg-blue-500/10 text-blue-400 font-bold px-2.5 py-0.5 rounded-full">
                 {unreadCount} New
               </span>
             )}
           </div>
 
-          <div className="max-h-72 sm:max-h-96 overflow-y-auto divide-y divide-slate-100">
+          <div className="max-h-72 sm:max-h-96 overflow-y-auto divide-y divide-slate-800">
             {loading ? (
               <div className="p-4 text-center text-sm text-slate-500">Loading...</div>
             ) : notifications.length === 0 ? (
               <div className="p-8 text-center flex flex-col items-center">
-                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-10 h-10 text-slate-300 mb-2">
+                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-10 h-10 text-slate-600 mb-2">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M14.857 17.082a23.848 23.848 0 0 0 5.454-1.31A8.967 8.967 0 0 1 18 9.75V9A6 6 0 0 0 6 9v.75a8.967 8.967 0 0 1-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 0 1-5.714 0m5.714 0a3 3 0 1 1-5.714 0" />
                 </svg>
-                <p className="text-sm font-semibold text-slate-700">No Notifications</p>
-                <p className="text-xs text-slate-400 mt-1">You're all caught up!</p>
+                <p className="text-sm font-semibold text-slate-300">No Notifications</p>
+                <p className="text-xs text-slate-500 mt-1">You're all caught up!</p>
               </div>
             ) : (
               <div className="flex flex-col">
@@ -275,18 +275,18 @@ export default function NotificationDropdown() {
                           handleMarkAsRead(notification.id);
                         }
                     }}
-                    className={`p-4 border-b border-slate-100 cursor-pointer transition-all duration-200 hover:bg-slate-50 flex items-center justify-between group ${
-                      notification.is_read ? 'opacity-60' : 'bg-blue-50/30'
+                    className={`p-4 border-b border-slate-800 cursor-pointer transition-all duration-200 hover:bg-slate-800 flex items-center justify-between group ${
+                      notification.is_read ? 'opacity-60' : 'bg-blue-500/5'
                     }`}
                   >
                     <div className="flex gap-3 pr-2">
                       {!notification.is_read && (
                         <div className="mt-1.5 flex-shrink-0">
-                          <div className="h-2 w-2 rounded-full bg-blue-600"></div>
+                          <div className="h-2 w-2 rounded-full bg-blue-500"></div>
                         </div>
                       )}
                       <div>
-                        <p className={`text-sm ${notification.is_read ? 'text-slate-600' : 'text-slate-800 font-medium'}`}>
+                        <p className={`text-sm ${notification.is_read ? 'text-slate-400' : 'text-slate-200 font-medium'}`}>
                           {formatNotificationMessage(notification.message)}
                         </p>
                         <p className="text-xs text-slate-400 mt-1">
@@ -345,7 +345,7 @@ export default function NotificationDropdown() {
 
                     <button
                       onClick={(e) => handleDeleteNotification(e, notification.id)}
-                      className="text-slate-300 hover:text-red-500 p-1.5 rounded-lg transition-colors flex-shrink-0 hover:bg-red-50"
+                      className="text-slate-500 hover:text-red-400 p-1.5 rounded-lg transition-colors flex-shrink-0 hover:bg-red-500/10"
                       title="Delete notification"
                     >
                       <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4">
@@ -357,10 +357,10 @@ export default function NotificationDropdown() {
               </div>
             )}
           </div>
-          <div className="bg-slate-50 border-t border-slate-100 px-4 py-3 flex justify-between items-center">
+          <div className="bg-slate-900/50 border-t border-slate-800 px-4 py-3 flex justify-between items-center">
             <button
               onClick={handleMarkAllAsRead}
-              className="text-xs font-semibold text-slate-600 hover:text-slate-800 transition-colors flex items-center gap-1"
+              className="text-xs font-semibold text-slate-400 hover:text-slate-200 transition-colors flex items-center gap-1"
             >
               Mark all as read
             </button>
@@ -368,7 +368,7 @@ export default function NotificationDropdown() {
               onClick={() => {
                 fetchNotifications(false);
               }}
-              className="text-xs font-semibold text-blue-600 hover:text-blue-800 transition-colors flex items-center gap-1"
+              className="text-xs font-semibold text-blue-400 hover:text-blue-300 transition-colors flex items-center gap-1"
             >
               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-3.5 h-3.5">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182m0-4.991v4.99" />

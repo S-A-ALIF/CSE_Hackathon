@@ -10,8 +10,8 @@ const FAQS = [
     answer: "If you are the team leader, you can use the 'Manage Team' option in the Team tab to send invitations, remove members, or edit the team name. Remember that teams must meet the minimum size limit before the registration deadline!"
   },
   {
-    question: "When will the problem statements be revealed?",
-    answer: "The problem statements remain locked until the hackathon officially starts. Keep an eye on the countdown on the landing page!"
+    question: "When will the problem statement be revealed?",
+    answer: "The problem statement remains locked until the hackathon officially starts. Keep an eye on the countdown on the landing page!"
   },
   {
     question: "How do I submit my project?",

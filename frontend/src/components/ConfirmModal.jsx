@@ -75,13 +75,13 @@ export default function ConfirmModal({
   const styles = getVariantStyles();
 
   return (
-    <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-110 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
       <div
         onClick={(e) => e.stopPropagation()}
         className="bg-white w-full max-w-md rounded-3xl shadow-2xl p-6 sm:p-8 relative border border-slate-100 animate-in zoom-in-95 duration-200"
       >
         <div className="flex items-start gap-4">
-          <div className={`w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0 ${styles.iconBg}`}>
+          <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 ${styles.iconBg}`}>
             {styles.icon}
           </div>
           <div className="flex-1 min-w-0">

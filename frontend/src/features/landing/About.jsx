@@ -30,15 +30,37 @@ export default function About() {
           <p className="text-slate-300 text-lg leading-relaxed mb-6">
             The primary objective of this hackathon is to build a full-stack <strong>Auction Web Application</strong>. The exact problem set and specific feature requirements will be revealed only after the hackathon officially starts. Contestants must develop a complete solution featuring a distinct frontend and backend connected via APIs.
           </p>
-          <div className="flex flex-col sm:flex-row gap-4">
-            <div className="flex-1 bg-slate-900/50 rounded-2xl p-5 border border-slate-700/50">
-              <div className="text-blue-400 font-bold mb-1">Tech Stack</div>
-              <div className="text-sm text-slate-400">Strictly MERN or PERN stack. Next.js is permitted as an alternative to React.</div>
-            </div>
-            <div className="flex-1 bg-slate-900/50 rounded-2xl p-5 border border-slate-700/50">
-              <div className="text-emerald-400 font-bold mb-1">Architecture</div>
-              <div className="text-sm text-slate-400">The frontend and backend must be separated codebases communicating exclusively via APIs.</div>
-            </div>
+          <div className="mt-10 pt-8 border-t border-slate-700/50">
+            <h4 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
+              <span className="w-8 h-8 rounded-lg bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-sm">⚙️</span>
+              Technical Stack Constraints
+            </h4>
+            <ul className="text-slate-300 space-y-4 text-left">
+              <li className="flex gap-3">
+                <span className="text-blue-400 font-bold shrink-0 min-w-[170px]">Repository Structure:</span>
+                <span className="leading-relaxed">The codebase must be split. There must be completely separate directories (or separate repos) for the Frontend and the Backend. No monolithic spaghetti code.</span>
+              </li>
+              <li className="flex gap-3">
+                <span className="text-blue-400 font-bold shrink-0 min-w-[170px]">Backend:</span>
+                <span className="leading-relaxed">Strictly Node.js paired with Express.</span>
+              </li>
+              <li className="flex gap-3">
+                <span className="text-blue-400 font-bold shrink-0 min-w-[170px]">Frontend:</span>
+                <span className="leading-relaxed">Strictly React or Next.js.</span>
+              </li>
+              <li className="flex gap-3">
+                <span className="text-blue-400 font-bold shrink-0 min-w-[170px]">Database:</span>
+                <span className="leading-relaxed">Strictly PostgreSQL or MongoDB.</span>
+              </li>
+              <li className="flex gap-3">
+                <span className="text-blue-400 font-bold shrink-0 min-w-[170px]">Image storage:</span>
+                <span className="leading-relaxed">Strictly Cloudinary</span>
+              </li>
+              <li className="flex gap-3">
+                <span className="text-blue-400 font-bold shrink-0 min-w-[170px]">Allowed Tooling:</span>
+                <span className="leading-relaxed">Open-source libraries (e.g., Socket.io, Mongoose, Prisma, Tailwind) are permitted.</span>
+              </li>
+            </ul>
           </div>
         </div>
       </div>

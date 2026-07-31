@@ -3,7 +3,7 @@ import { API_URL } from '../../config';
 
 export default function Timeline() {
   const [minSize, setMinSize] = useState(3);
-  const [maxSize, setMaxSize] = useState(4);
+  const [maxSize, setMaxSize] = useState(5);
 
   useEffect(() => {
     const fetchSettings = async () => {
@@ -15,7 +15,7 @@ export default function Timeline() {
           const maxVal = data.data.max_team_members;
           
           const minNum = minVal && minVal !== 'none' && !isNaN(parseInt(minVal, 10)) ? parseInt(minVal, 10) : 3;
-          const maxNum = maxVal && maxVal !== 'none' && !isNaN(parseInt(maxVal, 10)) ? parseInt(maxVal, 10) : 4;
+          const maxNum = maxVal && maxVal !== 'none' && !isNaN(parseInt(maxVal, 10)) ? parseInt(maxVal, 10) : 5;
           
           setMinSize(minNum);
           setMaxSize(maxNum);
@@ -30,23 +30,28 @@ export default function Timeline() {
   const timeline = [
     { 
       title: 'Registration Window', 
-      desc: `Opens July 31st at 6:00 PM. Late registration remains open until August 1st at 11:59 PM. Teams must have ${minSize}–${maxSize} members. Registration is free. Note: Late registrations receive no time extensions.` 
+      date: 'July 31 - August 1',
+      desc: <><span className="text-indigo-400 font-bold">Opens July 31st at 6:00 PM</span>. Late registration remains open until <span className="text-rose-400 font-bold">August 1st at 11:59 PM</span>. Teams must have {minSize}–{maxSize} members. Registration is free. Note: Late registrations receive no time extensions.</>
     },
     { 
-      title: 'Phase 1: The Core MVP', 
-      desc: 'July 31, 9:00 PM to August 2, 9:00 PM (48 Hours). The absolute deadline for the core MVP build.' 
+      title: 'Phase 1: The Core MVP',
+      date: 'July 31 - August 2',
+      desc: <><span className="text-amber-400 font-bold">July 31, 10:00 PM to August 2, 10:00 PM (48 Hours)</span>. The absolute deadline for the core MVP build.</> 
     },
     { 
       title: 'Phase 2: The "Steal the Meta" Sprint', 
-      desc: 'August 3, 11:00 AM to August 4, 11:00 AM (24 Hours).' 
+      date: 'August 3 - August 4',
+      desc: <><span className="text-cyan-400 font-bold">August 3, 11:00 AM to August 4, 11:00 AM (24 Hours)</span>.</> 
     },
     { 
       title: 'Demo Day (Physical Mandatory)', 
-      desc: 'August 4th. Teams must arrive at the venue by 10:00 AM for environment setup. Final presentations begin at 11:00 AM.' 
+      date: 'August 4',
+      desc: <>August 4th. Teams must arrive at the venue by <span className="text-emerald-400 font-bold">10:00 AM</span> for environment setup. Final presentations begin at <span className="text-emerald-400 font-bold">11:00 AM</span>.</> 
     },
     { 
       title: 'Results, Prizes & Awards', 
-      desc: "1st Place wins prize money, medals, exclusive certificates, and platform deployment for the department's tournament. All participants receive certificates and snacks!" 
+      date: 'August 4 (Evening)',
+      desc: <><span className="text-yellow-400 font-bold text-lg block mb-2 mt-1">🏆 1st Place Wins Prize Money!</span>Medals, exclusive certificates, and platform deployment for the department's tournament. All participants receive certificates and snacks!</> 
     },
   ];
 

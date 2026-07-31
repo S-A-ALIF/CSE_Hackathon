@@ -23,6 +23,16 @@ export default function TeamPage({ inDashboard = false }) {
   const [isInviteMentorOpen, setIsInviteMentorOpen] = useState(false);
   const [isConfirmLeaveOpen, setIsConfirmLeaveOpen] = useState(false);
   const [selectedMember, setSelectedMember] = useState(null);
+  const [activeDropdownId, setActiveDropdownId] = useState(null);
+  const [confirmConfig, setConfirmConfig] = useState({
+    isOpen: false,
+    title: '',
+    message: '',
+    confirmText: 'Confirm',
+    variant: 'danger',
+    onConfirm: () => {}
+  });
+  const [actionLoading, setActionLoading] = useState(false);
 
   const fetchActiveInvitations = async (force = false) => {
     if (!force && userCache.isFresh('invitations')) {
@@ -108,9 +118,98 @@ export default function TeamPage({ inDashboard = false }) {
     }
   };
 
+  const executeTransferLeadership = async (memberId) => {
+    setActionLoading(true);
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch(`${API_URL}/api/v1/teams/transfer-leadership`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ newLeaderId: memberId })
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        toast.success(data.message || 'Leadership transferred successfully');
+        setConfirmConfig(prev => ({ ...prev, isOpen: false }));
+        userCache.invalidate();
+        fetchTeam(true);
+      } else {
+        toast.error(data.message || 'Failed to transfer leadership');
+      }
+    } catch (error) {
+      console.error('Error transferring leadership:', error);
+      toast.error('Network error transferring leadership');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleTransferLeadership = (e, memberId, memberEmail) => {
+    e.stopPropagation();
+    setActiveDropdownId(null);
+    setConfirmConfig({
+      isOpen: true,
+      title: "Transfer Leadership?",
+      message: `Are you sure you want to transfer leadership to ${memberEmail}? You will become a regular member.`,
+      confirmText: "Transfer Leadership",
+      variant: "warning",
+      onConfirm: () => executeTransferLeadership(memberId)
+    });
+  };
+
+  const executeRemoveMember = async (memberId) => {
+    setActionLoading(true);
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch(`${API_URL}/api/v1/teams/members/${memberId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        toast.success(data.message || 'Member removed');
+        setConfirmConfig(prev => ({ ...prev, isOpen: false }));
+        userCache.invalidate();
+        fetchTeam(true);
+      } else {
+        toast.error(data.message || 'Failed to remove member');
+      }
+    } catch (error) {
+      console.error('Error removing member:', error);
+      toast.error('Network error removing member');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleRemoveMember = (e, memberId, memberEmail) => {
+    e.stopPropagation();
+    setActiveDropdownId(null);
+    setConfirmConfig({
+      isOpen: true,
+      title: "Remove Member?",
+      message: `Are you sure you want to remove ${memberEmail} from the team?`,
+      confirmText: "Remove",
+      variant: "danger",
+      onConfirm: () => executeRemoveMember(memberId)
+    });
+  };
+
   const handleLeaveTeam = () => {
     setIsConfirmLeaveOpen(true);
   };
+
+  // Close dropdown on click outside
+  useEffect(() => {
+    const closeDropdown = () => setActiveDropdownId(null);
+    window.addEventListener('click', closeDropdown);
+    return () => window.removeEventListener('click', closeDropdown);
+  }, []);
 
   useEffect(() => {
     fetchTeam();
@@ -181,19 +280,22 @@ export default function TeamPage({ inDashboard = false }) {
                 </div>
                 <div className="flex items-center gap-2 sm:gap-3 flex-wrap w-full sm:w-auto">
                   {team.team_code && (
-                    <div className="flex items-center gap-2 bg-slate-100 border border-slate-200 px-3 py-1.5 rounded-xl font-mono text-xs sm:text-sm font-bold text-slate-800">
-                      <span>Code:</span>
-                      <span className="text-blue-600">{team.team_code}</span>
-                      <button 
-                        onClick={() => {
-                          navigator.clipboard.writeText(team.team_code);
-                          toast.success('Team Code copied to clipboard!');
-                        }}
-                        className="text-slate-400 hover:text-slate-600 ml-1"
-                        title="Copy Code"
-                      >
-                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
-                      </button>
+                    <div className="flex flex-col gap-1 items-end mr-2">
+                      <div className="flex items-center gap-2 bg-slate-100 border border-slate-200 px-3 py-1.5 rounded-xl font-mono text-xs sm:text-sm font-bold text-slate-800">
+                        <span>Code:</span>
+                        <span className="text-blue-600">{team.team_code}</span>
+                        <button 
+                          onClick={() => {
+                            navigator.clipboard.writeText(team.team_code);
+                            toast.success('Team Code copied to clipboard!');
+                          }}
+                          className="text-slate-400 hover:text-slate-600 ml-1"
+                          title="Copy Code"
+                        >
+                          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
+                        </button>
+                      </div>
+                      <span className="text-[10px] text-slate-500 font-medium">Give this code to your team mate to join your team</span>
                     </div>
                   )}
                   <div className="relative group cursor-pointer inline-flex items-center">
@@ -227,14 +329,6 @@ export default function TeamPage({ inDashboard = false }) {
                   </div>
                   {team.leader_id === currentUser?.id ? (
                     <div className="flex gap-2">
-                      {!team.mentor_id && (
-                        <button
-                          onClick={() => setIsInviteMentorOpen(true)}
-                          className="px-4 py-2 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border border-indigo-200 font-bold rounded-xl text-xs sm:text-sm transition-colors shadow-sm"
-                        >
-                          Invite Mentor
-                        </button>
-                      )}
                       <button
                         onClick={() => setIsManageModalOpen(true)}
                         className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white font-bold rounded-xl text-xs sm:text-sm transition-colors shadow-sm"
@@ -288,6 +382,40 @@ export default function TeamPage({ inDashboard = false }) {
                           <span>View Info</span>
                           <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" /></svg>
                         </span>
+                        
+                        {team.leader_id === currentUser?.id && member.id !== team.leader_id && (
+                          <div className="relative inline-block text-left" onClick={e => e.stopPropagation()}>
+                            <button 
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setActiveDropdownId(activeDropdownId === member.id ? null : member.id);
+                              }}
+                              className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-200 rounded-lg transition-colors"
+                            >
+                              <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                                <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z" />
+                              </svg>
+                            </button>
+                            {activeDropdownId === member.id && (
+                              <div className="origin-top-right absolute right-0 mt-2 w-40 rounded-xl shadow-lg bg-white ring-1 ring-black ring-opacity-5 divide-y divide-slate-100 z-10 animate-in fade-in slide-in-from-top-2">
+                                <div className="py-1">
+                                  <button
+                                    onClick={(e) => handleTransferLeadership(e, member.id, member.email)}
+                                    className="group flex w-full items-center px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 hover:text-blue-600 transition-colors"
+                                  >
+                                    Make Leader
+                                  </button>
+                                  <button
+                                    onClick={(e) => handleRemoveMember(e, member.id, member.email)}
+                                    className="group flex w-full items-center px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors"
+                                  >
+                                    Remove
+                                  </button>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        )}
                       </div>
                     </div>
                   ))}
@@ -297,7 +425,7 @@ export default function TeamPage({ inDashboard = false }) {
             
             {/* If user is leader, they might want to invite more people */}
             {team.leader_id === currentUser?.id && (
-              <div className="text-center">
+              <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mt-8">
                 {(team.maxMembers === null || team.members.length < (team.maxMembers || 5)) && !team.is_full ? (
                   <button 
                     onClick={() => setIsCreateModalOpen(true)}
@@ -312,6 +440,18 @@ export default function TeamPage({ inDashboard = false }) {
                   <div className="inline-flex items-center space-x-2 px-6 py-3 bg-slate-100 text-slate-500 font-bold rounded-xl border border-slate-200">
                     <span>{team.is_full ? 'Team Declared Full' : 'Team Maximum Limit Reached'} ({team.maxMembers ? `${team.members.length}/${team.maxMembers}` : team.members.length})</span>
                   </div>
+                )}
+                
+                {!team.mentor_id && (
+                  <button
+                    onClick={() => setIsInviteMentorOpen(true)}
+                    className="px-6 py-3 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border border-indigo-200 font-bold rounded-xl transition-colors shadow-sm inline-flex items-center space-x-2"
+                  >
+                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                    </svg>
+                    <span>Invite Mentor</span>
+                  </button>
                 )}
               </div>
             )}
@@ -350,13 +490,23 @@ export default function TeamPage({ inDashboard = false }) {
         teamId={team?.id}
       />
       <ConfirmModal
-        isOpen={isConfirmLeaveOpen}
-        onClose={() => setIsConfirmLeaveOpen(false)}
-        onConfirm={executeLeaveTeam}
-        title="Leave Team?"
-        message="Are you sure you want to leave this team? You will lose access to the team and its resources."
-        confirmText="Leave Team"
-        variant="danger"
+        isOpen={isConfirmLeaveOpen || confirmConfig.isOpen}
+        onClose={() => {
+          setIsConfirmLeaveOpen(false);
+          setConfirmConfig(prev => ({ ...prev, isOpen: false }));
+        }}
+        onConfirm={() => {
+          if (confirmConfig.isOpen) {
+            confirmConfig.onConfirm();
+          } else {
+            executeLeaveTeam();
+          }
+        }}
+        title={confirmConfig.isOpen ? confirmConfig.title : "Leave Team?"}
+        message={confirmConfig.isOpen ? confirmConfig.message : "Are you sure you want to leave this team? You will lose access to the team and its resources."}
+        confirmText={confirmConfig.isOpen ? confirmConfig.confirmText : "Leave Team"}
+        variant={confirmConfig.isOpen ? confirmConfig.variant : "danger"}
+        loading={actionLoading}
       />
       <MemberInfoModal
         isOpen={!!selectedMember}

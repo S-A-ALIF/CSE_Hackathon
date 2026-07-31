@@ -35,7 +35,7 @@ export default function DashboardPage() {
       setActiveTab('team');
     }
     if (activeTab === 'problems' && !problemsOpen) {
-      toast.info('The admin has closed the Problem Statements.', {
+      toast.info('The admin has closed the Problem Statement.', {
         description: 'You have been redirected to your team dashboard.'
       });
       setActiveTab('team');
@@ -47,6 +47,8 @@ export default function DashboardPage() {
       navigate('/');
     } else if (currentUser.role === 'admin') {
       navigate('/admin', { replace: true });
+    } else if (currentUser.role === 'mentor') {
+      navigate('/mentor', { replace: true });
     }
   }, [currentUser, navigate]);
 
@@ -64,7 +66,7 @@ export default function DashboardPage() {
   }, [menuRef]);
 
   if (!currentUser) return null;
-  if (currentUser.role === 'admin') return null;
+  if (currentUser.role === 'admin' || currentUser.role === 'mentor') return null;
 
   const handleLogout = () => {
     logout();
@@ -92,7 +94,7 @@ export default function DashboardPage() {
     },
     {
       id: 'problems',
-      label: 'Problem Statements',
+      label: 'Problem Statement',
       icon: (
         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
           <path strokeLinecap="round" strokeLinejoin="round" d="M12 18v-5.25m0 0a6.01 6.01 0 0 0 1.5-.189m-1.5.189a6.01 6.01 0 0 1-1.5-.189m3.75 7.478a12.06 12.06 0 0 1-4.5 0m3.75 2.383a14.406 14.406 0 0 1-3 0M14.25 18v-.192c0-.983.658-1.823 1.508-2.316a7.5 7.5 0 1 0-7.517 0c.85.493 1.509 1.333 1.509 2.316V18" />
@@ -287,8 +289,8 @@ export default function DashboardPage() {
             problemsOpen ? <ProblemsPage inDashboard={true} /> :
             <div className="flex flex-col items-center justify-center h-full text-slate-500 animate-in fade-in">
               <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mb-4">🔒</div>
-              <h2 className="text-xl font-bold text-slate-800">Problem Statements are Hidden</h2>
-              <p className="mt-2 text-center max-w-sm">The problem statements will be revealed once the hackathon officially starts.</p>
+              <h2 className="text-xl font-bold text-slate-800">Problem Statement is Hidden</h2>
+              <p className="mt-2 text-center max-w-sm">The problem statement will be revealed once the hackathon officially starts.</p>
             </div>
           )}
           {activeTab === 'profile' && <ProfilePage inDashboard={true} />}

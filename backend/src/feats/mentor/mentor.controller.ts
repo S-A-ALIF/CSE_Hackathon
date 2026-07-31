@@ -54,14 +54,14 @@ export const respondToInvitation = async (req: Request, res: Response): Promise<
         }
 
         const { id } = req.params;
-        const { accept } = req.body;
+        const { accept, message } = req.body;
 
         if (typeof accept !== 'boolean') {
             res.status(400).json({ success: false, message: 'Accept boolean flag is required' });
             return;
         }
 
-        await mentorService.respondToInvitation(mentorId, id, accept);
+        await mentorService.respondToInvitation(mentorId, id, accept, message);
         res.status(200).json({ success: true, message: accept ? 'Invitation accepted' : 'Invitation rejected' });
     } catch (error: any) {
         console.error('[MentorController] Error responding to invitation:', error);
