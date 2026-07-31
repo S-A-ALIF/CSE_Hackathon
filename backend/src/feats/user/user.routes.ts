@@ -29,4 +29,14 @@ router.put(
     userController.updateProfile
 );
 
+/**
+ * @route   GET /api/v1/users/search
+ * @desc    Search users by name, email, or student ID
+ * @access  Private
+ */
+router.get(
+    '/search',
+    userController.searchUsers
+);
+
 export default router;

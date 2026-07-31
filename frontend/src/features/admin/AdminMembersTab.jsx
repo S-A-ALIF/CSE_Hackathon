@@ -30,6 +30,9 @@ export default function AdminMembersTab() {
   // Selection mode state
   const [isSelectionMode, setIsSelectionMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState([]);
+  
+  // Tabs state
+  const [activeTab, setActiveTab] = useState('students'); // 'students', 'mentors', 'admins'
 
   const fetchMembers = async (force = false) => {
     if (!force && adminCache.isFresh('members')) {
@@ -148,6 +151,82 @@ export default function AdminMembersTab() {
     });
   };
 
+  const executePromoteToMentor = async (member) => {
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch(`${API_URL}/api/v1/admin/members/${member.id}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ role: 'mentor' })
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        toast.success(`${member.name || member.email} promoted to Mentor successfully`);
+        setConfirmConfig(prev => ({ ...prev, isOpen: false }));
+        adminCache.invalidate();
+        fetchMembers(true);
+      } else {
+        toast.error(data.message || 'Failed to promote member');
+      }
+    } catch (err) {
+      console.error('Error promoting member:', err);
+      toast.error('Error promoting member');
+    }
+  };
+
+  const handlePromoteToMentor = (member) => {
+    setConfirmConfig({
+      isOpen: true,
+      title: "Promote to Mentor?",
+      message: `Are you sure you want to promote "${member.email}" to the Mentor role? They will gain access to the Mentor Dashboard.`,
+      confirmText: "Promote to Mentor",
+      variant: "info",
+      requireInput: false,
+      onConfirm: () => executePromoteToMentor(member)
+    });
+  };
+
+  const executePromoteToAdmin = async (member) => {
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch(`${API_URL}/api/v1/admin/members/${member.id}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ role: 'admin' })
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        toast.success(`${member.name || member.email} promoted to Admin successfully`);
+        setConfirmConfig(prev => ({ ...prev, isOpen: false }));
+        adminCache.invalidate();
+        fetchMembers(true);
+      } else {
+        toast.error(data.message || 'Failed to promote member');
+      }
+    } catch (err) {
+      console.error('Error promoting member:', err);
+      toast.error('Error promoting member');
+    }
+  };
+
+  const handlePromoteToAdmin = (member) => {
+    setConfirmConfig({
+      isOpen: true,
+      title: "Promote to Admin?",
+      message: `Are you sure you want to promote "${member.email}" to the Admin role? They will gain full administrative privileges.`,
+      confirmText: "Promote to Admin",
+      variant: "danger",
+      requireInput: false,
+      onConfirm: () => executePromoteToAdmin(member)
+    });
+  };
+
   const executeBulkDelete = async () => {
     try {
       const token = localStorage.getItem('token');
@@ -221,6 +300,126 @@ export default function AdminMembersTab() {
         return 0;
     }
   });
+
+  const admins = sortedMembers.filter(m => m.role === 'admin');
+  const mentors = sortedMembers.filter(m => m.role === 'mentor');
+  const students = sortedMembers.filter(m => m.role !== 'admin' && m.role !== 'mentor');
+
+  const renderMemberRow = (m) => {
+    const menuKey = `member-row-${m.id}`;
+    const isMenuOpen = openMenuId === menuKey;
+
+    return (
+      <tr
+        key={m.id}
+        className="hover:bg-slate-50/70 transition-colors"
+      >
+        {isSelectionMode && (
+          <td className="py-3 px-4 w-12 text-center" onClick={(e) => e.stopPropagation()}>
+            <input
+              type="checkbox"
+              checked={selectedIds.includes(m.id)}
+              onChange={(e) => {
+                if (e.target.checked) {
+                  setSelectedIds(prev => [...prev, m.id]);
+                } else {
+                  setSelectedIds(prev => prev.filter(id => id !== m.id));
+                }
+              }}
+              className="rounded border-slate-300 text-blue-600 focus:ring-blue-500 w-4 h-4 cursor-pointer"
+            />
+          </td>
+        )}
+        <td
+          className="py-3 px-4 cursor-pointer"
+          onClick={() => setDetailsModalData(m)}
+        >
+          <div className="font-bold text-slate-900">{m.name || 'Unnamed Member'}</div>
+          <div className="text-xs text-slate-500">{m.email}</div>
+        </td>
+        <td className="py-3 px-4 font-mono text-slate-700">{m.student_id || '—'}</td>
+        <td className="py-3 px-4 text-slate-700">{m.batch_session || '—'}</td>
+        <td className="py-3 px-4">
+          {m.team_name ? (
+            <span className="px-2.5 py-1 rounded-md bg-blue-50 text-blue-700 font-bold text-xs">
+              {m.team_name}
+            </span>
+          ) : (
+            <span className="text-slate-400 text-xs italic">No Team</span>
+          )}
+        </td>
+        <td className="py-3 px-4">
+          {m.is_banned ? (
+            <span className="text-red-600 font-bold text-xs">🚫 Banned</span>
+          ) : (
+            <span className="text-emerald-600 font-bold text-xs">✅ Active</span>
+          )}
+        </td>
+        <td className="py-3 px-4 text-right relative">
+          <button
+            onClick={() => setOpenMenuId(isMenuOpen ? null : menuKey)}
+            className="w-8 h-8 rounded-lg hover:bg-slate-100 inline-flex items-center justify-center text-slate-500 font-bold text-lg"
+          >
+            ⋮
+          </button>
+
+          {isMenuOpen && (
+            <div className="absolute right-4 mt-2 w-48 bg-white rounded-xl shadow-xl border border-slate-200 py-1 z-20 text-left">
+              <button
+                onClick={() => {
+                  setOpenMenuId(null);
+                  setEditModalData(m);
+                }}
+                className="w-full text-left px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 flex items-center gap-2"
+              >
+                ✏️ Edit Member
+              </button>
+              <button
+                onClick={() => {
+                  setOpenMenuId(null);
+                  handleBanToggleMember(m);
+                }}
+                className="w-full text-left px-4 py-2 text-sm font-semibold text-amber-700 hover:bg-amber-50 flex items-center gap-2"
+              >
+                {m.is_banned ? '🟢 Unban User' : '🚫 Ban User'}
+              </button>
+              {m.role !== 'mentor' && m.role !== 'admin' && (
+                <button
+                  onClick={() => {
+                    setOpenMenuId(null);
+                    handlePromoteToMentor(m);
+                  }}
+                  className="w-full text-left px-4 py-2 text-sm font-semibold text-indigo-600 hover:bg-indigo-50 flex items-center gap-2"
+                >
+                  🎓 Promote to Mentor
+                </button>
+              )}
+              {m.role !== 'admin' && (
+                <button
+                  onClick={() => {
+                    setOpenMenuId(null);
+                    handlePromoteToAdmin(m);
+                  }}
+                  className="w-full text-left px-4 py-2 text-sm font-semibold text-purple-600 hover:bg-purple-50 flex items-center gap-2"
+                >
+                  ⭐ Promote to Admin
+                </button>
+              )}
+              <button
+                onClick={() => {
+                  setOpenMenuId(null);
+                  handleDeleteMember(m.id, m.email);
+                }}
+                className="w-full text-left px-4 py-2 text-sm font-semibold text-red-600 hover:bg-red-50 flex items-center gap-2"
+              >
+                🗑️ Delete User
+              </button>
+            </div>
+          )}
+        </td>
+      </tr>
+    );
+  };
 
   return (
     <div className="space-y-6">
@@ -302,8 +501,36 @@ export default function AdminMembersTab() {
           <p className="text-slate-500 font-semibold">No members found matching your search.</p>
         </div>
       ) : (
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-          <div className="overflow-x-auto">
+        <div className="space-y-4">
+          <div className="flex space-x-2 bg-slate-100/50 p-1 rounded-xl">
+            <button
+              onClick={() => setActiveTab('students')}
+              className={`flex-1 py-2 text-sm font-bold rounded-lg transition-colors ${
+                activeTab === 'students' ? 'bg-blue-600 text-white shadow-md' : 'text-slate-600 hover:bg-slate-200'
+              }`}
+            >
+              Regular Users ({students.length})
+            </button>
+            <button
+              onClick={() => setActiveTab('mentors')}
+              className={`flex-1 py-2 text-sm font-bold rounded-lg transition-colors ${
+                activeTab === 'mentors' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-600 hover:bg-slate-200'
+              }`}
+            >
+              Mentors ({mentors.length})
+            </button>
+            <button
+              onClick={() => setActiveTab('admins')}
+              className={`flex-1 py-2 text-sm font-bold rounded-lg transition-colors ${
+                activeTab === 'admins' ? 'bg-red-600 text-white shadow-md' : 'text-slate-600 hover:bg-slate-200'
+              }`}
+            >
+              Admin Users ({admins.length})
+            </button>
+          </div>
+
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm">
+          <div>
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="border-b border-slate-200 bg-slate-50 text-slate-500 uppercase text-[11px] font-bold tracking-wider">
@@ -332,102 +559,30 @@ export default function AdminMembersTab() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 text-sm">
-                {sortedMembers.map((m) => {
-                  const menuKey = `member-row-${m.id}`;
-                  const isMenuOpen = openMenuId === menuKey;
+                {activeTab === 'admins' && admins.length === 0 && (
+                  <tr>
+                    <td colSpan="100%" className="py-8 text-center text-slate-500">No Admin Users found.</td>
+                  </tr>
+                )}
+                {activeTab === 'admins' && admins.map(renderMemberRow)}
 
-                  return (
-                    <tr
-                      key={m.id}
-                      className="hover:bg-slate-50/70 transition-colors"
-                    >
-                      {isSelectionMode && (
-                        <td className="py-3 px-4 w-12 text-center" onClick={(e) => e.stopPropagation()}>
-                          <input
-                            type="checkbox"
-                            checked={selectedIds.includes(m.id)}
-                            onChange={(e) => {
-                              if (e.target.checked) {
-                                setSelectedIds(prev => [...prev, m.id]);
-                              } else {
-                                setSelectedIds(prev => prev.filter(id => id !== m.id));
-                              }
-                            }}
-                            className="rounded border-slate-300 text-blue-600 focus:ring-blue-500 w-4 h-4 cursor-pointer"
-                          />
-                        </td>
-                      )}
-                      <td
-                        className="py-3 px-4 cursor-pointer"
-                        onClick={() => setDetailsModalData(m)}
-                      >
-                        <div className="font-bold text-slate-900">{m.name || 'Unnamed Member'}</div>
-                        <div className="text-xs text-slate-500">{m.email}</div>
-                      </td>
-                      <td className="py-3 px-4 font-mono text-slate-700">{m.student_id || '—'}</td>
-                      <td className="py-3 px-4 text-slate-700">{m.batch_session || '—'}</td>
-                      <td className="py-3 px-4">
-                        {m.team_name ? (
-                          <span className="px-2.5 py-1 rounded-md bg-blue-50 text-blue-700 font-bold text-xs">
-                            {m.team_name}
-                          </span>
-                        ) : (
-                          <span className="text-slate-400 text-xs italic">No Team</span>
-                        )}
-                      </td>
-                      <td className="py-3 px-4">
-                        {m.is_banned ? (
-                          <span className="text-red-600 font-bold text-xs">🚫 Banned</span>
-                        ) : (
-                          <span className="text-emerald-600 font-bold text-xs">✅ Active</span>
-                        )}
-                      </td>
-                      <td className="py-3 px-4 text-right relative">
-                        <button
-                          onClick={() => setOpenMenuId(isMenuOpen ? null : menuKey)}
-                          className="w-8 h-8 rounded-lg hover:bg-slate-100 inline-flex items-center justify-center text-slate-500 font-bold text-lg"
-                        >
-                          ⋮
-                        </button>
+                {activeTab === 'mentors' && mentors.length === 0 && (
+                  <tr>
+                    <td colSpan="100%" className="py-8 text-center text-slate-500">No Mentors found.</td>
+                  </tr>
+                )}
+                {activeTab === 'mentors' && mentors.map(renderMemberRow)}
 
-                        {isMenuOpen && (
-                          <div className="absolute right-4 mt-2 w-48 bg-white rounded-xl shadow-xl border border-slate-200 py-1 z-20 text-left">
-                            <button
-                              onClick={() => {
-                                setOpenMenuId(null);
-                                setEditModalData(m);
-                              }}
-                              className="w-full text-left px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 flex items-center gap-2"
-                            >
-                              ✏️ Edit Member
-                            </button>
-                            <button
-                              onClick={() => {
-                                setOpenMenuId(null);
-                                handleBanToggleMember(m);
-                              }}
-                              className="w-full text-left px-4 py-2 text-sm font-semibold text-amber-700 hover:bg-amber-50 flex items-center gap-2"
-                            >
-                              {m.is_banned ? '🟢 Unban User' : '🚫 Ban User'}
-                            </button>
-                            <button
-                              onClick={() => {
-                                setOpenMenuId(null);
-                                handleDeleteMember(m.id, m.email);
-                              }}
-                              className="w-full text-left px-4 py-2 text-sm font-semibold text-red-600 hover:bg-red-50 flex items-center gap-2"
-                            >
-                              🗑️ Delete User
-                            </button>
-                          </div>
-                        )}
-                      </td>
-                    </tr>
-                  );
-                })}
+                {activeTab === 'students' && students.length === 0 && (
+                  <tr>
+                    <td colSpan="100%" className="py-8 text-center text-slate-500">No Regular Users found.</td>
+                  </tr>
+                )}
+                {activeTab === 'students' && students.map(renderMemberRow)}
               </tbody>
             </table>
           </div>
+        </div>
         </div>
       )}
 

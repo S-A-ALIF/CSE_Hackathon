@@ -38,6 +38,7 @@ const initAllTables = async () => {
                 id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
                 name VARCHAR(255) NOT NULL,
                 leader_id UUID REFERENCES users(id) ON DELETE CASCADE,
+                mentor_id UUID REFERENCES users(id) ON DELETE SET NULL,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             );
 
@@ -55,6 +56,14 @@ const initAllTables = async () => {
                 pin_code VARCHAR(6) NOT NULL,
                 expires_at TIMESTAMP NOT NULL,
                 is_used BOOLEAN DEFAULT false,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
+
+            CREATE TABLE IF NOT EXISTS mentor_invitations (
+                id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                team_id UUID REFERENCES teams(id) ON DELETE CASCADE,
+                mentor_id UUID REFERENCES users(id) ON DELETE CASCADE,
+                status VARCHAR(20) DEFAULT 'pending',
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             );
         `);

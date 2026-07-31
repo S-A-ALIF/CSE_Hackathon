@@ -7,7 +7,7 @@ export const registerSchema = z.object({
     body: z.object({
         email: z.string().email({ message: "Invalid email address" }),
         password: z.string().min(6, { message: "Password must be at least 6 characters" }),
-        role: z.enum(['student', 'tutor', 'admin']).optional(),
+        role: z.enum(['student', 'mentor', 'admin']).optional(),
         name: z.string().min(1, { message: "Name is required" }).max(100),
         student_id: z.string().regex(STUDENT_ID_REGEX, { message: STUDENT_ID_ERROR }),
         batch_session: z.string().min(1, { message: "Batch/Session is required" }).max(50)

@@ -10,6 +10,7 @@ import TeamPage from './pages/TeamPage';
 import ProjectPage from './pages/ProjectPage';
 import ProblemsPage from './pages/ProblemsPage';
 import AdminPage from './pages/AdminPage';
+import MentorDashboardPage from './pages/MentorDashboardPage';
 
 function App() {
   return (
@@ -26,6 +27,7 @@ function App() {
             <Route path="/project" element={<ProjectPage />} />
             <Route path="/problems" element={<ProblemsPage />} />
             <Route path="/admin" element={<AdminPage />} />
+            <Route path="/mentor" element={<MentorDashboardPage />} />
           </Routes>
         </BrowserRouter>
       </AuthProvider>

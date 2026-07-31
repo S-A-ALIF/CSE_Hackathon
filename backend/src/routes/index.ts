@@ -6,6 +6,7 @@ import notificationRoutes from '../feats/notification/notification.routes';
 import teamRoutes from '../feats/team/team.routes';
 import adminRoutes from '../feats/admin/admin.routes';
 import problemRoutes from '../feats/problem/problem.routes';
+import mentorRoutes from '../feats/mentor/mentor.routes';
 
 const router = Router();
 
@@ -40,5 +41,6 @@ router.use('/notifications', notificationRoutes);
 router.use('/teams', teamRoutes);
 router.use('/admin', adminRoutes);
 router.use('/problems', problemRoutes);
+router.use('/mentors', mentorRoutes);
 
 export default router;

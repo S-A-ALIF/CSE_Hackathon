@@ -82,11 +82,13 @@ export default function AdminProblemsTab() {
     e.preventDefault();
     setIsSubmitting(true);
     try {
-      const criteriaArray = formData.criteria.split(',').map(s => s.trim()).filter(s => s !== '');
-      
       const payload = {
-        ...formData,
-        criteria: criteriaArray
+        title: "Main Hackathon Problem",
+        track: "General",
+        difficulty: "All Levels",
+        description: formData.description,
+        criteria: ["General Evaluation"],
+        prize: "Grand Prize"
       };
 
       if (editingProblem) {
@@ -181,22 +183,11 @@ export default function AdminProblemsTab() {
         {problems.map((problem) => (
           <div key={problem.id} className="bg-white rounded-3xl p-6 border border-slate-200 shadow-sm flex flex-col justify-between h-full">
             <div>
-              <div className="flex items-center justify-between mb-3">
-                <span className="px-3 py-1 bg-blue-100 text-blue-700 font-bold text-xs rounded-full uppercase tracking-wider truncate max-w-[60%]">
-                  {problem.track}
-                </span>
-                <span className="px-3 py-1 bg-slate-100 text-slate-700 font-bold text-xs rounded-full">
-                  {problem.difficulty}
-                </span>
-              </div>
               <h3 className="text-xl font-bold text-slate-900 mb-2 line-clamp-2">{problem.title}</h3>
-              <p className="text-slate-600 text-sm line-clamp-3 mb-4">{problem.description}</p>
+              <p className="text-slate-600 text-sm line-clamp-6 mb-4">{problem.description}</p>
             </div>
             
-            <div className="flex items-center justify-between mt-4 pt-4 border-t border-slate-100">
-              <span className="text-sm font-bold text-amber-600 flex items-center gap-1 truncate max-w-[50%]">
-                <span>🏆</span> {problem.prize}
-              </span>
+            <div className="flex items-center justify-end mt-4 pt-4 border-t border-slate-100">
               <div className="flex gap-2">
                 <button
                   onClick={() => handleOpenModal(problem)}
@@ -239,83 +230,16 @@ export default function AdminProblemsTab() {
 
               <form onSubmit={handleSubmit} className="space-y-5">
                 <div>
-                  <label className="block text-sm font-bold text-slate-700 mb-1.5">Problem Title</label>
-                  <input
-                    type="text"
-                    name="title"
-                    value={formData.title}
-                    onChange={handleChange}
-                    required
-                    className="w-full bg-slate-50 border border-slate-200 text-slate-900 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 block p-3 transition-colors"
-                    placeholder="e.g. Smart Campus AI Assistant"
-                  />
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                  <div>
-                    <label className="block text-sm font-bold text-slate-700 mb-1.5">Track / Category</label>
-                    <input
-                      type="text"
-                      name="track"
-                      value={formData.track}
-                      onChange={handleChange}
-                      required
-                      className="w-full bg-slate-50 border border-slate-200 text-slate-900 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 block p-3 transition-colors"
-                      placeholder="e.g. AI & Data Analytics"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-bold text-slate-700 mb-1.5">Difficulty Level</label>
-                    <input
-                      type="text"
-                      name="difficulty"
-                      value={formData.difficulty}
-                      onChange={handleChange}
-                      required
-                      className="w-full bg-slate-50 border border-slate-200 text-slate-900 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 block p-3 transition-colors"
-                      placeholder="e.g. Intermediate"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-bold text-slate-700 mb-1.5">Description</label>
+                  <label className="block text-sm font-bold text-slate-700 mb-1.5">Problem Statement</label>
                   <textarea
                     name="description"
                     value={formData.description}
                     onChange={handleChange}
                     required
-                    rows="4"
-                    className="w-full bg-slate-50 border border-slate-200 text-slate-900 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 block p-3 transition-colors resize-none"
-                    placeholder="Provide a detailed description of the problem..."
+                    rows="15"
+                    className="w-full bg-slate-50 border border-slate-200 text-slate-900 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 block p-3 transition-colors resize-y"
+                    placeholder="Paste the complete problem statement here..."
                   ></textarea>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-bold text-slate-700 mb-1.5">Evaluation Criteria (Comma Separated)</label>
-                  <textarea
-                    name="criteria"
-                    value={formData.criteria}
-                    onChange={handleChange}
-                    required
-                    rows="3"
-                    className="w-full bg-slate-50 border border-slate-200 text-slate-900 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 block p-3 transition-colors resize-none"
-                    placeholder="e.g. Real-time LLM integration, Data visualization, Role-based access control"
-                  ></textarea>
-                  <p className="text-xs text-slate-500 mt-1">Separate each criterion with a comma.</p>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-bold text-slate-700 mb-1.5">Prize / Award</label>
-                  <input
-                    type="text"
-                    name="prize"
-                    value={formData.prize}
-                    onChange={handleChange}
-                    required
-                    className="w-full bg-slate-50 border border-slate-200 text-slate-900 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 block p-3 transition-colors"
-                    placeholder="e.g. Gold Award, $1000, etc."
-                  />
                 </div>
 
                 <div className="pt-4 flex gap-3">

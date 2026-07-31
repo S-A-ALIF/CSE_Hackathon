@@ -59,13 +59,20 @@ export default function Navbar() {
           <div className="hidden lg:flex space-x-3 items-center">
             {currentUser ? (
               currentUser.role === 'admin' ? (
-                <Link
-                  to="/admin"
-                  className="bg-red-500/10 text-red-400 border border-red-500/20 hover:bg-red-500/20 font-bold py-2 px-4 rounded-lg transition-all flex items-center gap-1.5 text-sm"
-                >
-                  <span>🛡️</span> Admin Panel
-                </Link>
-              ) : (
+                  <Link
+                    to="/admin"
+                    className="bg-red-500/10 text-red-400 border border-red-500/20 hover:bg-red-500/20 font-bold py-2 px-4 rounded-lg transition-all flex items-center gap-1.5 text-sm"
+                  >
+                    <span>🛡️</span> Admin Panel
+                  </Link>
+                ) : currentUser.role === 'mentor' ? (
+                  <Link
+                    to="/mentor"
+                    className="bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 hover:bg-indigo-500/20 font-bold py-2 px-4 rounded-lg transition-all flex items-center gap-1.5 text-sm"
+                  >
+                    <span>🎓</span> Mentor Dashboard
+                  </Link>
+                ) : (
                 <Link
                   to="/dashboard"
                   className="bg-blue-600/10 text-blue-400 border border-blue-500/20 hover:bg-blue-500/20 font-semibold py-2 px-4 rounded-lg transition-all text-sm"
@@ -114,9 +121,16 @@ export default function Navbar() {
             ))}
             <div className="pt-3 border-t border-white/5 flex gap-3">
               {currentUser ? (
-                <Link to="/dashboard" className="flex-1 text-center bg-blue-600 text-white font-semibold py-2 rounded-lg text-sm">
-                  Dashboard
-                </Link>
+                <div className="flex flex-col gap-2 w-full">
+                  <Link to="/dashboard" className="w-full text-center bg-blue-600 text-white font-semibold py-2 rounded-lg text-sm">
+                    Dashboard
+                  </Link>
+                  {currentUser.role === 'mentor' && (
+                    <Link to="/mentor" className="w-full text-center bg-indigo-600 text-white font-semibold py-2 rounded-lg text-sm">
+                      Mentor Dashboard
+                    </Link>
+                  )}
+                </div>
               ) : (
                 <button 
                   onClick={() => { setIsLoginOpen(true); setMobileOpen(false); }} 

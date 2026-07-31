@@ -7,6 +7,7 @@ import JoinTeamModal from '../features/team/JoinTeamModal';
 import TeamManagementModal from '../features/team/TeamManagementModal';
 import ConfirmModal from '../components/ConfirmModal';
 import MemberInfoModal from '../features/team/MemberInfoModal';
+import InviteMentorModal from '../features/team/InviteMentorModal';
 import { userCache } from '../utils/userCache';
 
 export default function TeamPage({ inDashboard = false }) {
@@ -19,6 +20,7 @@ export default function TeamPage({ inDashboard = false }) {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isJoinModalOpen, setIsJoinModalOpen] = useState(false);
   const [isManageModalOpen, setIsManageModalOpen] = useState(false);
+  const [isInviteMentorOpen, setIsInviteMentorOpen] = useState(false);
   const [isConfirmLeaveOpen, setIsConfirmLeaveOpen] = useState(false);
   const [selectedMember, setSelectedMember] = useState(null);
 
@@ -170,6 +172,12 @@ export default function TeamPage({ inDashboard = false }) {
                 <div>
                   <h2 className="text-2xl sm:text-3xl font-black text-slate-900">{team.name}</h2>
                   <p className="text-slate-500 font-medium mt-1 text-sm sm:text-base">Created on {new Date(team.created_at).toLocaleDateString()}</p>
+                  {team.mentor_id && (
+                    <p className="text-blue-600 font-bold mt-1 text-sm sm:text-base flex items-center gap-1">
+                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 002-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" /></svg>
+                      Mentored by: {team.mentor_name}
+                    </p>
+                  )}
                 </div>
                 <div className="flex items-center gap-2 sm:gap-3 flex-wrap w-full sm:w-auto">
                   {team.team_code && (
@@ -218,12 +226,22 @@ export default function TeamPage({ inDashboard = false }) {
                     </span>
                   </div>
                   {team.leader_id === currentUser?.id ? (
-                    <button
-                      onClick={() => setIsManageModalOpen(true)}
-                      className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white font-bold rounded-xl text-xs sm:text-sm transition-colors shadow-sm"
-                    >
-                      Manage Team
-                    </button>
+                    <div className="flex gap-2">
+                      {!team.mentor_id && (
+                        <button
+                          onClick={() => setIsInviteMentorOpen(true)}
+                          className="px-4 py-2 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border border-indigo-200 font-bold rounded-xl text-xs sm:text-sm transition-colors shadow-sm"
+                        >
+                          Invite Mentor
+                        </button>
+                      )}
+                      <button
+                        onClick={() => setIsManageModalOpen(true)}
+                        className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white font-bold rounded-xl text-xs sm:text-sm transition-colors shadow-sm"
+                      >
+                        Manage Team
+                      </button>
+                    </div>
                   ) : (
                     <button
                       onClick={handleLeaveTeam}
@@ -325,6 +343,11 @@ export default function TeamPage({ inDashboard = false }) {
           userCache.invalidate('invitations');
           setInvitations(prev => prev.filter(inv => inv.id !== id));
         }}
+      />
+      <InviteMentorModal
+        isOpen={isInviteMentorOpen}
+        onClose={() => setIsInviteMentorOpen(false)}
+        teamId={team?.id}
       />
       <ConfirmModal
         isOpen={isConfirmLeaveOpen}

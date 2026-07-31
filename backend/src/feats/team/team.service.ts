@@ -37,7 +37,7 @@ export const teamService = {
         `;
 
         const [teamRes, membersRes, settingsRes] = await Promise.all([
-            pool.query('SELECT id, name, team_code, leader_id, COALESCE(is_full, false) as is_full, created_at FROM teams WHERE id = $1', [teamId]),
+            pool.query('SELECT t.id, t.name, t.team_code, t.leader_id, t.mentor_id, COALESCE(t.is_full, false) as is_full, t.created_at, COALESCE(ui.name, u.email) as mentor_name FROM teams t LEFT JOIN users u ON t.mentor_id = u.id LEFT JOIN user_info ui ON u.id = ui.user_id WHERE t.id = $1', [teamId]),
             pool.query(membersQuery, [teamId]),
             pool.query("SELECT key, value FROM platform_settings WHERE key IN ('min_team_members', 'max_team_members')")
         ]);

@@ -9,6 +9,7 @@ export default function EditModal({ isOpen, onClose, data, type, onSaved }) {
   const isTeam = type === 'team';
 
   const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
   const [role, setRole] = useState('student');
   const [studentId, setStudentId] = useState('');
   const [batchSession, setBatchSession] = useState('');
@@ -21,6 +22,7 @@ export default function EditModal({ isOpen, onClose, data, type, onSaved }) {
   useEffect(() => {
     if (data) {
       setName(data.name || '');
+      setEmail(data.email || '');
       setRole(data.role || 'student');
       setStudentId(data.student_id || '');
       setBatchSession(data.batch_session || '');
@@ -46,6 +48,7 @@ export default function EditModal({ isOpen, onClose, data, type, onSaved }) {
       ? { name, is_banned: isBanned, ban_reason: isBanned ? banReason : undefined }
       : {
           name,
+          email,
           role,
           student_id: studentId || undefined,
           batch_session: batchSession || undefined,
@@ -112,6 +115,21 @@ export default function EditModal({ isOpen, onClose, data, type, onSaved }) {
           </div>
 
           {!isTeam && (
+            <div className="mb-4">
+              <label className="block text-xs font-bold uppercase text-slate-600 mb-1">
+                Email Address
+              </label>
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                className="w-full px-4 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-blue-500 font-semibold text-slate-900 text-sm"
+              />
+            </div>
+          )}
+
+          {!isTeam && (
             <>
               <div className="grid grid-cols-2 gap-4">
                 <div>
@@ -169,6 +187,7 @@ export default function EditModal({ isOpen, onClose, data, type, onSaved }) {
                     className="w-full px-4 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-blue-500 font-semibold text-sm"
                   >
                     <option value="student">Student</option>
+                    <option value="mentor">Mentor</option>
                     <option value="admin">Admin</option>
                   </select>
                 </div>

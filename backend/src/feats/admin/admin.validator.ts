@@ -14,7 +14,7 @@ export const adminSchemas = {
     }),
     updateMember: z.object({
         body: z.object({
-            role: z.enum(['student', 'tutor', 'admin']).optional(),
+            role: z.enum(['student', 'mentor', 'admin']).optional(),
             email: z.string().email({ message: "Invalid email address" }).optional(),
             name: z.string().optional(),
             student_id: z.string().regex(STUDENT_ID_REGEX, { message: STUDENT_ID_ERROR }).optional(),

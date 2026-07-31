@@ -6,6 +6,6 @@ export interface User {
     id: string;
     email: string;
     password?: string; // Hashed password, exclude from sensitive responses
-    role: 'student' | 'tutor' | 'admin';
+    role: 'student' | 'mentor' | 'admin';
     createdAt?: Date;
 }

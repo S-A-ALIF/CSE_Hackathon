@@ -185,7 +185,6 @@ export const getAllMembers = async (req: Request, res: Response) => {
             LEFT JOIN user_info ui ON u.id = ui.user_id
             LEFT JOIN team_members tm ON u.id = tm.user_id
             LEFT JOIN teams t ON tm.team_id = t.id
-            WHERE u.role != 'admin'
             ORDER BY u.created_at DESC
         `;
         const result = await pool.query(query);

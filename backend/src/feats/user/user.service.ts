@@ -69,3 +69,27 @@ export const upsertProfile = async (data: UserInfo) => {
         throw new CustomError('Failed to update user profile', 500);
     }
 };
+
+export const searchUsers = async (searchQuery: string) => {
+    try {
+        const query = `
+            SELECT 
+                u.id as user_id, 
+                u.email, 
+                COALESCE(ui.name, '') as name, 
+                COALESCE(ui.student_id, '') as student_id
+            FROM users u
+            LEFT JOIN user_info ui ON u.id = ui.user_id
+            WHERE 
+                u.email ILIKE $1 
+                OR ui.name ILIKE $1 
+                OR ui.student_id ILIKE $1
+            LIMIT 10;
+        `;
+        const result = await pool.query(query, [`%${searchQuery}%`]);
+        return result.rows;
+    } catch (error: any) {
+        console.error('Service Error [searchUsers]:', error);
+        throw new CustomError('Failed to search users', 500);
+    }
+};

@@ -62,3 +62,22 @@ export const updateProfile = async (req: Request, res: Response, next: NextFunct
         next(error);
     }
 };
+
+export const searchUsers = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const { q } = req.query;
+        if (!q || typeof q !== 'string') {
+            return res.status(400).json({ status: 'error', message: 'Query parameter "q" is required' });
+        }
+
+        const users = await userService.searchUsers(q);
+        
+        res.status(200).json({
+            status: 'success',
+            success: true,
+            data: users
+        });
+    } catch (error) {
+        next(error);
+    }
+};
