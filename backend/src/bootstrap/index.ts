@@ -83,6 +83,9 @@ const server = app.listen(PORT, () => {
         ALTER TABLE teams ADD COLUMN IF NOT EXISTS ban_reason TEXT DEFAULT NULL;
         ALTER TABLE teams ADD COLUMN IF NOT EXISTS team_code VARCHAR(20) UNIQUE DEFAULT NULL;
         ALTER TABLE teams ADD COLUMN IF NOT EXISTS is_full BOOLEAN DEFAULT false;
+        ALTER TABLE teams ADD COLUMN IF NOT EXISTS repo_url VARCHAR(500) DEFAULT NULL;
+        ALTER TABLE teams ADD COLUMN IF NOT EXISTS is_submitted BOOLEAN DEFAULT false;
+        ALTER TABLE teams ADD COLUMN IF NOT EXISTS submitted_at TIMESTAMP DEFAULT NULL;
         UPDATE teams SET team_code = 'TM-' || UPPER(SUBSTRING(MD5(RANDOM()::TEXT), 1, 6)) WHERE team_code IS NULL;
         CREATE TABLE IF NOT EXISTS team_join_requests (
             id UUID PRIMARY KEY DEFAULT gen_random_uuid(),

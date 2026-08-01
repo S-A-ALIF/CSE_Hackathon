@@ -10,7 +10,14 @@ import SettingsPage from './SettingsPage';
 export default function MentorDashboardPage() {
   const { currentUser, logout } = useAuth();
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState('dashboard');
+  const [activeTab, setActiveTab] = useState(() => {
+    return localStorage.getItem('hackathon_mentor_tab') || 'dashboard';
+  });
+
+  useEffect(() => {
+    localStorage.setItem('hackathon_mentor_tab', activeTab);
+  }, [activeTab]);
+
   const [invitations, setInvitations] = useState([]);
   const [teams, setTeams] = useState([]);
   const [loading, setLoading] = useState(true);

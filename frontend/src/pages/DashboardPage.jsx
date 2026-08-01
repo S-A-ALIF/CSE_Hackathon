@@ -14,10 +14,16 @@ import QnAPage from './QnAPage';
 export default function DashboardPage() {
   const { currentUser, logout, workspaceOpen, problemsOpen, fetchPlatformSettings } = useAuth();
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState('team');
+  const [activeTab, setActiveTab] = useState(() => {
+    return localStorage.getItem('hackathon_active_tab') || 'team';
+  });
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const menuRef = useRef(null);
+
+  useEffect(() => {
+    localStorage.setItem('hackathon_active_tab', activeTab);
+  }, [activeTab]);
 
   // Poll settings every 10 seconds to respond to live admin closures
   useEffect(() => {

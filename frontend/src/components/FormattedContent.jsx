@@ -44,17 +44,18 @@ export default function FormattedContent({ content = '', className = '' }) {
   const baseProseClasses = `prose prose-slate dark:prose-invert max-w-none w-full max-w-full
     break-words overflow-wrap-anywhere whitespace-normal
     [&_*]:!max-w-full [&_*]:!break-words [&_*]:!whitespace-normal
+    [&_code]:!bg-slate-100 dark:[&_code]:!bg-slate-800/80 [&_code]:!px-1.5 [&_code]:!py-0.5 [&_code]:!rounded-md [&_code]:!text-sm [&_code]:!font-mono [&_code]:!text-slate-800 dark:[&_code]:!text-slate-200 [&_code]:!break-all
+    [&_pre]:!bg-slate-900 dark:[&_pre]:!bg-slate-950 [&_pre]:!text-slate-100
     prose-headings:font-bold prose-headings:text-slate-900 dark:prose-headings:text-slate-100 
     prose-p:text-slate-700 dark:prose-p:text-slate-300 prose-p:leading-relaxed 
     prose-a:text-blue-600 dark:prose-a:text-blue-400 prose-a:underline hover:prose-a:text-blue-700
     prose-ul:list-disc prose-ol:list-decimal prose-li:my-1 prose-li:text-slate-700 dark:prose-li:text-slate-300
     prose-blockquote:border-l-4 prose-blockquote:border-blue-500 prose-blockquote:bg-blue-50/50 dark:prose-blockquote:bg-blue-950/20 prose-blockquote:py-1 prose-blockquote:px-4 prose-blockquote:rounded-r-xl
-    prose-code:bg-slate-100 dark:prose-code:bg-slate-800 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded-md prose-code:text-sm prose-code:font-mono prose-code:break-all
     prose-img:rounded-2xl prose-img:shadow-md
     ${className}`;
 
   if (isHtml) {
-    // Remove hardcoded black/dark-gray text colors or white backgrounds from Word/Google Docs paste
+    // Remove hardcoded text colors or backgrounds from pasted HTML
     DOMPurify.addHook('afterSanitizeAttributes', (node) => {
       if (node.style) {
         node.style.removeProperty('white-space');
@@ -63,14 +64,12 @@ export default function FormattedContent({ content = '', className = '' }) {
         node.style.removeProperty('max-width');
         node.style.removeProperty('height');
         node.style.removeProperty('text-overflow');
+        node.style.removeProperty('background-color');
+        node.style.removeProperty('background');
 
         const color = node.style.color || '';
-        const bg = node.style.backgroundColor || '';
         if (isDarkOrGray(color)) {
           node.style.removeProperty('color');
-        }
-        if (/rgb\(\s*255,\s*255,\s*255\s*\)|#ffffff|#fff|white|transparent/i.test(bg)) {
-          node.style.removeProperty('background-color');
         }
         if (node.getAttribute('style')?.trim() === '') {
           node.removeAttribute('style');
@@ -78,6 +77,9 @@ export default function FormattedContent({ content = '', className = '' }) {
       }
       if (node.hasAttribute('color') && isDarkOrGray(node.getAttribute('color'))) {
         node.removeAttribute('color');
+      }
+      if (node.hasAttribute('bgcolor')) {
+        node.removeAttribute('bgcolor');
       }
     });
 

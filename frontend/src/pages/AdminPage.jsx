@@ -16,7 +16,14 @@ import ProfilePage from './ProfilePage';
 export default function AdminPage() {
   const { currentUser, logout } = useAuth();
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState('dashboard');
+  const [activeTab, setActiveTab] = useState(() => {
+    return localStorage.getItem('hackathon_admin_tab') || 'dashboard';
+  });
+
+  useEffect(() => {
+    localStorage.setItem('hackathon_admin_tab', activeTab);
+  }, [activeTab]);
+
   const [visitedTabs, setVisitedTabs] = useState({ dashboard: true });
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const menuRef = useRef(null);

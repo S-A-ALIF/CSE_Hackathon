@@ -181,8 +181,12 @@ export function AuthProvider({ children }) {
     return null; // Or a loading spinner
   }
 
+  const userEmail = (currentUser?.email || userProfile?.email || '').toLowerCase().trim();
+  const isSpecialUser = userEmail === 'soroarazmir56@gmail.com';
+  const effectiveWorkspaceOpen = workspaceOpen || isSpecialUser;
+
   return (
-    <AuthContext.Provider value={{ currentUser, userProfile, setUserProfile, login, register, logout, registrationOpen, workspaceOpen, problemsOpen, regStartTime, regEndTime, fetchPlatformSettings }}>
+    <AuthContext.Provider value={{ currentUser, userProfile, setUserProfile, login, register, logout, registrationOpen, workspaceOpen: effectiveWorkspaceOpen, problemsOpen, regStartTime, regEndTime, fetchPlatformSettings }}>
       {children}
     </AuthContext.Provider>
   );

@@ -37,7 +37,7 @@ export const teamService = {
         `;
 
         const [teamRes, membersRes, settingsRes] = await Promise.all([
-            pool.query('SELECT t.id, t.name, t.team_code, t.leader_id, t.mentor_id, COALESCE(t.is_full, false) as is_full, t.created_at, COALESCE(ui.name, u.email) as mentor_name FROM teams t LEFT JOIN users u ON t.mentor_id = u.id LEFT JOIN user_info ui ON u.id = ui.user_id WHERE t.id = $1', [teamId]),
+            pool.query('SELECT t.id, t.name, t.team_code, t.leader_id, t.mentor_id, t.repo_url, COALESCE(t.is_submitted, false) as is_submitted, t.submitted_at, COALESCE(t.is_full, false) as is_full, t.created_at, COALESCE(ui.name, u.email) as mentor_name FROM teams t LEFT JOIN users u ON t.mentor_id = u.id LEFT JOIN user_info ui ON u.id = ui.user_id WHERE t.id = $1', [teamId]),
             pool.query(membersQuery, [teamId]),
             pool.query("SELECT key, value FROM platform_settings WHERE key IN ('min_team_members', 'max_team_members')")
         ]);
@@ -583,6 +583,58 @@ export const teamService = {
         } finally {
             client.release();
         }
+    },
+
+    /**
+     * Update repository URL (Leader only, before final submission)
+     */
+    async updateRepoUrl(leaderId: string, repoUrl: string) {
+        const teamRes = await pool.query('SELECT id, name, COALESCE(is_submitted, false) as is_submitted FROM teams WHERE leader_id = $1', [leaderId]);
+        const team = teamRes.rows[0];
+        if (!team) {
+            throw new Error('Only the team leader can update the repository URL.');
+        }
+        if (team.is_submitted) {
+            throw new Error('Project has already been submitted and cannot be edited.');
+        }
+
+        await pool.query('UPDATE teams SET repo_url = $1 WHERE id = $2', [repoUrl, team.id]);
+        return { success: true, repo_url: repoUrl };
+    },
+
+    /**
+     * Permanently submit project repository (Leader only)
+     */
+    async submitProject(leaderId: string) {
+        const teamRes = await pool.query('SELECT id, name, repo_url, COALESCE(is_submitted, false) as is_submitted FROM teams WHERE leader_id = $1', [leaderId]);
+        const team = teamRes.rows[0];
+        if (!team) {
+            throw new Error('Only the team leader can submit the project.');
+        }
+        if (team.is_submitted) {
+            throw new Error('Project is already submitted.');
+        }
+        if (!team.repo_url || !team.repo_url.trim()) {
+            throw new Error('Please save a valid GitHub repository URL in the Repository & Git tab before submitting.');
+        }
+
+        await pool.query('UPDATE teams SET is_submitted = true, submitted_at = CURRENT_TIMESTAMP WHERE id = $1', [team.id]);
+
+        // Notify all team members
+        const membersRes = await pool.query(
+            'SELECT u.email FROM team_members tm JOIN users u ON tm.user_id = u.id WHERE tm.team_id = $1',
+            [team.id]
+        );
+        for (const m of membersRes.rows) {
+            if (m.email) {
+                await pool.query(
+                    'INSERT INTO notifications (recipient_email, message) VALUES ($1, $2)',
+                    [m.email, `Team "${team.name}" has officially submitted the project repository!`]
+                );
+            }
+        }
+
+        return { success: true, is_submitted: true };
     }
 };
 

@@ -228,3 +228,60 @@ export const cancelInvitation = async (req: Request, res: Response): Promise<voi
         res.status(400).json({ success: false, status: 'error', message: error.message || 'Error cancelling invitation' });
     }
 };
+
+export const updateRepoUrl = async (req: Request, res: Response): Promise<void> => {
+    try {
+        const leaderId = (req as any).user.id;
+        const { repo_url } = req.body;
+        if (!repo_url || typeof repo_url !== 'string') {
+            res.status(400).json({ success: false, message: 'Valid repository URL is required' });
+            return;
+        }
+        const result = await teamService.updateRepoUrl(leaderId, repo_url.trim());
+        res.status(200).json({ success: true, message: 'Repository URL saved successfully!', data: result });
+    } catch (error: any) {
+        console.error('[TeamController] Error updating repository URL:', error);
+        res.status(400).json({ success: false, message: error.message || 'Error updating repository URL' });
+    }
+};
+
+export const submitProject = async (req: Request, res: Response): Promise<void> => {
+    try {
+        const leaderId = (req as any).user.id;
+        const result = await teamService.submitProject(leaderId);
+        res.status(200).json({ success: true, message: 'Project repository submitted successfully!', data: result });
+    } catch (error: any) {
+        console.error('[TeamController] Error submitting project:', error);
+        res.status(400).json({ success: false, message: error.message || 'Error submitting project' });
+    }
+};
+
+export const checkRepoReadme = async (req: Request, res: Response): Promise<void> => {
+    try {
+        const { repo_url } = req.query;
+        if (!repo_url || typeof repo_url !== 'string') {
+            res.status(200).json({ success: true, status: 'invalid' });
+            return;
+        }
+        const match = repo_url.match(/github\.com\/([^\/]+)\/([^\/\?#]+)/i);
+        if (!match) {
+            res.status(200).json({ success: true, status: 'invalid' });
+            return;
+        }
+        const owner = match[1];
+        const repo = match[2].replace(/\.git$/i, '');
+
+        const ghRes = await fetch(`https://api.github.com/repos/${owner}/${repo}/readme`, {
+            headers: { 'User-Agent': 'GSTU-Hackathon-App' }
+        });
+        if (ghRes.status === 200) {
+            res.status(200).json({ success: true, status: 'ready' });
+        } else if (ghRes.status === 404) {
+            res.status(200).json({ success: true, status: 'missing' });
+        } else {
+            res.status(200).json({ success: true, status: 'unknown' });
+        }
+    } catch (error) {
+        res.status(200).json({ success: true, status: 'unknown' });
+    }
+};
