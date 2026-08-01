@@ -87,6 +87,7 @@ const initAllTables = async () => {
             ALTER TABLE users ADD COLUMN IF NOT EXISTS ban_reason TEXT DEFAULT NULL;
             ALTER TABLE teams ADD COLUMN IF NOT EXISTS is_banned BOOLEAN DEFAULT false;
             ALTER TABLE teams ADD COLUMN IF NOT EXISTS ban_reason TEXT DEFAULT NULL;
+            ALTER TABLE teams ADD COLUMN IF NOT EXISTS mentor_id UUID REFERENCES users(id) ON DELETE SET NULL;
             CREATE TABLE IF NOT EXISTS platform_settings (
                 key VARCHAR(50) PRIMARY KEY,
                 value TEXT NOT NULL

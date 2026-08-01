@@ -3,8 +3,7 @@ import { Link } from 'react-router-dom';
 import jsPDF from 'jspdf';
 import { API_URL } from '../config';
 import { useAuth } from '../contexts/AuthContext';
-import ReactMarkdown from 'react-markdown';
-import remarkGfm from 'remark-gfm';
+import FormattedContent from '../components/FormattedContent';
 
 export default function ProblemsPage({ inDashboard = false }) {
   const { workspaceOpen } = useAuth();
@@ -32,6 +31,13 @@ export default function ProblemsPage({ inDashboard = false }) {
     fetchProblems();
   }, []);
 
+  const stripHtml = (htmlString) => {
+    if (!htmlString) return '';
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = htmlString;
+    return tempDiv.textContent || tempDiv.innerText || '';
+  };
+
   const downloadPDF = (problem) => {
     const doc = new jsPDF();
     let y = 20;
@@ -44,7 +50,8 @@ export default function ProblemsPage({ inDashboard = false }) {
 
     doc.setFontSize(12);
     doc.setFont("helvetica", "normal");
-    const descLines = doc.splitTextToSize(problem.description, 170);
+    const plainTextDesc = stripHtml(problem.description);
+    const descLines = doc.splitTextToSize(plainTextDesc, 170);
     doc.text(descLines, 20, y);
 
     doc.save(`Problem_${problem.id}_${problem.title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.pdf`);
@@ -62,8 +69,8 @@ export default function ProblemsPage({ inDashboard = false }) {
               <span>Problem Statement</span>
             </div>
           )}
-          <h1 className="text-2xl sm:text-3xl md:text-4xl font-black tracking-tight text-slate-900">Hackathon Problem Statement</h1>
-          <p className="mt-2 text-base sm:text-lg text-slate-600">Select a problem statement for your team and build a winning solution.</p>
+          <h1 className="text-2xl sm:text-3xl md:text-4xl font-black tracking-tight text-slate-900 dark:text-white">Hackathon Problem Statement</h1>
+          <p className="mt-2 text-base sm:text-lg text-slate-600 dark:text-slate-400">Select a problem statement for your team and build a winning solution.</p>
         </div>
 
         {loading ? (
@@ -75,34 +82,30 @@ export default function ProblemsPage({ inDashboard = false }) {
             {/* Single Problem Display */}
             <div className="w-full max-w-4xl mx-auto">
               {problems.length > 0 ? (
-                <div className="bg-white rounded-3xl p-6 sm:p-12 border border-slate-200 shadow-sm transition-all flex flex-col">
+                <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 sm:p-12 border border-slate-200 dark:border-slate-800 shadow-sm transition-all flex flex-col">
                   <div>
-                    <h2 className="text-3xl font-black text-slate-900 mb-6">{problems[0].title}</h2>
-                    <div className="prose prose-slate max-w-none mb-10">
-                      <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                        {problems[0].description}
-                      </ReactMarkdown>
-                    </div>
+                    <h2 className="text-3xl font-black text-slate-900 dark:text-white mb-6">{problems[0].title}</h2>
+                    <FormattedContent content={problems[0].description} className="mb-10" />
                   </div>
 
-                  <div className="border-t border-slate-100 pt-6 flex flex-col sm:flex-row items-center justify-end gap-4">
+                  <div className="border-t border-slate-100 dark:border-slate-800 pt-6 flex flex-col sm:flex-row items-center justify-end gap-4">
                     <button
                       onClick={() => downloadPDF(problems[0])}
-                      className="w-full sm:w-auto px-6 py-3 bg-blue-50 hover:bg-blue-100 text-blue-700 font-bold text-sm rounded-xl transition-colors flex items-center justify-center gap-2"
+                      className="w-full sm:w-auto px-6 py-3 bg-blue-50 dark:bg-blue-950/40 hover:bg-blue-100 dark:hover:bg-blue-900/60 text-blue-700 dark:text-blue-300 font-bold text-sm rounded-xl transition-colors flex items-center justify-center gap-2"
                     >
                       <span>📄</span> Download PDF
                     </button>
                     {workspaceOpen ? (
                       <Link
                         to="/project"
-                        className="w-full sm:w-auto px-8 py-3 bg-slate-900 hover:bg-slate-800 text-white font-bold text-sm rounded-xl transition-colors text-center"
+                        className="w-full sm:w-auto px-8 py-3 bg-slate-900 dark:bg-blue-600 hover:bg-slate-800 dark:hover:bg-blue-500 text-white font-bold text-sm rounded-xl transition-colors text-center"
                       >
                         Select & Start Hacking
                       </Link>
                     ) : (
                       <button
                         disabled
-                        className="w-full sm:w-auto px-8 py-3 bg-slate-100 border border-slate-200 text-slate-400 font-bold text-sm rounded-xl cursor-not-allowed flex items-center justify-center gap-1.5"
+                        className="w-full sm:w-auto px-8 py-3 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-400 dark:text-slate-500 font-bold text-sm rounded-xl cursor-not-allowed flex items-center justify-center gap-1.5"
                         title="Workspace is currently locked by admin"
                       >
                         <span>🔒</span> Workspace Locked
@@ -111,9 +114,9 @@ export default function ProblemsPage({ inDashboard = false }) {
                   </div>
                 </div>
               ) : (
-                <div className="text-center py-20 bg-white rounded-3xl border border-slate-200 shadow-sm">
-                  <h3 className="text-xl font-bold text-slate-800">No problem statement found</h3>
-                  <p className="text-slate-500 mt-2">The administrators haven't published the problem yet.</p>
+                <div className="text-center py-20 bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm">
+                  <h3 className="text-xl font-bold text-slate-800 dark:text-white">No problem statement found</h3>
+                  <p className="text-slate-500 dark:text-slate-400 mt-2">The administrators haven't published the problem yet.</p>
                 </div>
               )}
             </div>
