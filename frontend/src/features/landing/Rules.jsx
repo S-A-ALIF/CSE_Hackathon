@@ -1,3 +1,7 @@
+import { useState, useEffect } from 'react';
+import { API_URL } from '../../config';
+import FormattedContent from '../../components/FormattedContent';
+
 const rules = [
   {
     id: '01',
@@ -65,6 +69,23 @@ const categoryColors = {
 };
 
 export default function Rules() {
+  const [customRules, setCustomRules] = useState([]);
+
+  useEffect(() => {
+    const fetchRules = async () => {
+      try {
+        const res = await fetch(`${API_URL}/api/v1/rules`);
+        const data = await res.json();
+        if (data.success && Array.isArray(data.data) && data.data.length > 0) {
+          setCustomRules(data.data);
+        }
+      } catch (error) {
+        console.error('Failed to load custom rules', error);
+      }
+    };
+    fetchRules();
+  }, []);
+
   return (
     <section id="rules" className="bg-slate-900 py-28 text-white">
       <div className="container mx-auto px-6 lg:px-16">
@@ -74,30 +95,36 @@ export default function Rules() {
             Guidelines
           </span>
           <h2 className="text-4xl md:text-5xl font-black tracking-tight mb-5">
-            Hackathon Rules
+            {customRules.length > 0 ? customRules[0].title : 'Hackathon Rules'}
           </h2>
           <p className="text-slate-400 text-lg">
             All participants are expected to read and follow these rules. Violations may result in point deductions or disqualification.
           </p>
         </div>
 
-        {/* Rules Grid */}
-        <div className="max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-5">
-          {rules.map((rule) => (
-            <div key={rule.id} className="bg-slate-800/50 border border-slate-700/50 rounded-2xl p-5 sm:p-6 hover:border-slate-600 transition-all flex flex-col sm:flex-row gap-3 sm:gap-5 items-start">
-              <div className="flex-shrink-0 w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-slate-700/50 border border-slate-600/50 flex items-center justify-center text-slate-300 font-black text-sm">
-                {rule.id}
-              </div>
-              <div>
-                <div className={`inline-block text-[10px] font-bold uppercase tracking-widest border px-2 py-0.5 rounded mb-2 ${categoryColors[rule.category] || 'bg-slate-500/10 text-slate-400 border-slate-500/20'}`}>
-                  {rule.category}
+        {/* Rules Display */}
+        {customRules.length > 0 ? (
+          <div className="max-w-4xl mx-auto bg-slate-800/60 border border-slate-700/60 rounded-3xl p-6 sm:p-12 shadow-xl">
+            <FormattedContent content={customRules[0].content} />
+          </div>
+        ) : (
+          <div className="max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-5">
+            {rules.map((rule) => (
+              <div key={rule.id} className="bg-slate-800/50 border border-slate-700/50 rounded-2xl p-5 sm:p-6 hover:border-slate-600 transition-all flex flex-col sm:flex-row gap-3 sm:gap-5 items-start">
+                <div className="flex-shrink-0 w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-slate-700/50 border border-slate-600/50 flex items-center justify-center text-slate-300 font-black text-sm">
+                  {rule.id}
                 </div>
-                <h3 className="font-bold text-white mb-2">{rule.title}</h3>
-                <p className="text-slate-400 text-sm leading-relaxed">{rule.desc}</p>
+                <div>
+                  <div className={`inline-block text-[10px] font-bold uppercase tracking-widest border px-2 py-0.5 rounded mb-2 ${categoryColors[rule.category] || 'bg-slate-500/10 text-slate-400 border-slate-500/20'}`}>
+                    {rule.category}
+                  </div>
+                  <h3 className="font-bold text-white mb-2">{rule.title}</h3>
+                  <p className="text-slate-400 text-sm leading-relaxed">{rule.desc}</p>
+                </div>
               </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
       </div>
     </section>
   );

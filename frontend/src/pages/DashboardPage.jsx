@@ -5,6 +5,7 @@ import NotificationDropdown from '../components/NotificationDropdown';
 import TeamPage from './TeamPage';
 import ProjectPage from './ProjectPage';
 import ProblemsPage from './ProblemsPage';
+import RulesPage from './RulesPage';
 import ProfilePage from './ProfilePage';
 import { toast } from 'sonner';
 import SettingsPage from './SettingsPage';
@@ -98,6 +99,15 @@ export default function DashboardPage() {
       icon: (
         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
           <path strokeLinecap="round" strokeLinejoin="round" d="M12 18v-5.25m0 0a6.01 6.01 0 0 0 1.5-.189m-1.5.189a6.01 6.01 0 0 1-1.5-.189m3.75 7.478a12.06 12.06 0 0 1-4.5 0m3.75 2.383a14.406 14.406 0 0 1-3 0M14.25 18v-.192c0-.983.658-1.823 1.508-2.316a7.5 7.5 0 1 0-7.517 0c.85.493 1.509 1.333 1.509 2.316V18" />
+        </svg>
+      )
+    },
+    {
+      id: 'rules',
+      label: 'Rules & Regulations',
+      icon: (
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.042A8.967 8.967 0 0 0 6 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 0 1 6 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 0 1 6-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0 0 18 18a8.967 8.967 0 0 0-6 2.292m0-14.25v14.25" />
         </svg>
       )
     },
@@ -293,6 +303,7 @@ export default function DashboardPage() {
               <p className="mt-2 text-center max-w-sm">The problem statement will be revealed once the hackathon officially starts.</p>
             </div>
           )}
+          {activeTab === 'rules' && <RulesPage inDashboard={true} />}
           {activeTab === 'profile' && <ProfilePage inDashboard={true} />}
           {activeTab === 'settings' && <SettingsPage />}
           {activeTab === 'qna' && <QnAPage />}

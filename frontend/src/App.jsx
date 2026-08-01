@@ -9,6 +9,7 @@ import ProfilePage from './pages/ProfilePage';
 import TeamPage from './pages/TeamPage';
 import ProjectPage from './pages/ProjectPage';
 import ProblemsPage from './pages/ProblemsPage';
+import RulesPage from './pages/RulesPage';
 import AdminPage from './pages/AdminPage';
 import MentorDashboardPage from './pages/MentorDashboardPage';
 import AdminMessagePopup from './components/AdminMessagePopup';
@@ -28,6 +29,7 @@ function App() {
             <Route path="/team" element={<TeamPage />} />
             <Route path="/project" element={<ProjectPage />} />
             <Route path="/problems" element={<ProblemsPage />} />
+            <Route path="/rules" element={<RulesPage />} />
             <Route path="/admin" element={<AdminPage />} />
             <Route path="/mentor" element={<MentorDashboardPage />} />
           </Routes>

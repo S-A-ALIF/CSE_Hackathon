@@ -102,6 +102,12 @@ const server = app.listen(PORT, () => {
             prize VARCHAR(255) NOT NULL,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         );
+        CREATE TABLE IF NOT EXISTS rules (
+            id SERIAL PRIMARY KEY,
+            title VARCHAR(255) NOT NULL DEFAULT 'Hackathon Rules & Regulations',
+            content TEXT NOT NULL,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
         CREATE TABLE IF NOT EXISTS platform_settings (
             key VARCHAR(50) PRIMARY KEY,
             value TEXT NOT NULL
