@@ -495,6 +495,35 @@ export const updateRegistrationTimeline = async (req: Request, res: Response) =>
 };
 
 /**
+ * POST /api/v1/admin/settings/hackathon-timeline
+ * Update hack_start_time and hack_end_time
+ */
+export const updateHackathonTimeline = async (req: Request, res: Response) => {
+    try {
+        const { hack_start_time, hack_end_time } = req.body;
+
+        await pool.query(
+            "INSERT INTO platform_settings (key, value) VALUES ('hack_start_time', $1) ON CONFLICT (key) DO UPDATE SET value = $1",
+            [hack_start_time || '']
+        );
+        await pool.query(
+            "INSERT INTO platform_settings (key, value) VALUES ('hack_end_time', $1) ON CONFLICT (key) DO UPDATE SET value = $1",
+            [hack_end_time || '']
+        );
+
+        res.status(200).json({
+            status: 'success',
+            success: true,
+            data: { hack_start_time: hack_start_time || '', hack_end_time: hack_end_time || '' },
+            message: 'Hackathon timeline updated successfully'
+        });
+    } catch (error) {
+        console.error('Error updating hackathon timeline:', error);
+        res.status(500).json({ status: 'error', success: false, message: 'Failed to update hackathon timeline' });
+    }
+};
+
+/**
  * DELETE /api/v1/admin/members/bulk-delete
  * Bulk delete members with admin protection
  */

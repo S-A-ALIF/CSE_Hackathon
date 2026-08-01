@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 
 export default function Home() {
-  const { registrationOpen, regStartTime, regEndTime } = useAuth();
+  const { registrationOpen, regStartTime, regEndTime, hackStartTime, hackEndTime, isSubmissionOpen } = useAuth();
 
   const [now, setNow] = useState(new Date().getTime());
 
@@ -50,7 +50,27 @@ export default function Home() {
     return null;
   };
 
+  const getHackTimelineMessage = () => {
+    const hackStart = hackStartTime ? new Date(hackStartTime).getTime() : 0;
+    const hackEnd = hackEndTime ? new Date(hackEndTime).getTime() : 0;
+
+    if (hackStartTime && hackStart > now) {
+      return { text: `Hackathon starts in: ${getCountdown(hackStartTime)}`, type: 'upcoming' };
+    }
+
+    if (hackEndTime && hackEnd > now) {
+      return { text: `Submission closes in: ${getCountdown(hackEndTime)}`, type: 'closing' };
+    }
+
+    if (hackStartTime && hackEndTime && hackEnd <= now) {
+      return { text: 'Hackathon submission has ended', type: 'ended' };
+    }
+
+    return null;
+  };
+
   const timelineMessage = getTimelineMessage();
+  const hackTimelineInfo = getHackTimelineMessage();
 
   return (
     <section id="home" className="relative min-h-screen flex flex-col justify-center bg-slate-950 text-white overflow-hidden">
@@ -62,12 +82,33 @@ export default function Home() {
       <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-indigo-600/10 rounded-full blur-3xl pointer-events-none" />
 
       <div className="relative container mx-auto px-6 lg:px-16 z-10 text-center pt-24 pb-16">
-        {/* Timeline Banner */}
+        {/* Registration Timeline Banner */}
         {timelineMessage && (
-          <div className="flex justify-center mb-4">
+          <div className="flex justify-center mb-3">
             <div className="inline-flex items-center gap-2 bg-gradient-to-r from-purple-500/10 via-fuchsia-500/10 to-pink-500/10 border border-fuchsia-500/20 text-fuchsia-300 text-sm font-bold tracking-wide px-6 py-2.5 rounded-full shadow-lg shadow-fuchsia-500/5 backdrop-blur-sm animate-pulse-slow">
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
               {timelineMessage}
+            </div>
+          </div>
+        )}
+
+        {/* Hackathon Submission Timeline Banner */}
+        {hackTimelineInfo && (
+          <div className="flex justify-center mb-4">
+            <div className={`inline-flex items-center gap-2 text-sm font-bold tracking-wide px-6 py-2.5 rounded-full shadow-lg backdrop-blur-sm ${
+              hackTimelineInfo.type === 'upcoming'
+                ? 'bg-gradient-to-r from-blue-500/10 via-cyan-500/10 to-teal-500/10 border border-cyan-500/20 text-cyan-300 shadow-cyan-500/5 animate-pulse-slow'
+                : hackTimelineInfo.type === 'closing'
+                ? 'bg-gradient-to-r from-orange-500/10 via-amber-500/10 to-yellow-500/10 border border-amber-500/20 text-amber-300 shadow-amber-500/5 animate-pulse-slow'
+                : 'bg-slate-800/50 border border-slate-700/50 text-slate-400'
+            }`}>
+              <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                {hackTimelineInfo.type === 'ended'
+                  ? <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  : <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                }
+              </svg>
+              {hackTimelineInfo.text}
             </div>
           </div>
         )}

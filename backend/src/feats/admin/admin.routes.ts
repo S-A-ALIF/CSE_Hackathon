@@ -16,6 +16,7 @@ import {
     toggleProblems,
     updateTeamLimits,
     updateRegistrationTimeline,
+    updateHackathonTimeline,
     deleteMultipleMembers,
     deleteMultipleTeams,
     sendAdminMessage
@@ -51,6 +52,7 @@ router.post('/settings/toggle-workspace', toggleWorkspace);
 router.post('/settings/toggle-problems', toggleProblems);
 router.post('/settings/team-limits', validateRequest(adminSchemas.teamLimits), updateTeamLimits);
 router.post('/settings/registration-timeline', updateRegistrationTimeline);
+router.post('/settings/hackathon-timeline', updateHackathonTimeline);
 
 export default router;
 

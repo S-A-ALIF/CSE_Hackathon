@@ -6,7 +6,7 @@ import { toast } from 'sonner';
 import ConfirmModal from '../components/ConfirmModal';
 
 export default function ProjectPage({ inDashboard = false }) {
-  const { currentUser } = useAuth();
+  const { currentUser, hackStartTime, hackEndTime, isSubmissionOpen } = useAuth();
   const [activeTab, setActiveTab] = useState(() => {
     return localStorage.getItem('hackathon_project_tab') || 'overview';
   });
@@ -78,12 +78,18 @@ export default function ProjectPage({ inDashboard = false }) {
   const minRequired = team?.minMembers || 3;
   const isTeamFormed = memberCount >= minRequired;
   const isSubmitted = Boolean(team?.is_submitted);
-  const isDeadlineEnded = Boolean(team?.deadline_ended || (team?.submission_deadline && new Date() > new Date(team.submission_deadline)));
+  const isHackNotStarted = Boolean(hackStartTime && new Date() < new Date(hackStartTime));
+  const isDeadlineEnded = Boolean(
+    team?.deadline_ended ||
+    (team?.submission_deadline && new Date() > new Date(team.submission_deadline)) ||
+    (hackEndTime && new Date() > new Date(hackEndTime))
+  );
 
   const isM1Red = !isTeamFormed;
   const isM2Red = !isSubmitted && isDeadlineEnded;
   const isM3Red = !isSubmitted && (!team?.repo_url || isDeadlineEnded);
   const isAnyMilestoneRed = !isSubmitted && (isM1Red || isM2Red || isM3Red);
+  const progressCount = (!isM1Red ? 1 : 0) + (!isM2Red ? 1 : 0) + (!isM3Red ? 1 : 0);
 
   const handleSaveRepo = async (e) => {
     e.preventDefault();
@@ -120,6 +126,12 @@ export default function ProjectPage({ inDashboard = false }) {
   const handleSubmitProject = () => {
     if (!isLeader) {
       const err = 'Only the team leader can submit the project.';
+      setSubmitError(err);
+      toast.error(err);
+      return;
+    }
+    if (isHackNotStarted) {
+      const err = 'Submission Failed: Hackathon submission has not started yet.';
       setSubmitError(err);
       toast.error(err);
       return;
@@ -200,6 +212,16 @@ export default function ProjectPage({ inDashboard = false }) {
               <span className="px-3.5 sm:px-4 py-1.5 sm:py-2 bg-emerald-100 text-emerald-800 font-bold rounded-full text-xs sm:text-sm flex items-center gap-1.5 sm:gap-2">
                 <span>🔒</span>
                 <span>Submitted & Locked</span>
+              </span>
+            ) : isDeadlineEnded ? (
+              <span className="px-3.5 sm:px-4 py-1.5 sm:py-2 bg-rose-100 text-rose-800 font-bold rounded-full text-xs sm:text-sm flex items-center gap-1.5 sm:gap-2 border border-rose-200">
+                <span>❌</span>
+                <span>Submission Closed</span>
+              </span>
+            ) : isHackNotStarted ? (
+              <span className="px-3.5 sm:px-4 py-1.5 sm:py-2 bg-amber-100 text-amber-800 font-bold rounded-full text-xs sm:text-sm flex items-center gap-1.5 sm:gap-2 border border-amber-200">
+                <span>⏳</span>
+                <span>Submission Starts Soon</span>
               </span>
             ) : (
               <span className="px-3.5 sm:px-4 py-1.5 sm:py-2 bg-blue-100 text-blue-700 font-bold rounded-full text-xs sm:text-sm flex items-center gap-1.5 sm:gap-2">
@@ -333,10 +355,8 @@ export default function ProjectPage({ inDashboard = false }) {
                   <span className="font-bold text-emerald-600 dark:text-emerald-400">Stage 3 of 3 (Completed 🎉)</span>
                 ) : isDeadlineEnded ? (
                   <span className="font-bold text-rose-600 dark:text-rose-400">Deadline Ended (Unsubmitted)</span>
-                ) : team?.repo_url ? (
-                  <span className="font-bold text-blue-600 dark:text-blue-400">Stage 3 of 3 (Ready to Submit ⚡)</span>
                 ) : (
-                  <span className="font-bold text-blue-600 dark:text-blue-400">Stage 2 of 3 (Active)</span>
+                  <span className="font-bold text-blue-600 dark:text-blue-400">Stage {progressCount} of 3 ({progressCount === 3 ? 'Ready to Submit ⚡' : 'Active'})</span>
                 )}
               </div>
             </div>
@@ -350,7 +370,9 @@ export default function ProjectPage({ inDashboard = false }) {
                     {team?.is_submitted ? 'Locked' : 'Active'}
                   </span>
                 </div>
-                <p className="text-xs text-slate-500 dark:text-slate-400 mb-4">Deadline: Sunday at 11:59 PM</p>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mb-4">
+                  Deadline: {hackEndTime ? new Date(hackEndTime).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' }) : 'Sunday at 11:59 PM'}
+                </p>
 
                 <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 space-y-3">
                   <div className="flex justify-between items-center text-xs sm:text-sm">

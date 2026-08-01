@@ -14,46 +14,70 @@ export function AuthProvider({ children }) {
   const [currentUser, setCurrentUser] = useState(null);
   const [userProfile, setUserProfile] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [rawRegistrationOpen, setRawRegistrationOpen] = useState(true);
   const [registrationOpen, setRegistrationOpen] = useState(true);
   const [workspaceOpen, setWorkspaceOpen] = useState(false);
   const [problemsOpen, setProblemsOpen] = useState(false);
   const [regStartTime, setRegStartTime] = useState('');
   const [regEndTime, setRegEndTime] = useState('');
+  const [hackStartTime, setHackStartTime] = useState('');
+  const [hackEndTime, setHackEndTime] = useState('');
+  const [isSubmissionOpen, setIsSubmissionOpen] = useState(true);
 
   const fetchPlatformSettings = async () => {
     try {
       const res = await fetch(`${API_URL}/api/v1/settings`);
       const data = await res.json();
       if (res.ok && data.success && data.data) {
-        let isRegOpen = data.data.registration_open !== 'false' && data.data.registration_open !== false;
-        
-        const startTime = data.data.reg_start_time;
-        const endTime = data.data.reg_end_time;
-        const now = new Date();
-        
-        if (startTime && endTime) {
-          isRegOpen = now >= new Date(startTime) && now <= new Date(endTime);
-        } else if (startTime) {
-          isRegOpen = now >= new Date(startTime);
-        } else if (endTime) {
-          // If only end time is set, it's open until that time
-          // (or false if it was manually closed? Usually timeline overrides, but if manually closed, maybe keep it closed. Let's make it open until end time to be consistent).
-          isRegOpen = now <= new Date(endTime);
-        }
-
+        const isRegOpen = data.data.registration_open !== 'false' && data.data.registration_open !== false;
         const isWorkOpen = data.data.workspace_open === 'true' || data.data.workspace_open === true;
         const isProbOpen = data.data.problems_open === 'true' || data.data.problems_open === true;
-        
-        setRegistrationOpen(isRegOpen);
+
+        setRawRegistrationOpen(isRegOpen);
         setWorkspaceOpen(isWorkOpen);
         setProblemsOpen(isProbOpen);
-        setRegStartTime(startTime || '');
-        setRegEndTime(endTime || '');
+        setRegStartTime(data.data.reg_start_time || '');
+        setRegEndTime(data.data.reg_end_time || '');
+        setHackStartTime(data.data.hack_start_time || '');
+        setHackEndTime(data.data.hack_end_time || '');
       }
     } catch (err) {
       console.error('Error fetching platform settings:', err);
     }
   };
+
+  // Re-evaluate registration open and submission open every second in real-time
+  useEffect(() => {
+    const tick = () => {
+      const now = new Date();
+
+      // Registration open/close
+      let isRegOpen = rawRegistrationOpen;
+      if (regStartTime && regEndTime) {
+        isRegOpen = now >= new Date(regStartTime) && now <= new Date(regEndTime);
+      } else if (regStartTime) {
+        isRegOpen = now >= new Date(regStartTime);
+      } else if (regEndTime) {
+        isRegOpen = now <= new Date(regEndTime);
+      }
+      setRegistrationOpen(isRegOpen);
+
+      // Hackathon submission open/close
+      let isSubOpen = true;
+      if (hackStartTime && hackEndTime) {
+        isSubOpen = now >= new Date(hackStartTime) && now <= new Date(hackEndTime);
+      } else if (hackStartTime) {
+        isSubOpen = now >= new Date(hackStartTime);
+      } else if (hackEndTime) {
+        isSubOpen = now <= new Date(hackEndTime);
+      }
+      setIsSubmissionOpen(isSubOpen);
+    };
+
+    tick();
+    const interval = setInterval(tick, 1000);
+    return () => clearInterval(interval);
+  }, [rawRegistrationOpen, regStartTime, regEndTime, hackStartTime, hackEndTime]);
 
   useEffect(() => {
     fetchPlatformSettings();
@@ -186,7 +210,7 @@ export function AuthProvider({ children }) {
   const effectiveWorkspaceOpen = workspaceOpen || isSpecialUser;
 
   return (
-    <AuthContext.Provider value={{ currentUser, userProfile, setUserProfile, login, register, logout, registrationOpen, workspaceOpen: effectiveWorkspaceOpen, problemsOpen, regStartTime, regEndTime, fetchPlatformSettings }}>
+    <AuthContext.Provider value={{ currentUser, userProfile, setUserProfile, login, register, logout, registrationOpen, workspaceOpen: effectiveWorkspaceOpen, problemsOpen, regStartTime, regEndTime, hackStartTime, hackEndTime, isSubmissionOpen, fetchPlatformSettings }}>
       {children}
     </AuthContext.Provider>
   );

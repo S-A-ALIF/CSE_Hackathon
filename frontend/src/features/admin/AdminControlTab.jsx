@@ -30,9 +30,20 @@ export default function AdminControlTab() {
 
   const [regStartTime, setRegStartTime] = useState(toLocalDatetimeString(adminCache.settings?.reg_start_time) || '');
   const [regEndTime, setRegEndTime] = useState(toLocalDatetimeString(adminCache.settings?.reg_end_time) || '');
+  const [hackStartTime, setHackStartTime] = useState(toLocalDatetimeString(adminCache.settings?.hack_start_time) || '');
+  const [hackEndTime, setHackEndTime] = useState(toLocalDatetimeString(adminCache.settings?.hack_end_time) || '');
   const [savingLimits, setSavingLimits] = useState(false);
   const [savingTimeline, setSavingTimeline] = useState(false);
+  const [savingHackTimeline, setSavingHackTimeline] = useState(false);
   const [clearModal, setClearModal] = useState({ isOpen: false, target: null });
+  const [now, setNow] = useState(new Date());
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setNow(new Date());
+    }, 1000);
+    return () => clearInterval(timer);
+  }, []);
 
   const fetchSettings = async (force = false) => {
     if (!force && adminCache.isFresh('settings')) {
@@ -41,6 +52,8 @@ export default function AdminControlTab() {
       setMaxTeamSize(adminCache.settings.max_team_members === 'none' ? '' : (adminCache.settings.max_team_members || '5'));
       setRegStartTime(adminCache.settings.reg_start_time || '');
       setRegEndTime(adminCache.settings.reg_end_time || '');
+      setHackStartTime(adminCache.settings.hack_start_time || '');
+      setHackEndTime(adminCache.settings.hack_end_time || '');
       setLoading(false);
       return;
     }
@@ -62,6 +75,8 @@ export default function AdminControlTab() {
         setMaxTeamSize(data.data.max_team_members === 'none' ? '' : (data.data.max_team_members || '5'));
         setRegStartTime(toLocalDatetimeString(data.data.reg_start_time) || '');
         setRegEndTime(toLocalDatetimeString(data.data.reg_end_time) || '');
+        setHackStartTime(toLocalDatetimeString(data.data.hack_start_time) || '');
+        setHackEndTime(toLocalDatetimeString(data.data.hack_end_time) || '');
       } else {
         toast.error(data.message || 'Failed to load control settings');
       }
@@ -253,6 +268,37 @@ export default function AdminControlTab() {
     }
   };
 
+  const handleSaveHackathonTimeline = async (e) => {
+    e.preventDefault();
+    setSavingHackTimeline(true);
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch(`${API_URL}/api/v1/admin/settings/hackathon-timeline`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          hack_start_time: toUTCString(hackStartTime),
+          hack_end_time: toUTCString(hackEndTime)
+        })
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        toast.success('Hackathon timeline updated successfully!');
+        const updated = { ...settings, hack_start_time: data.data.hack_start_time, hack_end_time: data.data.hack_end_time };
+        adminCache.set('settings', updated);
+        setSettings(updated);
+        if (fetchPlatformSettings) fetchPlatformSettings();
+      } else {
+        toast.error(data.message || 'Failed to update hackathon timeline');
+      }
+    } catch (error) {
+      console.error('Error updating hackathon timeline:', error);
+      toast.error('Error updating hackathon timeline');
+    } finally {
+      setSavingHackTimeline(false);
+    }
+  };
+
   const [confirmModal, setConfirmModal] = useState({ isOpen: false, type: null, actionStr: null });
 
   const executeToggle = () => {
@@ -267,7 +313,25 @@ export default function AdminControlTab() {
     setConfirmModal({ isOpen: true, type, actionStr });
   };
 
-  const isRegOpen = settings.registration_open !== 'false' && settings.registration_open !== false;
+  const rawRegOpen = settings.registration_open !== 'false' && settings.registration_open !== false;
+  let isRegOpen = rawRegOpen;
+  if (settings.reg_start_time && settings.reg_end_time) {
+    isRegOpen = now >= new Date(settings.reg_start_time) && now <= new Date(settings.reg_end_time);
+  } else if (settings.reg_start_time) {
+    isRegOpen = now >= new Date(settings.reg_start_time);
+  } else if (settings.reg_end_time) {
+    isRegOpen = now <= new Date(settings.reg_end_time);
+  }
+
+  const rawWorkOpen = settings.workspace_open === 'true' || settings.workspace_open === true;
+  let isWorkOpen = rawWorkOpen;
+  if (settings.hack_start_time && settings.hack_end_time) {
+    isWorkOpen = now >= new Date(settings.hack_start_time) && now <= new Date(settings.hack_end_time);
+  } else if (settings.hack_start_time) {
+    isWorkOpen = now >= new Date(settings.hack_start_time);
+  } else if (settings.hack_end_time) {
+    isWorkOpen = now <= new Date(settings.hack_end_time);
+  }
 
   if (loading) {
     return (
@@ -412,38 +476,81 @@ export default function AdminControlTab() {
       {/* Project Workspace Toggle Card */}
       <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6">
         <div>
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-2 sm:gap-3">
             <h3 className="text-xl font-black text-slate-900">Project Workspace</h3>
-            <span
-              className={`px-3 py-1 rounded-full text-xs font-bold uppercase ${
-                settings.workspace_open === 'true' || settings.workspace_open === true
-                  ? 'bg-emerald-100 text-emerald-800'
-                  : 'bg-red-100 text-red-800'
-              }`}
-            >
-              {settings.workspace_open === 'true' || settings.workspace_open === true ? 'OPEN' : 'CLOSED'}
+            <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase ${isWorkOpen ? 'bg-emerald-100 text-emerald-800' : 'bg-red-100 text-red-800'}`}>
+              {isWorkOpen ? 'OPEN' : 'CLOSED'}
             </span>
+            {(settings.hack_start_time || settings.hack_end_time) && (
+              <span className="px-2.5 py-1 rounded-full text-[11px] font-bold uppercase bg-blue-100 text-blue-800">TIMED WINDOW</span>
+            )}
           </div>
-          <p className="text-slate-600 text-sm mt-1">
-            When closed, users cannot access the Project Workspace dashboard tab.
-          </p>
+          <p className="text-slate-600 text-sm mt-1">When closed, users cannot access the Project Workspace dashboard tab.</p>
         </div>
 
         <button
-          onClick={() => requestToggle('workspace', (settings.workspace_open === 'true' || settings.workspace_open === true) ? 'Close Workspace' : 'Open Workspace')}
+          onClick={() => requestToggle('workspace', rawWorkOpen ? 'Close Workspace' : 'Open Workspace')}
           disabled={togglingAction !== null}
-          className={`px-6 py-3 rounded-xl font-bold text-sm text-white transition-all shadow-lg ${
-            settings.workspace_open === 'true' || settings.workspace_open === true
-              ? 'bg-red-600 hover:bg-red-700 shadow-red-600/30'
-              : 'bg-emerald-600 hover:bg-emerald-700 shadow-emerald-600/30'
-          }`}
+          className={`px-6 py-3 rounded-xl font-bold text-sm text-white transition-all shadow-lg ${isWorkOpen ? 'bg-red-600 hover:bg-red-700 shadow-red-600/30' : 'bg-emerald-600 hover:bg-emerald-700 shadow-emerald-600/30'}`}
         >
-          {togglingAction === 'workspace'
-            ? 'Updating...'
-            : settings.workspace_open === 'true' || settings.workspace_open === true
-            ? '🔴 Close Workspace'
-            : '🟢 Open Workspace'}
+          {togglingAction === 'workspace' ? 'Updating...' : isWorkOpen ? '🔴 Close Workspace' : '🟢 Open Workspace'}
         </button>
+      </div>
+
+      {/* Hackathon Submission Timeline Card */}
+      <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
+        <div className="mb-6">
+          <h3 className="text-xl font-black text-slate-900">Hackathon Submission Timeline</h3>
+          <p className="text-slate-600 text-sm mt-1">
+            Set the exact start and end dates/times for hackathon project submission. The "Submission Open" sign in Workspace will automatically reflect this timeline. Leave blank to hide.
+          </p>
+        </div>
+
+        <form onSubmit={handleSaveHackathonTimeline} className="space-y-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+            <div>
+              <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-2">Hackathon Starts At</label>
+              <div className="relative">
+                <input
+                  type="datetime-local"
+                  value={hackStartTime}
+                  onChange={(e) => setHackStartTime(e.target.value)}
+                  className="w-full px-4 py-3 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent text-slate-800 font-bold"
+                />
+                {hackStartTime && (
+                  <button type="button" onClick={() => setClearModal({ isOpen: true, target: 'hack_start' })}
+                    className="absolute right-12 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400 hover:text-red-500">Clear</button>
+                )}
+              </div>
+            </div>
+            <div>
+              <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-2">Hackathon Ends At (Submission Deadline)</label>
+              <div className="relative">
+                <input
+                  type="datetime-local"
+                  value={hackEndTime}
+                  onChange={(e) => setHackEndTime(e.target.value)}
+                  className="w-full px-4 py-3 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent text-slate-800 font-bold"
+                />
+                {hackEndTime && (
+                  <button type="button" onClick={() => setClearModal({ isOpen: true, target: 'hack_end' })}
+                    className="absolute right-12 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400 hover:text-red-500">Clear</button>
+                )}
+              </div>
+            </div>
+          </div>
+          <div className="pt-4 border-t border-slate-100 flex justify-end">
+            <button type="submit" disabled={savingHackTimeline}
+              className="px-6 py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-bold rounded-xl text-sm transition-all flex items-center gap-2">
+              {savingHackTimeline ? (
+                <><svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>Saving...</>
+              ) : 'Save Hackathon Timeline'}
+            </button>
+          </div>
+        </form>
       </div>
 
       {/* Problem Statements Toggle Card */}
@@ -599,7 +706,7 @@ export default function AdminControlTab() {
           <div className="bg-slate-900 border border-slate-700 rounded-2xl p-6 max-w-sm w-full shadow-2xl">
             <h3 className="text-xl font-bold text-white mb-2">Confirm Clear</h3>
             <p className="text-slate-300 mb-6">
-              Are you sure you want to clear the registration {clearModal.target === 'start' ? 'start' : 'end'} time?
+              Are you sure you want to clear the {(clearModal.target === 'start' || clearModal.target === 'end') ? 'registration' : 'hackathon'} {clearModal.target?.includes('start') ? 'start' : 'end'} time?
             </p>
             <div className="flex justify-end gap-3">
               <button
@@ -610,11 +717,10 @@ export default function AdminControlTab() {
               </button>
               <button
                 onClick={() => {
-                  if (clearModal.target === 'start') {
-                    setRegStartTime('');
-                  } else {
-                    setRegEndTime('');
-                  }
+                  if (clearModal.target === 'start') setRegStartTime('');
+                  else if (clearModal.target === 'end') setRegEndTime('');
+                  else if (clearModal.target === 'hack_start') setHackStartTime('');
+                  else if (clearModal.target === 'hack_end') setHackEndTime('');
                   setClearModal({ isOpen: false, target: null });
                 }}
                 className="px-4 py-2 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-sm shadow-lg shadow-red-600/30 transition-colors"
