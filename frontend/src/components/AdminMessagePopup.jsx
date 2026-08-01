@@ -147,17 +147,6 @@ export default function AdminMessagePopup() {
             You can view this message anytime in your Notifications menu (bell icon at top right).
           </p>
         </div>
-
-        {/* Footer actions */}
-        <div className="bg-slate-50 dark:bg-slate-800/50 px-6 py-4 border-t border-slate-100 dark:border-slate-800 flex items-center justify-end">
-          <button
-            type="button"
-            onClick={handleDismiss}
-            className="w-full sm:w-auto px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm rounded-xl shadow-lg shadow-blue-500/20 dark:shadow-none transition-all text-center"
-          >
-            Dismiss & View in Notifications
-          </button>
-        </div>
       </div>
     </div>
   );
