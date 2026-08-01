@@ -12,11 +12,13 @@ const poolConfig: PoolConfig = {
     password: envConfig.db.pass,
     database: envConfig.db.name,
     
-    // Performance & Resource Tuning for Production Environments
+    // Performance & Resource Tuning for Production Environments & Neon Serverless
     max: 20,                          // Maximum number of active clients allowed in the pool
-    idleTimeoutMillis: 30000,         // Close idle clients after 30 seconds of inactivity
-    connectionTimeoutMillis: 10000,   // Increased to 10s to allow Neon Serverless DB to wake up
+    idleTimeoutMillis: 15000,         // Close idle clients after 15 seconds before Neon drops TCP connection
+    connectionTimeoutMillis: 30000,   // 30 seconds to allow Neon Serverless DB to wake up from cold sleep
     maxUses: 7500,                    // Recreate allocations after 7500 queries to mitigate memory leaks
+    keepAlive: true,
+    keepAliveInitialDelayMillis: 10000,
     
     // Explicitly enforce SSL when running in a production ecosystem or using Neon
     ssl: (envConfig.env === 'production' || envConfig.db.host.includes('.neon.tech')) ? { rejectUnauthorized: false } : false

@@ -37,6 +37,21 @@ const formatNotificationMessage = (msg) => {
   return cleaned.replace(/\.\./g, '.').trim();
 };
 
+// Truncate notification messages to at most 3 lines, or 2 lines ending with "....." if longer
+const clampNotificationMessage = (msg) => {
+  const cleaned = formatNotificationMessage(msg);
+  if (!cleaned) return '';
+  const lines = cleaned.split(/\r?\n/);
+  if (lines.length > 2 || cleaned.length > 130) {
+    let twoLines = lines.slice(0, 2).join('\n');
+    if (twoLines.length > 110) {
+      twoLines = twoLines.substring(0, 105).trim();
+    }
+    return `${twoLines}.....`;
+  }
+  return cleaned;
+};
+
 export default function NotificationDropdown() {
   const { currentUser } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
@@ -44,6 +59,7 @@ export default function NotificationDropdown() {
   const [loading, setLoading] = useState(false);
   const [actionLoading, setActionLoading] = useState({});
   const [showJoinModal, setShowJoinModal] = useState(false);
+  const [selectedNotificationModal, setSelectedNotificationModal] = useState(null);
   const dropdownRef = useRef(null);
 
   // Close dropdown when clicking outside
@@ -274,6 +290,7 @@ export default function NotificationDropdown() {
                         if (!notification.is_read && !(isInviteOrRequest && isPendingAction)) {
                           handleMarkAsRead(notification.id);
                         }
+                        setSelectedNotificationModal(notification);
                     }}
                     className={`p-4 border-b border-slate-800 cursor-pointer transition-all duration-200 hover:bg-slate-800 flex items-center justify-between group ${
                       notification.is_read ? 'opacity-60' : 'bg-blue-500/5'
@@ -286,8 +303,8 @@ export default function NotificationDropdown() {
                         </div>
                       )}
                       <div>
-                        <p className={`text-sm ${notification.is_read ? 'text-slate-400' : 'text-slate-200 font-medium'}`}>
-                          {formatNotificationMessage(notification.message)}
+                        <p className={`text-sm line-clamp-3 whitespace-pre-line leading-snug ${notification.is_read ? 'text-slate-400' : 'text-slate-200 font-medium'}`}>
+                          {clampNotificationMessage(notification.message)}
                         </p>
                         <p className="text-xs text-slate-400 mt-1">
                           {formatGMT6(notification.created_at)}
@@ -388,6 +405,105 @@ export default function NotificationDropdown() {
             fetchNotifications(false);
           }} 
         />,
+        document.body
+      )}
+
+      {/* Full Message Reader Popup Modal */}
+      {selectedNotificationModal && createPortal(
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-800 max-w-lg w-full max-h-[80vh] flex flex-col overflow-hidden transform transition-all scale-100">
+            {/* Header with Close button at Top Right */}
+            <div className="p-6 pb-4 flex items-center justify-between gap-4 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-blue-100 dark:bg-blue-900/50 text-blue-600 dark:text-blue-400 flex items-center justify-center text-xl shrink-0">
+                  🔔
+                </div>
+                <div>
+                  <h3 className="font-black text-slate-900 dark:text-white text-base leading-tight">
+                    Notification Details
+                  </h3>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                    {formatGMT6(selectedNotificationModal.created_at)}
+                  </p>
+                </div>
+              </div>
+
+              {/* Close Button on Top Right */}
+              <button
+                type="button"
+                onClick={() => setSelectedNotificationModal(null)}
+                className="px-3.5 py-1.5 bg-slate-200/80 hover:bg-slate-300/80 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold text-xs rounded-xl transition-all shadow-sm shrink-0"
+              >
+                Close
+              </button>
+            </div>
+
+            {/* Scrollable Fixed-Size Message Body */}
+            <div className="p-6 overflow-y-auto flex-1 space-y-4">
+              <div className="bg-slate-50 dark:bg-slate-800/60 rounded-2xl p-4 border border-slate-200/60 dark:border-slate-700/60">
+                <p className="text-sm md:text-base text-slate-700 dark:text-slate-200 font-medium whitespace-pre-line leading-relaxed">
+                  {formatNotificationMessage(selectedNotificationModal.message)}
+                </p>
+              </div>
+
+              {/* If there are invite action buttons or status badges, render them inside the modal too */}
+              {(selectedNotificationModal.message.includes('You received a team invitation') || selectedNotificationModal.message.includes('requested to join your team')) && (
+                <div className="pt-2">
+                  {(!selectedNotificationModal.action_status || selectedNotificationModal.action_status === 'pending') ? (
+                    <div className="flex items-center gap-3">
+                      <button
+                        type="button"
+                        disabled={!!actionLoading[selectedNotificationModal.id]}
+                        onClick={() => {
+                          handleAcceptInvite(selectedNotificationModal);
+                          setSelectedNotificationModal(null);
+                        }}
+                        className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-xl shadow-sm transition-all disabled:opacity-50 flex items-center gap-1.5"
+                      >
+                        {actionLoading[selectedNotificationModal.id] === 'accept' && (
+                          <svg className="animate-spin h-3.5 w-3.5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                          </svg>
+                        )}
+                        {actionLoading[selectedNotificationModal.id] === 'accept' ? 'Accepting...' : 'Accept Invitation'}
+                      </button>
+                      <button
+                        type="button"
+                        disabled={!!actionLoading[selectedNotificationModal.id]}
+                        onClick={() => {
+                          handleRejectInvite(selectedNotificationModal);
+                          setSelectedNotificationModal(null);
+                        }}
+                        className="px-4 py-2 bg-slate-200 hover:bg-rose-500 hover:text-white text-slate-700 text-xs font-bold rounded-xl transition-all disabled:opacity-50 flex items-center gap-1.5"
+                      >
+                        {actionLoading[selectedNotificationModal.id] === 'reject' && (
+                          <svg className="animate-spin h-3.5 w-3.5 text-current" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                          </svg>
+                        )}
+                        {actionLoading[selectedNotificationModal.id] === 'reject' ? 'Rejecting...' : 'Reject Invitation'}
+                      </button>
+                    </div>
+                  ) : selectedNotificationModal.action_status === 'accepted' ? (
+                    <div className="flex items-center gap-1.5 text-xs font-bold text-emerald-700 bg-emerald-100/80 dark:bg-emerald-950/60 dark:text-emerald-300 px-3 py-1.5 rounded-xl w-fit border border-emerald-300 dark:border-emerald-700">
+                      ✓ Accepted
+                    </div>
+                  ) : selectedNotificationModal.action_status === 'rejected' ? (
+                    <div className="flex items-center gap-1.5 text-xs font-bold text-rose-700 bg-rose-100/80 dark:bg-rose-950/60 dark:text-rose-300 px-3 py-1.5 rounded-xl w-fit border border-rose-300 dark:border-rose-700">
+                      ✕ Rejected
+                    </div>
+                  ) : selectedNotificationModal.action_status === 'expired' ? (
+                    <div className="flex items-center gap-1.5 text-xs font-bold text-amber-700 bg-amber-100/80 dark:bg-amber-950/60 dark:text-amber-300 px-3 py-1.5 rounded-xl w-fit border border-amber-300 dark:border-amber-700">
+                      ⌛ Expired
+                    </div>
+                  ) : null}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>,
         document.body
       )}
     </div>

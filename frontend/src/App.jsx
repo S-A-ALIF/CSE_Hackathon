@@ -11,12 +11,14 @@ import ProjectPage from './pages/ProjectPage';
 import ProblemsPage from './pages/ProblemsPage';
 import AdminPage from './pages/AdminPage';
 import MentorDashboardPage from './pages/MentorDashboardPage';
+import AdminMessagePopup from './components/AdminMessagePopup';
 
 function App() {
   return (
     <ThemeProvider>
       <AuthProvider>
         <Toaster richColors position="top-right" closeButton duration={4000} />
+        <AdminMessagePopup />
         <BrowserRouter>
           <Routes>
             <Route path="/" element={<LandingPage />} />

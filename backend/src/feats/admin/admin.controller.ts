@@ -553,3 +553,88 @@ export const deleteMultipleTeams = async (req: Request, res: Response) => {
         });
     }
 };
+
+/**
+ * POST /api/v1/admin/messages/send
+ * Broadcast/send notification message to all members, mentors, team leaders, or selected users/teams
+ */
+export const sendAdminMessage = async (req: Request, res: Response) => {
+    try {
+        const { targetType, selectedEmails, selectedTeamIds, title, message, severity = 'info' } = req.body;
+
+        if (!message || !message.trim()) {
+            return res.status(400).json({ status: 'error', success: false, message: 'Message content is required.' });
+        }
+
+        let recipientEmails: string[] = [];
+
+        if (targetType === 'all') {
+            const resAll = await pool.query("SELECT DISTINCT email FROM users WHERE role != 'admin' AND email IS NOT NULL AND email != ''");
+            recipientEmails = resAll.rows.map(r => r.email);
+        } else if (targetType === 'team_leaders') {
+            const resLeaders = await pool.query(
+                "SELECT DISTINCT u.email FROM teams t JOIN users u ON t.leader_id = u.id WHERE u.email IS NOT NULL AND u.email != ''"
+            );
+            recipientEmails = resLeaders.rows.map(r => r.email);
+        } else if (targetType === 'mentors') {
+            const resMentors = await pool.query(
+                "SELECT DISTINCT email FROM users WHERE role = 'mentor' AND email IS NOT NULL AND email != ''"
+            );
+            recipientEmails = resMentors.rows.map(r => r.email);
+        } else if (targetType === 'selected') {
+            if (!Array.isArray(selectedEmails) || selectedEmails.length === 0) {
+                return res.status(400).json({ status: 'error', success: false, message: 'Please select at least one recipient.' });
+            }
+            recipientEmails = [...new Set(selectedEmails.filter(Boolean))];
+        } else if (targetType === 'teams') {
+            if (!Array.isArray(selectedTeamIds) || selectedTeamIds.length === 0) {
+                return res.status(400).json({ status: 'error', success: false, message: 'Please select at least one team.' });
+            }
+            const resTeams = await pool.query(
+                `SELECT DISTINCT u.email 
+                 FROM users u 
+                 LEFT JOIN team_members tm ON u.id = tm.user_id 
+                 LEFT JOIN teams t ON (t.leader_id = u.id OR t.mentor_id = u.id OR tm.team_id = t.id)
+                 WHERE t.id = ANY($1::uuid[]) AND u.email IS NOT NULL AND u.email != ''`,
+                [selectedTeamIds]
+            );
+            recipientEmails = resTeams.rows.map(r => r.email);
+        } else {
+            return res.status(400).json({ status: 'error', success: false, message: 'Invalid target type.' });
+        }
+
+        if (recipientEmails.length === 0) {
+            return res.status(404).json({ status: 'error', success: false, message: 'No recipients found for the selected target group.' });
+        }
+
+        let prefix = '📢 [Admin Message]';
+        if (severity === 'urgent') prefix = '🚨 [URGENT Broadcast]';
+        else if (severity === 'warning') prefix = '⚠️ [Important Notice]';
+
+        const formattedMessage = `${prefix} ${title && title.trim() ? title.trim() + ' — ' : ''}${message.trim()}`;
+
+        const insertPromises = recipientEmails.map(email =>
+            pool.query(
+                'INSERT INTO notifications (recipient_email, message, action_status) VALUES ($1, $2, $3)',
+                [email, formattedMessage, severity]
+            )
+        );
+
+        await Promise.all(insertPromises);
+
+        res.status(200).json({
+            status: 'success',
+            success: true,
+            message: `Message sent to ${recipientEmails.length} recipient(s).`,
+            recipientsCount: recipientEmails.length
+        });
+    } catch (error: any) {
+        console.error('Error sending admin broadcast message:', error);
+        res.status(500).json({
+            status: 'error',
+            success: false,
+            message: error.message || 'Failed to send message.'
+        });
+    }
+};
+

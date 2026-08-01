@@ -17,7 +17,8 @@ import {
     updateTeamLimits,
     updateRegistrationTimeline,
     deleteMultipleMembers,
-    deleteMultipleTeams
+    deleteMultipleTeams,
+    sendAdminMessage
 } from './admin.controller';
 
 const router = Router();
@@ -27,6 +28,9 @@ router.use(authMiddleware, adminMiddleware);
 
 // Dashboard Statistics
 router.get('/stats', getStats);
+
+// Broadcast / Send Message
+router.post('/messages/send', sendAdminMessage);
 
 // Teams Management
 router.get('/teams', getAllTeams);
@@ -49,3 +53,4 @@ router.post('/settings/team-limits', validateRequest(adminSchemas.teamLimits), u
 router.post('/settings/registration-timeline', updateRegistrationTimeline);
 
 export default router;
+
