@@ -33,16 +33,23 @@ function isDarkOrGray(colorStr) {
 export default function FormattedContent({ content = '', className = '' }) {
   if (!content) return null;
 
-  // Check if content appears to be HTML (produced by React Quill or rich text editor)
-  const isHtml = /<[a-z][\s\S]*>/i.test(content);
+  // Clean up non-breaking spaces and problematic whitespace characters that prevent line wrapping
+  const cleanedContent = typeof content === 'string'
+    ? content.replace(/&nbsp;/gi, ' ').replace(/\u00A0/g, ' ')
+    : content;
 
-  const baseProseClasses = `prose prose-slate dark:prose-invert max-w-none 
+  // Check if content appears to be HTML (produced by React Quill or rich text editor)
+  const isHtml = /<[a-z][\s\S]*>/i.test(cleanedContent);
+
+  const baseProseClasses = `prose prose-slate dark:prose-invert max-w-none w-full max-w-full
+    break-words overflow-wrap-anywhere whitespace-normal
+    [&_*]:!max-w-full [&_*]:!break-words [&_*]:!whitespace-normal
     prose-headings:font-bold prose-headings:text-slate-900 dark:prose-headings:text-slate-100 
     prose-p:text-slate-700 dark:prose-p:text-slate-300 prose-p:leading-relaxed 
     prose-a:text-blue-600 dark:prose-a:text-blue-400 prose-a:underline hover:prose-a:text-blue-700
     prose-ul:list-disc prose-ol:list-decimal prose-li:my-1 prose-li:text-slate-700 dark:prose-li:text-slate-300
     prose-blockquote:border-l-4 prose-blockquote:border-blue-500 prose-blockquote:bg-blue-50/50 dark:prose-blockquote:bg-blue-950/20 prose-blockquote:py-1 prose-blockquote:px-4 prose-blockquote:rounded-r-xl
-    prose-code:bg-slate-100 dark:prose-code:bg-slate-800 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded-md prose-code:text-sm prose-code:font-mono
+    prose-code:bg-slate-100 dark:prose-code:bg-slate-800 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded-md prose-code:text-sm prose-code:font-mono prose-code:break-all
     prose-img:rounded-2xl prose-img:shadow-md
     ${className}`;
 
@@ -50,6 +57,13 @@ export default function FormattedContent({ content = '', className = '' }) {
     // Remove hardcoded black/dark-gray text colors or white backgrounds from Word/Google Docs paste
     DOMPurify.addHook('afterSanitizeAttributes', (node) => {
       if (node.style) {
+        node.style.removeProperty('white-space');
+        node.style.removeProperty('width');
+        node.style.removeProperty('min-width');
+        node.style.removeProperty('max-width');
+        node.style.removeProperty('height');
+        node.style.removeProperty('text-overflow');
+
         const color = node.style.color || '';
         const bg = node.style.backgroundColor || '';
         if (isDarkOrGray(color)) {
@@ -67,7 +81,7 @@ export default function FormattedContent({ content = '', className = '' }) {
       }
     });
 
-    const sanitizedHtml = DOMPurify.sanitize(content, {
+    const sanitizedHtml = DOMPurify.sanitize(cleanedContent, {
       ADD_TAGS: ['iframe'], // allow embedded videos if needed
       ADD_ATTR: ['allow', 'allowfullscreen', 'frameborder', 'scrolling', 'target']
     });
@@ -86,7 +100,7 @@ export default function FormattedContent({ content = '', className = '' }) {
   return (
     <div className={baseProseClasses}>
       <ReactMarkdown remarkPlugins={[remarkGfm]}>
-        {content}
+        {cleanedContent}
       </ReactMarkdown>
     </div>
   );

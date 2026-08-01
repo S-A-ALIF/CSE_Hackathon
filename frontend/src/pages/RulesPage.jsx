@@ -77,11 +77,11 @@ export default function RulesPage({ inDashboard = false }) {
           </div>
         ) : (
           <>
-            <div className="w-full max-w-4xl mx-auto">
+            <div className="w-full max-w-4xl mx-auto overflow-hidden">
               {rules.length > 0 ? (
-                <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 sm:p-12 border border-slate-200 dark:border-slate-800 shadow-sm transition-all flex flex-col">
-                  <div>
-                    <h2 className="text-3xl font-black text-slate-900 dark:text-white mb-6">{rules[0].title}</h2>
+                <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 sm:p-12 border border-slate-200 dark:border-slate-800 shadow-sm transition-all flex flex-col overflow-hidden w-full max-w-full">
+                  <div className="w-full max-w-full overflow-hidden">
+                    <h2 className="text-3xl font-black text-slate-900 dark:text-white mb-6 break-words">{rules[0].title}</h2>
                     <FormattedContent content={rules[0].content} className="mb-10" />
                   </div>
 

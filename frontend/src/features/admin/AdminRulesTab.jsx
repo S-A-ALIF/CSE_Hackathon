@@ -286,8 +286,8 @@ export default function AdminRulesTab() {
         </div>
       ) : (
         <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden flex flex-col">
-          <div className="p-6 sm:p-8 flex-1">
-            <h3 className="text-2xl font-black text-slate-900 dark:text-white mb-6">{rule.title}</h3>
+          <div className="p-6 sm:p-8 flex-1 w-full max-w-full overflow-hidden">
+            <h3 className="text-2xl font-black text-slate-900 dark:text-white mb-6 break-words">{rule.title}</h3>
             <FormattedContent content={rule.content} />
           </div>
           <div className="bg-slate-50 dark:bg-slate-800/50 px-6 py-4 border-t border-slate-100 dark:border-slate-800 flex items-center justify-end gap-3">
