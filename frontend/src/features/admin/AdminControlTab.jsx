@@ -397,376 +397,201 @@ export default function AdminControlTab() {
         </button>
       </div>
 
-      {/* Registration Open/Close Toggle Card */}
-      <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6">
-        <div>
-          <div className="flex items-center gap-3">
-            <h3 className="text-xl font-black text-slate-900">Account Registration</h3>
-            <span
-              className={`px-3 py-1 rounded-full text-xs font-bold uppercase ${
-                isRegOpen
-                  ? 'bg-emerald-100 text-emerald-800'
-                  : 'bg-red-100 text-red-800'
-              }`}
-            >
-              {isRegOpen ? 'OPEN' : 'CLOSED'}
-            </span>
-          </div>
-          <p className="text-slate-600 text-sm mt-1">
-            When closed, new users will be blocked from signing up for the hackathon.
-          </p>
-        </div>
-
-        <button
-          onClick={() => requestToggle('registration', isRegOpen ? 'Close Registration' : 'Open Registration')}
-          disabled={togglingAction !== null}
-          className={`px-6 py-3 rounded-xl font-bold text-sm text-white transition-all shadow-lg ${
-            isRegOpen
-              ? 'bg-red-600 hover:bg-red-700 shadow-red-600/30'
-              : 'bg-emerald-600 hover:bg-emerald-700 shadow-emerald-600/30'
-          }`}
-        >
-          {togglingAction === 'registration'
-            ? 'Updating...'
-            : isRegOpen
-            ? '🔴 Close Registration'
-            : '🟢 Open Registration'}
-        </button>
-      </div>
-
-      {/* Registration Timeline Card */}
-      <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+      {/* Platform Toggles Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {/* Registration Toggle */}
+        <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-5 shadow-sm flex flex-col justify-between">
           <div>
-            <h3 className="text-xl font-black text-slate-900">Registration Timeline</h3>
-            <p className="text-slate-600 text-sm mt-1">
-              Set the exact start and end dates/times for registration. This will be publicly displayed on the landing page. Leave blank to hide.
-            </p>
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="font-bold text-slate-900 dark:text-white">Account Registration</h3>
+              <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${isRegOpen ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-500/20 dark:text-emerald-400' : 'bg-red-100 text-red-800 dark:bg-red-500/20 dark:text-red-400'}`}>
+                {isRegOpen ? 'OPEN' : 'CLOSED'}
+              </span>
+            </div>
+            <p className="text-slate-500 dark:text-slate-400 text-xs mb-4">Allow new users to sign up for the platform.</p>
           </div>
+          <button
+            onClick={() => requestToggle('registration', isRegOpen ? 'Close Registration' : 'Open Registration')}
+            disabled={togglingAction !== null}
+            className={`w-full py-2.5 rounded-xl font-bold text-sm text-white transition-all shadow-md ${isRegOpen ? 'bg-red-500 hover:bg-red-600 shadow-red-500/20' : 'bg-emerald-500 hover:bg-emerald-600 shadow-emerald-500/20'}`}
+          >
+            {togglingAction === 'registration' ? 'Updating...' : isRegOpen ? 'Close Registration' : 'Open Registration'}
+          </button>
         </div>
 
-        <form onSubmit={handleSaveRegistrationTimeline} className="space-y-6">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-            <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-2">
-                Registration Starts At
-              </label>
-              <div className="relative">
-                <input
-                  type="datetime-local"
-                  value={regStartTime}
-                  onChange={(e) => setRegStartTime(e.target.value)}
-                  className="w-full px-4 py-3 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent text-slate-800 font-bold"
-                />
-                {regStartTime && (
-                  <button
-                    type="button"
-                    onClick={() => setClearModal({ isOpen: true, target: 'start' })}
-                    className="absolute right-12 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400 hover:text-red-500"
-                  >
-                    Clear
-                  </button>
-                )}
-              </div>
+        {/* Project Workspace Toggle */}
+        <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-5 shadow-sm flex flex-col justify-between">
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="font-bold text-slate-900 dark:text-white">Project Workspace</h3>
+              <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${isWorkOpen ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-500/20 dark:text-emerald-400' : 'bg-red-100 text-red-800 dark:bg-red-500/20 dark:text-red-400'}`}>
+                {isWorkOpen ? 'OPEN' : 'CLOSED'}
+              </span>
             </div>
-
-            <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-2">
-                Registration Ends At
-              </label>
-              <div className="relative">
-                <input
-                  type="datetime-local"
-                  value={regEndTime}
-                  onChange={(e) => setRegEndTime(e.target.value)}
-                  className="w-full px-4 py-3 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent text-slate-800 font-bold"
-                />
-                {regEndTime && (
-                  <button
-                    type="button"
-                    onClick={() => setClearModal({ isOpen: true, target: 'end' })}
-                    className="absolute right-12 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400 hover:text-red-500"
-                  >
-                    Clear
-                  </button>
-                )}
-              </div>
-            </div>
+            <p className="text-slate-500 dark:text-slate-400 text-xs mb-4">Grant access to the team Project Workspace tab.</p>
           </div>
-
-          <div className="pt-4 border-t border-slate-100 flex justify-end">
-            <button
-              type="submit"
-              disabled={savingTimeline}
-              className="px-6 py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-bold rounded-xl text-sm transition-all flex items-center gap-2"
-            >
-              {savingTimeline ? (
-                <>
-                  <svg className="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
-                  Saving...
-                </>
-              ) : 'Save Timeline'}
-            </button>
-          </div>
-        </form>
-      </div>
-
-      {/* Project Workspace Toggle Card */}
-      <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6">
-        <div>
-          <div className="flex flex-wrap items-center gap-2 sm:gap-3">
-            <h3 className="text-xl font-black text-slate-900">Project Workspace</h3>
-            <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase ${isWorkOpen ? 'bg-emerald-100 text-emerald-800' : 'bg-red-100 text-red-800'}`}>
-              {isWorkOpen ? 'OPEN' : 'CLOSED'}
-            </span>
-            {(settings.hack_start_time || settings.hack_end_time) && (
-              <span className="px-2.5 py-1 rounded-full text-[11px] font-bold uppercase bg-blue-100 text-blue-800">TIMED WINDOW</span>
-            )}
-          </div>
-          <p className="text-slate-600 text-sm mt-1">When closed, users cannot access the Project Workspace dashboard tab.</p>
+          <button
+            onClick={() => requestToggle('workspace', rawWorkOpen ? 'Close Workspace' : 'Open Workspace')}
+            disabled={togglingAction !== null}
+            className={`w-full py-2.5 rounded-xl font-bold text-sm text-white transition-all shadow-md ${isWorkOpen ? 'bg-red-500 hover:bg-red-600 shadow-red-500/20' : 'bg-emerald-500 hover:bg-emerald-600 shadow-emerald-500/20'}`}
+          >
+            {togglingAction === 'workspace' ? 'Updating...' : isWorkOpen ? 'Close Workspace' : 'Open Workspace'}
+          </button>
         </div>
 
-        <button
-          onClick={() => requestToggle('workspace', rawWorkOpen ? 'Close Workspace' : 'Open Workspace')}
-          disabled={togglingAction !== null}
-          className={`px-6 py-3 rounded-xl font-bold text-sm text-white transition-all shadow-lg ${isWorkOpen ? 'bg-red-600 hover:bg-red-700 shadow-red-600/30' : 'bg-emerald-600 hover:bg-emerald-700 shadow-emerald-600/30'}`}
-        >
-          {togglingAction === 'workspace' ? 'Updating...' : isWorkOpen ? '🔴 Close Workspace' : '🟢 Open Workspace'}
-        </button>
-      </div>
-
-      {/* Hackathon Submission Timeline Card */}
-      <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
-        <div className="mb-6">
-          <h3 className="text-xl font-black text-slate-900">Hackathon Submission Timeline</h3>
-          <p className="text-slate-600 text-sm mt-1">
-            Set the exact start and end dates/times for hackathon project submission. The "Submission Open" sign in Workspace will automatically reflect this timeline. Leave blank to hide.
-          </p>
+        {/* Problem Statements Toggle */}
+        <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-5 shadow-sm flex flex-col justify-between">
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="font-bold text-slate-900 dark:text-white">Problem Statements</h3>
+              <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${(settings.problems_open === 'true' || settings.problems_open === true) ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-500/20 dark:text-emerald-400' : 'bg-red-100 text-red-800 dark:bg-red-500/20 dark:text-red-400'}`}>
+                {(settings.problems_open === 'true' || settings.problems_open === true) ? 'OPEN' : 'CLOSED'}
+              </span>
+            </div>
+            <p className="text-slate-500 dark:text-slate-400 text-xs mb-4">Reveal hackathon problem statements to users.</p>
+          </div>
+          <button
+            onClick={() => requestToggle('problems', (settings.problems_open === 'true' || settings.problems_open === true) ? 'Close Problems' : 'Open Problems')}
+            disabled={togglingAction !== null}
+            className={`w-full py-2.5 rounded-xl font-bold text-sm text-white transition-all shadow-md ${(settings.problems_open === 'true' || settings.problems_open === true) ? 'bg-red-500 hover:bg-red-600 shadow-red-500/20' : 'bg-emerald-500 hover:bg-emerald-600 shadow-emerald-500/20'}`}
+          >
+            {togglingAction === 'problems' ? 'Updating...' : (settings.problems_open === 'true' || settings.problems_open === true) ? 'Close Problems' : 'Open Problems'}
+          </button>
         </div>
 
-        <form onSubmit={handleSaveHackathonTimeline} className="space-y-6">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-            <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-2">Hackathon Starts At</label>
-              <div className="relative">
-                <input
-                  type="datetime-local"
-                  value={hackStartTime}
-                  onChange={(e) => setHackStartTime(e.target.value)}
-                  className="w-full px-4 py-3 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent text-slate-800 font-bold"
-                />
-                {hackStartTime && (
-                  <button type="button" onClick={() => setClearModal({ isOpen: true, target: 'hack_start' })}
-                    className="absolute right-12 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400 hover:text-red-500">Clear</button>
-                )}
-              </div>
+        {/* Feedback Widget Toggle */}
+        <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-5 shadow-sm flex flex-col justify-between">
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="font-bold text-slate-900 dark:text-white">Feedback Widget</h3>
+              <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${(settings.feedback_open === 'true' || settings.feedback_open === true || settings.feedback_open === undefined) ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-500/20 dark:text-emerald-400' : 'bg-red-100 text-red-800 dark:bg-red-500/20 dark:text-red-400'}`}>
+                {(settings.feedback_open === 'true' || settings.feedback_open === true || settings.feedback_open === undefined) ? 'VISIBLE' : 'HIDDEN'}
+              </span>
             </div>
-            <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-2">Hackathon Ends At (Submission Deadline)</label>
-              <div className="relative">
-                <input
-                  type="datetime-local"
-                  value={hackEndTime}
-                  onChange={(e) => setHackEndTime(e.target.value)}
-                  className="w-full px-4 py-3 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent text-slate-800 font-bold"
-                />
-                {hackEndTime && (
-                  <button type="button" onClick={() => setClearModal({ isOpen: true, target: 'hack_end' })}
-                    className="absolute right-12 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400 hover:text-red-500">Clear</button>
-                )}
-              </div>
-            </div>
+            <p className="text-slate-500 dark:text-slate-400 text-xs mb-4">Show the feedback form in user menus globally.</p>
           </div>
-          <div className="pt-4 border-t border-slate-100 flex justify-end">
-            <button type="submit" disabled={savingHackTimeline}
-              className="px-6 py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-bold rounded-xl text-sm transition-all flex items-center gap-2">
-              {savingHackTimeline ? (
-                <><svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                </svg>Saving...</>
-              ) : 'Save Hackathon Timeline'}
-            </button>
-          </div>
-        </form>
-      </div>
-
-      {/* Problem Statements Toggle Card */}
-      <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6">
-        <div>
-          <div className="flex items-center gap-3">
-            <h3 className="text-xl font-black text-slate-900">Problem Statements</h3>
-            <span
-              className={`px-3 py-1 rounded-full text-xs font-bold uppercase ${
-                settings.problems_open === 'true' || settings.problems_open === true
-                  ? 'bg-emerald-100 text-emerald-800'
-                  : 'bg-red-100 text-red-800'
-              }`}
-            >
-              {settings.problems_open === 'true' || settings.problems_open === true ? 'OPEN' : 'CLOSED'}
-            </span>
-          </div>
-          <p className="text-slate-600 text-sm mt-1">
-            When closed, users cannot view the problem statements.
-          </p>
-        </div>
-
-        <button
-          onClick={() => requestToggle('problems', (settings.problems_open === 'true' || settings.problems_open === true) ? 'Close Problems' : 'Open Problems')}
-          disabled={togglingAction !== null}
-          className={`px-6 py-3 rounded-xl font-bold text-sm text-white transition-all shadow-lg ${
-            settings.problems_open === 'true' || settings.problems_open === true
-              ? 'bg-red-600 hover:bg-red-700 shadow-red-600/30'
-              : 'bg-emerald-600 hover:bg-emerald-700 shadow-emerald-600/30'
-          }`}
-        >
-          {togglingAction === 'problems'
-            ? 'Updating...'
-            : settings.problems_open === 'true' || settings.problems_open === true
-            ? '🔴 Close Problems'
-            : '🟢 Open Problems'}
-        </button>
-      </div>
-
-      <div className="bg-slate-50 border border-slate-200 rounded-xl p-5 mb-6">
-        <h4 className="text-lg font-bold text-slate-900 mb-2">Feedback & Questions Widget</h4>
-        <p className="text-sm text-slate-600 mb-4">
-          Toggle the visibility of the Feedback widget from the hamburger menu across the platform.
-        </p>
-        <div className="flex items-center gap-4">
-          <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${
-            (settings.feedback_open === 'true' || settings.feedback_open === true || settings.feedback_open === undefined) ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'
-          }`}>
-            {(settings.feedback_open === 'true' || settings.feedback_open === true || settings.feedback_open === undefined) ? 'Visible' : 'Hidden'}
-          </span>
           <button
             onClick={() => requestToggle('feedback', (settings.feedback_open === 'true' || settings.feedback_open === true || settings.feedback_open === undefined) ? 'Hide Feedback' : 'Show Feedback')}
-            disabled={togglingAction === 'feedback'}
-            className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center min-w-[140px]"
+            disabled={togglingAction !== null}
+            className={`w-full py-2.5 rounded-xl font-bold text-sm text-white transition-all shadow-md ${(settings.feedback_open === 'true' || settings.feedback_open === true || settings.feedback_open === undefined) ? 'bg-slate-700 hover:bg-slate-800 shadow-slate-700/20' : 'bg-indigo-500 hover:bg-indigo-600 shadow-indigo-500/20'}`}
           >
-            {togglingAction === 'feedback' ? (
-              <span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
-            ) : (
-              (settings.feedback_open === 'true' || settings.feedback_open === true || settings.feedback_open === undefined) ? 'Hide Feedback' : 'Show Feedback'
-            )}
+            {togglingAction === 'feedback' ? 'Updating...' : (settings.feedback_open === 'true' || settings.feedback_open === true || settings.feedback_open === undefined) ? 'Hide Widget' : 'Show Widget'}
           </button>
         </div>
       </div>
 
-      {/* Team Size Requirements Card */}
-      <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+      {/* Timelines & Deadlines Section */}
+      <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
+        <div className="p-6 border-b border-slate-200 dark:border-slate-700">
+          <h3 className="text-xl font-black text-slate-900 dark:text-white">Timelines & Deadlines</h3>
+          <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">Configure automated start and end times for platform phases.</p>
+        </div>
+        
+        <div className="p-6">
+          {/* Registration Timeline */}
+          <div className="mb-8">
+            <h4 className="text-sm font-bold text-slate-800 dark:text-slate-200 mb-4 flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-blue-500"></span>
+              Registration Window
+            </h4>
+            <form onSubmit={handleSaveRegistrationTimeline} className="space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">Start Time</label>
+                  <div className="relative">
+                    <input type="datetime-local" value={regStartTime} onChange={(e) => setRegStartTime(e.target.value)} className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none text-sm font-medium transition-all" />
+                    {regStartTime && <button type="button" onClick={() => setClearModal({ isOpen: true, target: 'start' })} className="absolute right-12 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400 hover:text-red-500">Clear</button>}
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">End Time</label>
+                  <div className="relative">
+                    <input type="datetime-local" value={regEndTime} onChange={(e) => setRegEndTime(e.target.value)} className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none text-sm font-medium transition-all" />
+                    {regEndTime && <button type="button" onClick={() => setClearModal({ isOpen: true, target: 'end' })} className="absolute right-12 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400 hover:text-red-500">Clear</button>}
+                  </div>
+                </div>
+              </div>
+              <div className="flex justify-end">
+                <button type="submit" disabled={savingTimeline} className="px-5 py-2 bg-slate-900 dark:bg-blue-600 hover:bg-slate-800 dark:hover:bg-blue-700 text-white font-bold rounded-lg text-sm transition-all shadow-sm">
+                  {savingTimeline ? 'Saving...' : 'Save Registration'}
+                </button>
+              </div>
+            </form>
+          </div>
+
+          <hr className="border-slate-100 dark:border-slate-700/50 mb-8" />
+
+          {/* Hackathon Timeline */}
           <div>
-            <h3 className="text-xl font-black text-slate-900">Team Size Requirements</h3>
-            <p className="text-slate-600 text-sm mt-1">
-              Configure the minimum and maximum allowed team sizes. Leave blank or clear for no restriction.
-            </p>
+            <h4 className="text-sm font-bold text-slate-800 dark:text-slate-200 mb-4 flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-indigo-500"></span>
+              Hackathon & Submission Window
+            </h4>
+            <form onSubmit={handleSaveHackathonTimeline} className="space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">Start Time</label>
+                  <div className="relative">
+                    <input type="datetime-local" value={hackStartTime} onChange={(e) => setHackStartTime(e.target.value)} className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none text-sm font-medium transition-all" />
+                    {hackStartTime && <button type="button" onClick={() => setClearModal({ isOpen: true, target: 'hack_start' })} className="absolute right-12 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400 hover:text-red-500">Clear</button>}
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">Submission Deadline</label>
+                  <div className="relative">
+                    <input type="datetime-local" value={hackEndTime} onChange={(e) => setHackEndTime(e.target.value)} className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none text-sm font-medium transition-all" />
+                    {hackEndTime && <button type="button" onClick={() => setClearModal({ isOpen: true, target: 'hack_end' })} className="absolute right-12 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400 hover:text-red-500">Clear</button>}
+                  </div>
+                </div>
+              </div>
+              <div className="flex justify-end">
+                <button type="submit" disabled={savingHackTimeline} className="px-5 py-2 bg-slate-900 dark:bg-indigo-600 hover:bg-slate-800 dark:hover:bg-indigo-700 text-white font-bold rounded-lg text-sm transition-all shadow-sm">
+                  {savingHackTimeline ? 'Saving...' : 'Save Hackathon'}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
+      </div>
 
-        <form onSubmit={handleSaveTeamLimits} className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-2">
-                Minimum Members Required
-              </label>
-              <div className="relative">
-                <input
-                  type="number"
-                  min="1"
-                  max="20"
-                  value={minTeamSize}
-                  onChange={(e) => setMinTeamSize(e.target.value)}
-                  placeholder="No minimum limit"
-                  className="w-full px-4 py-3 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent text-slate-800 font-bold"
-                />
-                {minTeamSize && (
-                  <button
-                    type="button"
-                    onClick={() => setMinTeamSize('')}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400 hover:text-red-500"
-                  >
-                    Clear (No Min)
-                  </button>
-                )}
+      {/* Team Size Requirements Card */}
+      <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
+        <div className="p-6 border-b border-slate-200 dark:border-slate-700">
+          <h3 className="text-xl font-black text-slate-900 dark:text-white">Team Configuration</h3>
+          <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">Set limits for team capacity and mentor workload.</p>
+        </div>
+        <div className="p-6">
+          <form onSubmit={handleSaveTeamLimits} className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">Min Members</label>
+                <div className="relative">
+                  <input type="number" min="1" max="20" value={minTeamSize} onChange={(e) => setMinTeamSize(e.target.value)} placeholder="No limit" className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none text-sm font-medium transition-all" />
+                  {minTeamSize && <button type="button" onClick={() => setMinTeamSize('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400 hover:text-red-500">Clear</button>}
+                </div>
               </div>
-              <p className="text-xs text-slate-500 mt-1">
-                {minTeamSize ? `Teams must have at least ${minTeamSize} members.` : 'No minimum team size restriction set.'}
-              </p>
-            </div>
-
-            <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-2">
-                Maximum Members Allowed
-              </label>
-              <div className="relative">
-                <input
-                  type="number"
-                  min="1"
-                  max="20"
-                  value={maxTeamSize}
-                  onChange={(e) => setMaxTeamSize(e.target.value)}
-                  placeholder="No maximum limit"
-                  className="w-full px-4 py-3 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent text-slate-800 font-bold"
-                />
-                {maxTeamSize && (
-                  <button
-                    type="button"
-                    onClick={() => setMaxTeamSize('')}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400 hover:text-red-500"
-                  >
-                    Clear (No Max)
-                  </button>
-                )}
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">Max Members</label>
+                <div className="relative">
+                  <input type="number" min="1" max="20" value={maxTeamSize} onChange={(e) => setMaxTeamSize(e.target.value)} placeholder="No limit" className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none text-sm font-medium transition-all" />
+                  {maxTeamSize && <button type="button" onClick={() => setMaxTeamSize('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400 hover:text-red-500">Clear</button>}
+                </div>
               </div>
-              <p className="text-xs text-slate-500 mt-1">
-                {maxTeamSize ? `Teams can have up to ${maxTeamSize} members.` : 'No maximum team size restriction set.'}
-              </p>
-            </div>
-
-            <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-2">
-                Max Teams Per Mentor
-              </label>
-              <div className="relative">
-                <input
-                  type="number"
-                  min="1"
-                  max="100"
-                  value={maxTeamsPerMentor}
-                  onChange={(e) => setMaxTeamsPerMentor(e.target.value)}
-                  placeholder="e.g. 3"
-                  className="w-full px-4 py-3 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent text-slate-800 font-bold"
-                />
-                {maxTeamsPerMentor && (
-                  <button
-                    type="button"
-                    onClick={() => setMaxTeamsPerMentor('')}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400 hover:text-red-500"
-                  >
-                    Clear (Default 3)
-                  </button>
-                )}
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">Max Teams per Mentor</label>
+                <div className="relative">
+                  <input type="number" min="1" max="100" value={maxTeamsPerMentor} onChange={(e) => setMaxTeamsPerMentor(e.target.value)} placeholder="Default 3" className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none text-sm font-medium transition-all" />
+                  {maxTeamsPerMentor && <button type="button" onClick={() => setMaxTeamsPerMentor('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400 hover:text-red-500">Clear</button>}
+                </div>
               </div>
-              <p className="text-xs text-slate-500 mt-1">
-                {maxTeamsPerMentor ? `A mentor can guide up to ${maxTeamsPerMentor} teams.` : 'Defaults to 3 teams.'}
-              </p>
             </div>
-          </div>
-
-          <div className="flex justify-end pt-2">
-            <button
-              type="submit"
-              disabled={savingLimits}
-              className="px-6 py-3 rounded-xl font-bold text-sm text-white bg-blue-600 hover:bg-blue-700 shadow-lg shadow-blue-600/30 transition-all disabled:opacity-50"
-            >
-              {savingLimits ? 'Saving Changes...' : 'Save Team Size Limits'}
-            </button>
-          </div>
-        </form>
+            <div className="flex justify-end border-t border-slate-100 dark:border-slate-700/50 pt-6 mt-6">
+              <button type="submit" disabled={savingLimits} className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl text-sm transition-all shadow-md shadow-blue-500/20">
+                {savingLimits ? 'Saving...' : 'Save Configuration'}
+              </button>
+            </div>
+          </form>
+        </div>
       </div>
 
       {/* Confirmation Modal */}

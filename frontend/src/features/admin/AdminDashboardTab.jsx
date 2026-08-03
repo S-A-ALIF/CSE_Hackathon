@@ -146,18 +146,6 @@ export default function AdminDashboardTab({ setActiveTab }) {
             Platform Control Center &rarr;
           </button>
         </div>
-      </div>
-
-      {/* Quick Tips */}
-      <div className="bg-blue-600/5 border border-blue-500/20 rounded-2xl p-6">
-        <h3 className="font-bold text-slate-900 mb-2">📌 Admin Tips & Controls</h3>
-        <ul className="text-sm text-slate-600 space-y-2 list-disc list-inside">
-          <li>Use the <strong>All Teams</strong> tab to expand any team and view all of its registered members.</li>
-          <li>Click on any team or member row to open the <strong>Details Information Modal</strong>.</li>
-          <li>Use the <strong>Three-Dot Menu (⋮)</strong> on any row to Edit details, Ban/Unban, or Delete a team/member.</li>
-          <li>Toggle registration open or closed globally from the <strong>Control</strong> tab.</li>
-        </ul>
-      </div>
-    </div>
+      </div>    </div>
   );
 }

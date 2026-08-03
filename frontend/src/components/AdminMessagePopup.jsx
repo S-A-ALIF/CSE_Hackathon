@@ -152,7 +152,7 @@ export default function AdminMessagePopup() {
 
           <div className="bg-slate-50 dark:bg-slate-800/60 rounded-2xl p-4 border border-slate-200/60 dark:border-slate-700/60 overflow-y-auto">
             <div 
-              className="text-sm text-slate-700 dark:text-slate-200 font-medium whitespace-pre-line leading-relaxed prose prose-sm dark:prose-invert max-w-none"
+              className="text-sm text-slate-700 dark:text-slate-200 font-medium whitespace-pre-line leading-relaxed prose prose-sm dark:prose-invert max-w-none [overflow-wrap:anywhere]"
               dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(cleanMsg || rawMsg) }}
             >
             </div>

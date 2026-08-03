@@ -353,8 +353,8 @@ export default function AdminMessagesTab() {
                         <span className="text-xs font-bold text-slate-500 dark:text-slate-400">Target: {msg.target_type}</span>
                         <span className="text-xs text-slate-400">{new Date(msg.created_at).toLocaleString()}</span>
                       </div>
-                      <h4 className="font-bold text-slate-900 dark:text-white text-sm">{msg.title || '(No Title)'}</h4>
-                      <p className="text-sm text-slate-600 dark:text-slate-300 mt-1 whitespace-pre-line leading-snug">
+                      <h4 className="font-bold text-slate-900 dark:text-white text-sm [overflow-wrap:anywhere]">{msg.title || '(No Title)'}</h4>
+                      <p className="text-sm text-slate-600 dark:text-slate-300 mt-1 whitespace-pre-line leading-snug [overflow-wrap:anywhere] line-clamp-3">
                         {clampNotificationMessage(msg.message)}
                       </p>
                     </div>
@@ -684,13 +684,13 @@ export default function AdminMessagesTab() {
               <label className="block text-sm font-bold text-slate-700 dark:text-slate-200 mb-2">
                 Message Content <span className="text-red-500">*</span>
               </label>
-              <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
+              <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden [&_.ql-editor]:!text-slate-900 dark:[&_.ql-editor]:!text-white dark:[&_.ql-editor_*]:!text-white [&_.ql-editor::before]:!text-slate-400 dark:[&_.ql-editor::before]:!text-slate-500 [&_.ql-toolbar]:border-b-slate-200 dark:[&_.ql-toolbar]:border-b-slate-700 dark:[&_.ql-stroke]:!stroke-slate-300 dark:[&_.ql-fill]:!fill-slate-300 dark:[&_.ql-picker]:!text-slate-300">
                 <ReactQuill
                   theme="snow"
                   value={message}
                   onChange={setMessage}
                   placeholder="Write your announcement or notification text here..."
-                  className="text-sm font-medium text-slate-900 dark:text-white"
+                  className="text-sm font-medium"
                 />
               </div>
               <div className="flex justify-between items-center mt-1 text-xs text-slate-500 dark:text-slate-400">
@@ -720,7 +720,7 @@ export default function AdminMessagesTab() {
                     <span className="font-bold text-white">{title.trim()} — </span>
                   ) : null}
                   {message.trim() ? (
-                    <div className="prose prose-sm prose-invert max-w-none mt-2" dangerouslySetInnerHTML={{ __html: message }} />
+                    <div className="prose prose-sm prose-invert max-w-none mt-2 whitespace-normal break-words [overflow-wrap:anywhere]" dangerouslySetInnerHTML={{ __html: message }} />
                   ) : (
                     <span>Your message preview will appear here...</span>
                   )}
@@ -802,7 +802,7 @@ export default function AdminMessagesTab() {
             </div>
             <div className="p-6 overflow-y-auto flex-1 space-y-4">
               <div className="bg-slate-50 dark:bg-slate-800/60 rounded-2xl p-4 border border-slate-200/60 dark:border-slate-700/60">
-                <div className="text-sm md:text-base text-slate-700 dark:text-slate-200 font-medium whitespace-pre-line leading-relaxed prose prose-sm dark:prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(formatNotificationMessage(selectedHistoryModal.message, false)) }}>
+                <div className="text-sm md:text-base text-slate-700 dark:text-slate-200 font-medium whitespace-pre-line leading-relaxed prose prose-sm dark:prose-invert max-w-none [overflow-wrap:anywhere]" dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(formatNotificationMessage(selectedHistoryModal.message, false)) }}>
                 </div>
               </div>
             </div>
