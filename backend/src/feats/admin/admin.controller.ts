@@ -642,10 +642,16 @@ export const sendAdminMessage = async (req: Request, res: Response) => {
 
         const formattedMessage = `${prefix} ${title && title.trim() ? title.trim() + ' — ' : ''}${message.trim()}`;
 
+        const adminMsgRes = await pool.query(
+            'INSERT INTO admin_messages (title, message, target_type, severity) VALUES ($1, $2, $3, $4) RETURNING id',
+            [title || '', message.trim(), targetType, severity]
+        );
+        const adminMessageId = adminMsgRes.rows[0].id;
+
         const insertPromises = recipientEmails.map(email =>
             pool.query(
-                'INSERT INTO notifications (recipient_email, message, action_status) VALUES ($1, $2, $3)',
-                [email, formattedMessage, severity]
+                'INSERT INTO notifications (recipient_email, message, action_status, admin_message_id) VALUES ($1, $2, $3, $4)',
+                [email, formattedMessage, severity, adminMessageId]
             )
         );
 
@@ -667,3 +673,44 @@ export const sendAdminMessage = async (req: Request, res: Response) => {
     }
 };
 
+export const getAdminMessageHistory = async (req: Request, res: Response) => {
+    try {
+        const result = await pool.query('SELECT * FROM admin_messages ORDER BY created_at DESC');
+        res.status(200).json({ success: true, status: 'success', data: result.rows });
+    } catch (error: any) {
+        console.error('Error fetching admin messages:', error);
+        res.status(500).json({ success: false, status: 'error', message: error.message || 'Failed to fetch history' });
+    }
+};
+
+export const updateAdminMessage = async (req: Request, res: Response) => {
+    try {
+        const { id } = req.params;
+        const { title, message, severity = 'info' } = req.body;
+        
+        if (!message || !message.trim()) {
+            return res.status(400).json({ status: 'error', success: false, message: 'Message content is required.' });
+        }
+        
+        await pool.query(
+            'UPDATE admin_messages SET title = $1, message = $2, severity = $3, updated_at = CURRENT_TIMESTAMP WHERE id = $4',
+            [title || '', message.trim(), severity, id]
+        );
+        
+        let prefix = '📢 [Admin Message]';
+        if (severity === 'urgent') prefix = '🚨 [URGENT Broadcast]';
+        else if (severity === 'warning') prefix = '⚠️ [Important Notice]';
+        
+        const formattedMessage = `${prefix} ${title && title.trim() ? title.trim() + ' — ' : ''}${message.trim()}`;
+        
+        await pool.query(
+            'UPDATE notifications SET message = $1, action_status = $2 WHERE admin_message_id = $3',
+            [formattedMessage, severity, id]
+        );
+        
+        res.status(200).json({ success: true, status: 'success', message: 'Message updated successfully.' });
+    } catch (error: any) {
+        console.error('Error updating admin message:', error);
+        res.status(500).json({ success: false, status: 'error', message: error.message || 'Failed to update message' });
+    }
+};

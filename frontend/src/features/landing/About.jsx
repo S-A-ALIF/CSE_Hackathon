@@ -36,28 +36,28 @@ export default function About() {
               Technical Stack Constraints
             </h4>
             <ul className="text-slate-300 space-y-4 text-left">
-              <li className="flex gap-3">
-                <span className="text-blue-400 font-bold shrink-0 min-w-[170px]">Repository Structure:</span>
+              <li className="flex flex-col md:flex-row gap-2 md:gap-3">
+                <span className="text-blue-400 font-bold shrink-0 md:min-w-[170px]">Repository Structure:</span>
                 <span className="leading-relaxed">The codebase must be split. There must be completely separate directories (or separate repos) for the Frontend and the Backend. No monolithic spaghetti code.</span>
               </li>
-              <li className="flex gap-3">
-                <span className="text-blue-400 font-bold shrink-0 min-w-[170px]">Backend:</span>
+              <li className="flex flex-col md:flex-row gap-2 md:gap-3">
+                <span className="text-blue-400 font-bold shrink-0 md:min-w-[170px]">Backend:</span>
                 <span className="leading-relaxed">Strictly Node.js paired with Express.</span>
               </li>
-              <li className="flex gap-3">
-                <span className="text-blue-400 font-bold shrink-0 min-w-[170px]">Frontend:</span>
+              <li className="flex flex-col md:flex-row gap-2 md:gap-3">
+                <span className="text-blue-400 font-bold shrink-0 md:min-w-[170px]">Frontend:</span>
                 <span className="leading-relaxed">Strictly React or Next.js.</span>
               </li>
-              <li className="flex gap-3">
-                <span className="text-blue-400 font-bold shrink-0 min-w-[170px]">Database:</span>
+              <li className="flex flex-col md:flex-row gap-2 md:gap-3">
+                <span className="text-blue-400 font-bold shrink-0 md:min-w-[170px]">Database:</span>
                 <span className="leading-relaxed">Strictly PostgreSQL or MongoDB.</span>
               </li>
-              <li className="flex gap-3">
-                <span className="text-blue-400 font-bold shrink-0 min-w-[170px]">Image storage:</span>
+              <li className="flex flex-col md:flex-row gap-2 md:gap-3">
+                <span className="text-blue-400 font-bold shrink-0 md:min-w-[170px]">Image storage:</span>
                 <span className="leading-relaxed">Strictly Cloudinary</span>
               </li>
-              <li className="flex gap-3">
-                <span className="text-blue-400 font-bold shrink-0 min-w-[170px]">Allowed Tooling:</span>
+              <li className="flex flex-col md:flex-row gap-2 md:gap-3">
+                <span className="text-blue-400 font-bold shrink-0 md:min-w-[170px]">Allowed Tooling:</span>
                 <span className="leading-relaxed">Open-source libraries (e.g., Socket.io, Mongoose, Prisma, Tailwind) are permitted.</span>
               </li>
             </ul>

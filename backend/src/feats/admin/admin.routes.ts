@@ -19,7 +19,9 @@ import {
     updateHackathonTimeline,
     deleteMultipleMembers,
     deleteMultipleTeams,
-    sendAdminMessage
+    sendAdminMessage,
+    getAdminMessageHistory,
+    updateAdminMessage
 } from './admin.controller';
 
 const router = Router();
@@ -31,7 +33,9 @@ router.use(authMiddleware, adminMiddleware);
 router.get('/stats', getStats);
 
 // Broadcast / Send Message
+router.get('/messages/history', getAdminMessageHistory);
 router.post('/messages/send', sendAdminMessage);
+router.put('/messages/:id', updateAdminMessage);
 
 // Teams Management
 router.get('/teams', getAllTeams);

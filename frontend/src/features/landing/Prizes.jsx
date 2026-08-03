@@ -2,7 +2,7 @@ import React from 'react';
 
 export default function Prizes() {
   return (
-    <section id="prizes" className="bg-slate-950 py-28 text-white relative">
+    <section id="prizes" className="bg-slate-950 py-28 text-white relative overflow-hidden">
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[400px] bg-amber-500/10 rounded-full blur-[100px] pointer-events-none" />
       <div className="container mx-auto px-6 lg:px-16 relative z-10">
         <div className="max-w-3xl mx-auto text-center mb-16">

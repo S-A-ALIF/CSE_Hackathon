@@ -2,6 +2,43 @@ import { useState, useEffect } from 'react';
 import { API_URL } from '../../config';
 import { toast } from 'sonner';
 import { adminCache } from './adminCache';
+import ReactQuill from 'react-quill-new';
+import 'react-quill-new/dist/quill.snow.css';
+import DOMPurify from 'dompurify';
+import { createPortal } from 'react-dom';
+
+const decodeHTMLEntities = (text) => {
+  try {
+    const doc = new DOMParser().parseFromString(text, 'text/html');
+    return doc.documentElement.textContent;
+  } catch (e) {
+    return text;
+  }
+};
+
+const formatNotificationMessage = (msg, stripHtml = true) => {
+  if (!msg) return '';
+  let cleaned = msg;
+  if (stripHtml) {
+    cleaned = DOMPurify.sanitize(msg, { ALLOWED_TAGS: [] });
+    cleaned = decodeHTMLEntities(cleaned);
+  }
+  return cleaned.trim();
+};
+
+const clampNotificationMessage = (msg) => {
+  const cleaned = formatNotificationMessage(msg);
+  if (!cleaned) return '';
+  const lines = cleaned.split(/\r?\n/);
+  if (lines.length > 2 || cleaned.length > 130) {
+    let twoLines = lines.slice(0, 2).join('\n');
+    if (twoLines.length > 110) {
+      twoLines = twoLines.substring(0, 105).trim();
+    }
+    return `${twoLines}.....`;
+  }
+  return cleaned;
+};
 
 export default function AdminMessagesTab() {
   const [targetType, setTargetType] = useState('all'); // 'all', 'team_leaders', 'mentors', 'teams', 'selected'
@@ -9,6 +46,16 @@ export default function AdminMessagesTab() {
   const [message, setMessage] = useState('');
   const [severity, setSeverity] = useState('info'); // 'info', 'warning', 'urgent'
   const [sending, setSending] = useState(false);
+
+  // History State
+  const [viewMode, setViewMode] = useState('compose'); // 'compose' | 'history'
+  const [history, setHistory] = useState([]);
+  const [loadingHistory, setLoadingHistory] = useState(false);
+  const [editMessageId, setEditMessageId] = useState(null);
+  
+  // History Modal State
+  const [selectedHistoryModal, setSelectedHistoryModal] = useState(null);
+  const [isFullScreen, setIsFullScreen] = useState(false);
 
   // Data for selector lists
   const [teamsList, setTeamsList] = useState([]);
@@ -30,6 +77,31 @@ export default function AdminMessagesTab() {
       loadMembers();
     }
   }, [targetType]);
+
+  useEffect(() => {
+    if (viewMode === 'history') {
+      loadHistory();
+    }
+  }, [viewMode]);
+
+  const loadHistory = async () => {
+    try {
+      setLoadingHistory(true);
+      const token = localStorage.getItem('token');
+      const res = await fetch(`${API_URL}/api/v1/admin/messages/history`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setHistory(data.data || []);
+      }
+    } catch (err) {
+      console.error('Error loading history:', err);
+      toast.error('Failed to load message history');
+    } finally {
+      setLoadingHistory(false);
+    }
+  };
 
   const loadTeams = async () => {
     try {
@@ -138,29 +210,38 @@ export default function AdminMessagesTab() {
       return;
     }
 
-    if (targetType === 'teams' && selectedTeamIds.length === 0) {
-      toast.error('Please select at least one team');
-      return;
-    }
+    if (!editMessageId) {
+      if (targetType === 'teams' && selectedTeamIds.length === 0) {
+        toast.error('Please select at least one team');
+        return;
+      }
 
-    if (targetType === 'selected' && selectedEmails.length === 0) {
-      toast.error('Please select at least one user');
-      return;
+      if (targetType === 'selected' && selectedEmails.length === 0) {
+        toast.error('Please select at least one user');
+        return;
+      }
     }
 
     try {
       setSending(true);
       const token = localStorage.getItem('token');
-      const res = await fetch(`${API_URL}/api/v1/admin/messages/send`, {
-        method: 'POST',
+      
+      const url = editMessageId 
+        ? `${API_URL}/api/v1/admin/messages/${editMessageId}`
+        : `${API_URL}/api/v1/admin/messages/send`;
+        
+      const method = editMessageId ? 'PUT' : 'POST';
+
+      const res = await fetch(url, {
+        method,
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({
-          targetType,
-          selectedTeamIds: targetType === 'teams' ? selectedTeamIds : undefined,
-          selectedEmails: targetType === 'selected' ? selectedEmails : undefined,
+          targetType: editMessageId ? undefined : targetType,
+          selectedTeamIds: (!editMessageId && targetType === 'teams') ? selectedTeamIds : undefined,
+          selectedEmails: (!editMessageId && targetType === 'selected') ? selectedEmails : undefined,
           title: title.trim(),
           message: message.trim(),
           severity
@@ -169,13 +250,10 @@ export default function AdminMessagesTab() {
 
       const data = await res.json();
       if (res.ok && data.success) {
-        toast.success(`Notification broadcast successfully to ${data.recipientsCount} recipient(s)!`);
-        setTitle('');
-        setMessage('');
-        setSelectedTeamIds([]);
-        setSelectedEmails([]);
+        toast.success(editMessageId ? 'Message updated successfully!' : `Notification broadcast successfully to ${data.recipientsCount} recipient(s)!`);
+        resetForm();
       } else {
-        toast.error(data.message || 'Failed to send broadcast message');
+        toast.error(data.message || 'Failed to save message');
       }
     } catch (err) {
       console.error('Error sending message:', err);
@@ -183,6 +261,15 @@ export default function AdminMessagesTab() {
     } finally {
       setSending(false);
     }
+  };
+
+  const resetForm = () => {
+    setTitle('');
+    setMessage('');
+    setSelectedTeamIds([]);
+    setSelectedEmails([]);
+    setEditMessageId(null);
+    setViewMode('compose');
   };
 
   // Preview helper
@@ -219,17 +306,81 @@ export default function AdminMessagesTab() {
           <div>
             <h2 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight flex items-center gap-2.5">
               <span>📢</span>
-              <span>Send Message (In-App Notification)</span>
+              <span>{editMessageId ? 'Edit Broadcast Message' : 'Send Message (In-App Notification)'}</span>
             </h2>
             <p className="text-slate-500 dark:text-slate-400 mt-1 text-sm sm:text-base">
-              Broadcast announcements and instant notifications directly to members' in-app notification menu.
+              {editMessageId ? 'Update a previously sent message. This will update the notification text for all recipients.' : 'Broadcast announcements and instant notifications directly to members\' in-app notification menu.'}
             </p>
+          </div>
+          
+          <div className="flex bg-slate-100 dark:bg-slate-800 p-1 rounded-xl">
+            <button
+              onClick={() => {
+                if(editMessageId) resetForm();
+                else setViewMode('compose');
+              }}
+              className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${viewMode === 'compose' ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm' : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200'}`}
+            >
+              {editMessageId ? 'Cancel Edit' : 'Compose'}
+            </button>
+            <button
+              onClick={() => setViewMode('history')}
+              className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${viewMode === 'history' ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm' : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200'}`}
+            >
+              History
+            </button>
           </div>
         </div>
       </div>
 
+      {viewMode === 'history' ? (
+        <div className="bg-white dark:bg-slate-900 p-6 sm:p-8 rounded-3xl shadow-sm border border-slate-200 dark:border-slate-800">
+          <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-4">Past Broadcasts</h3>
+          {loadingHistory ? (
+            <div className="py-8 text-center text-slate-500 dark:text-slate-400 text-sm">Loading history...</div>
+          ) : history.length === 0 ? (
+            <div className="py-8 text-center text-slate-500 dark:text-slate-400 text-sm">No past broadcasts found.</div>
+          ) : (
+            <div className="space-y-4">
+              {history.map((msg) => (
+                <div key={msg.id} className="p-4 rounded-2xl border border-slate-200 dark:border-slate-800 hover:border-blue-500/50 transition-colors">
+                  <div className="flex justify-between items-start gap-4 cursor-pointer" onClick={() => setSelectedHistoryModal(msg)}>
+                    <div>
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${msg.severity === 'urgent' ? 'bg-rose-100 text-rose-700 dark:bg-rose-950/60 dark:text-rose-300' : msg.severity === 'warning' ? 'bg-amber-100 text-amber-700 dark:bg-amber-950/60 dark:text-amber-300' : 'bg-blue-100 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300'}`}>
+                          {msg.severity}
+                        </span>
+                        <span className="text-xs font-bold text-slate-500 dark:text-slate-400">Target: {msg.target_type}</span>
+                        <span className="text-xs text-slate-400">{new Date(msg.created_at).toLocaleString()}</span>
+                      </div>
+                      <h4 className="font-bold text-slate-900 dark:text-white text-sm">{msg.title || '(No Title)'}</h4>
+                      <p className="text-sm text-slate-600 dark:text-slate-300 mt-1 whitespace-pre-line leading-snug">
+                        {clampNotificationMessage(msg.message)}
+                      </p>
+                    </div>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setEditMessageId(msg.id);
+                        setTitle(msg.title || '');
+                        setMessage(msg.message || '');
+                        setSeverity(msg.severity || 'info');
+                        setViewMode('compose');
+                      }}
+                      className="shrink-0 px-4 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-blue-50 dark:hover:bg-blue-900/40 text-blue-600 dark:text-blue-400 font-bold text-xs rounded-lg transition-colors"
+                    >
+                      Edit Message
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      ) : (
       <form onSubmit={handleSendMessage} className="space-y-6">
         {/* Step 1: Target Audience Selection */}
+        {!editMessageId && (
         <div className="bg-white dark:bg-slate-900 p-6 sm:p-8 rounded-3xl shadow-sm border border-slate-200 dark:border-slate-800">
           <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
             <span className="w-6 h-6 rounded-lg bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400 flex items-center justify-center text-xs font-black">
@@ -475,6 +626,7 @@ export default function AdminMessagesTab() {
             </div>
           )}
         </div>
+        )}
 
         {/* Step 2: Message Compose Card */}
         <div className="bg-white dark:bg-slate-900 p-6 sm:p-8 rounded-3xl shadow-sm border border-slate-200 dark:border-slate-800">
@@ -532,17 +684,18 @@ export default function AdminMessagesTab() {
               <label className="block text-sm font-bold text-slate-700 dark:text-slate-200 mb-2">
                 Message Content <span className="text-red-500">*</span>
               </label>
-              <textarea
-                rows={4}
-                required
-                placeholder="Write your announcement or notification text here..."
-                value={message}
-                onChange={(e) => setMessage(e.target.value)}
-                className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm font-medium"
-              />
+              <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
+                <ReactQuill
+                  theme="snow"
+                  value={message}
+                  onChange={setMessage}
+                  placeholder="Write your announcement or notification text here..."
+                  className="text-sm font-medium text-slate-900 dark:text-white"
+                />
+              </div>
               <div className="flex justify-between items-center mt-1 text-xs text-slate-500 dark:text-slate-400">
                 <span>The message will appear in real-time in recipient notification menus.</span>
-                <span>{message.length} characters</span>
+                <span>{message.replace(/<[^>]*>?/gm, '').length} characters</span>
               </div>
             </div>
 
@@ -559,15 +712,19 @@ export default function AdminMessagesTab() {
                   </div>
                   <span className="text-xs text-slate-400">Just now</span>
                 </div>
-                <p className="text-sm text-slate-200 font-medium">
+                <div className="text-sm text-slate-200 font-medium">
                   {severity === 'urgent' && '🚨 [URGENT Broadcast] '}
                   {severity === 'warning' && '⚠️ [Important Notice] '}
                   {severity === 'info' && '📢 [Admin Message] '}
                   {title && title.trim() ? (
                     <span className="font-bold text-white">{title.trim()} — </span>
                   ) : null}
-                  <span>{message.trim() || 'Your message preview will appear here...'}</span>
-                </p>
+                  {message.trim() ? (
+                    <div className="prose prose-sm prose-invert max-w-none mt-2" dangerouslySetInnerHTML={{ __html: message }} />
+                  ) : (
+                    <span>Your message preview will appear here...</span>
+                  )}
+                </div>
               </div>
             </div>
           </div>
@@ -598,10 +755,61 @@ export default function AdminMessagesTab() {
                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
               </svg>
             )}
-            <span>Send Notification Broadcast</span>
+            <span>{editMessageId ? 'Update Message' : 'Send Notification Broadcast'}</span>
           </button>
         </div>
       </form>
+      )}
+
+      {/* Full Message Reader Popup Modal */}
+      {selectedHistoryModal && createPortal(
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className={`bg-white dark:bg-slate-900 shadow-2xl border border-slate-200 dark:border-slate-800 flex flex-col overflow-hidden transform transition-all duration-300 ${isFullScreen ? 'w-full h-full rounded-none m-0' : 'max-w-lg w-full max-h-[80vh] rounded-3xl scale-100'}`}>
+            <div className="p-6 pb-4 flex items-center justify-between gap-4 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-blue-100 dark:bg-blue-900/50 text-blue-600 dark:text-blue-400 flex items-center justify-center text-xl shrink-0">
+                  📢
+                </div>
+                <div>
+                  <h3 className="font-black text-slate-900 dark:text-white text-base leading-tight">
+                    {selectedHistoryModal.title || 'Broadcast Details'}
+                  </h3>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                    {new Date(selectedHistoryModal.created_at).toLocaleString()}
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setIsFullScreen(!isFullScreen)}
+                  className="px-3.5 py-1.5 bg-blue-50/80 hover:bg-blue-100/80 dark:bg-blue-900/30 dark:hover:bg-blue-800/40 text-blue-600 dark:text-blue-400 font-bold text-xs rounded-xl transition-all shadow-sm shrink-0 flex items-center gap-1.5"
+                >
+                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" /></svg>
+                  {isFullScreen ? 'Exit Fullscreen' : 'Expand'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSelectedHistoryModal(null);
+                    setIsFullScreen(false);
+                  }}
+                  className="px-3.5 py-1.5 bg-slate-200/80 hover:bg-slate-300/80 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold text-xs rounded-xl transition-all shadow-sm shrink-0"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+            <div className="p-6 overflow-y-auto flex-1 space-y-4">
+              <div className="bg-slate-50 dark:bg-slate-800/60 rounded-2xl p-4 border border-slate-200/60 dark:border-slate-700/60">
+                <div className="text-sm md:text-base text-slate-700 dark:text-slate-200 font-medium whitespace-pre-line leading-relaxed prose prose-sm dark:prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(formatNotificationMessage(selectedHistoryModal.message, false)) }}>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
     </div>
   );
 }

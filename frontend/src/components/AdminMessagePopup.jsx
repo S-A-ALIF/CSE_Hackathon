@@ -1,11 +1,13 @@
 import { useState, useEffect } from 'react';
 import { API_URL } from '../config';
 import { useAuth } from '../contexts/AuthContext';
+import DOMPurify from 'dompurify';
 
 export default function AdminMessagePopup() {
   const { currentUser } = useAuth();
   const [activePopup, setActivePopup] = useState(null);
   const [isOpen, setIsOpen] = useState(false);
+  const [isFullScreen, setIsFullScreen] = useState(false);
 
   useEffect(() => {
     if (!currentUser || !currentUser.email) return;
@@ -69,6 +71,7 @@ export default function AdminMessagePopup() {
     );
     setIsOpen(false);
     setActivePopup(null);
+    setIsFullScreen(false);
   };
 
   if (!isOpen || !activePopup) return null;
@@ -98,7 +101,7 @@ export default function AdminMessagePopup() {
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-800 max-w-md w-full overflow-hidden transform transition-all scale-100">
+      <div className={`bg-white dark:bg-slate-900 shadow-2xl border border-slate-200 dark:border-slate-800 flex flex-col overflow-hidden transform transition-all duration-300 ${isFullScreen ? 'w-full h-full rounded-none m-0 max-w-none' : 'max-w-md w-full rounded-3xl scale-100'}`}>
         {/* Top Header Bar with Close text button at Top Right instead of Cross */}
         <div className="p-6 pb-4 flex items-start justify-between gap-4 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30">
           <div className="flex items-center gap-3">
@@ -115,14 +118,24 @@ export default function AdminMessagePopup() {
             </div>
           </div>
 
-          {/* Top Right "Close" Button (instead of cross) */}
-          <button
-            type="button"
-            onClick={handleDismiss}
-            className="px-3.5 py-1.5 bg-slate-200/80 hover:bg-slate-300/80 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold text-xs rounded-xl transition-all shadow-sm shrink-0"
-          >
-            Close
-          </button>
+          {/* Buttons on Top Right */}
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setIsFullScreen(!isFullScreen)}
+              className="px-3.5 py-1.5 bg-blue-50/80 hover:bg-blue-100/80 dark:bg-blue-900/30 dark:hover:bg-blue-800/40 text-blue-600 dark:text-blue-400 font-bold text-xs rounded-xl transition-all shadow-sm shrink-0 flex items-center gap-1.5"
+            >
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" /></svg>
+              {isFullScreen ? 'Exit Fullscreen' : 'Expand'}
+            </button>
+            <button
+              type="button"
+              onClick={handleDismiss}
+              className="px-3.5 py-1.5 bg-slate-200/80 hover:bg-slate-300/80 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold text-xs rounded-xl transition-all shadow-sm shrink-0"
+            >
+              Close
+            </button>
+          </div>
         </div>
 
         {/* Message Content Body */}
@@ -137,10 +150,12 @@ export default function AdminMessagePopup() {
             </span>
           </div>
 
-          <div className="bg-slate-50 dark:bg-slate-800/60 rounded-2xl p-4 border border-slate-200/60 dark:border-slate-700/60">
-            <p className="text-sm text-slate-700 dark:text-slate-200 font-medium whitespace-pre-line leading-relaxed">
-              {cleanMsg || rawMsg}
-            </p>
+          <div className="bg-slate-50 dark:bg-slate-800/60 rounded-2xl p-4 border border-slate-200/60 dark:border-slate-700/60 overflow-y-auto">
+            <div 
+              className="text-sm text-slate-700 dark:text-slate-200 font-medium whitespace-pre-line leading-relaxed prose prose-sm dark:prose-invert max-w-none"
+              dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(cleanMsg || rawMsg) }}
+            >
+            </div>
           </div>
 
           <p className="text-xs text-slate-500 dark:text-slate-400 text-center">

@@ -4,6 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { toast } from 'sonner';
 import JoinTeamModal from '../features/team/JoinTeamModal';
 import { createPortal } from 'react-dom';
+import DOMPurify from 'dompurify';
 
 // Utility to format timestamp in GMT+6:00 directly without offset text
 const formatGMT6 = (dateString) => {
@@ -28,10 +29,27 @@ const formatGMT6 = (dateString) => {
   }
 };
 
+// Utility to decode HTML entities (like &nbsp;) into plain text safely
+const decodeHTMLEntities = (text) => {
+  try {
+    const doc = new DOMParser().parseFromString(text, 'text/html');
+    return doc.documentElement.textContent;
+  } catch (e) {
+    return text;
+  }
+};
+
 // Remove backend tags like [TeamID:...] or [ReqID:...] so display ends cleanly at the team name
-const formatNotificationMessage = (msg) => {
+const formatNotificationMessage = (msg, stripHtml = true) => {
   if (!msg) return '';
-  let cleaned = msg
+  let cleaned = msg;
+  if (stripHtml) {
+    // Strip HTML using DOMPurify
+    cleaned = DOMPurify.sanitize(msg, { ALLOWED_TAGS: [] });
+    // Decode remaining HTML entities like &nbsp;
+    cleaned = decodeHTMLEntities(cleaned);
+  }
+  cleaned = cleaned
     .replace(/\s*\[TeamID:[a-fA-F0-9-]+\]\.?/i, '.')
     .replace(/\s*\[ReqID:[a-fA-F0-9-]+\]\.?/i, '.');
   return cleaned.replace(/\.\./g, '.').trim();
@@ -60,6 +78,7 @@ export default function NotificationDropdown() {
   const [actionLoading, setActionLoading] = useState({});
   const [showJoinModal, setShowJoinModal] = useState(false);
   const [selectedNotificationModal, setSelectedNotificationModal] = useState(null);
+  const [isFullScreen, setIsFullScreen] = useState(false);
   const dropdownRef = useRef(null);
 
   // Close dropdown when clicking outside
@@ -411,7 +430,7 @@ export default function NotificationDropdown() {
       {/* Full Message Reader Popup Modal */}
       {selectedNotificationModal && createPortal(
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-800 max-w-lg w-full max-h-[80vh] flex flex-col overflow-hidden transform transition-all scale-100">
+          <div className={`bg-white dark:bg-slate-900 shadow-2xl border border-slate-200 dark:border-slate-800 flex flex-col overflow-hidden transform transition-all duration-300 ${isFullScreen ? 'w-full h-full rounded-none m-0' : 'max-w-lg w-full max-h-[80vh] rounded-3xl scale-100'}`}>
             {/* Header with Close button at Top Right */}
             <div className="p-6 pb-4 flex items-center justify-between gap-4 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30">
               <div className="flex items-center gap-3">
@@ -428,22 +447,34 @@ export default function NotificationDropdown() {
                 </div>
               </div>
 
-              {/* Close Button on Top Right */}
-              <button
-                type="button"
-                onClick={() => setSelectedNotificationModal(null)}
-                className="px-3.5 py-1.5 bg-slate-200/80 hover:bg-slate-300/80 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold text-xs rounded-xl transition-all shadow-sm shrink-0"
-              >
-                Close
-              </button>
+              {/* Buttons on Top Right */}
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setIsFullScreen(!isFullScreen)}
+                  className="px-3.5 py-1.5 bg-blue-50/80 hover:bg-blue-100/80 dark:bg-blue-900/30 dark:hover:bg-blue-800/40 text-blue-600 dark:text-blue-400 font-bold text-xs rounded-xl transition-all shadow-sm shrink-0 flex items-center gap-1.5"
+                >
+                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" /></svg>
+                  {isFullScreen ? 'Exit Fullscreen' : 'Expand'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSelectedNotificationModal(null);
+                    setIsFullScreen(false);
+                  }}
+                  className="px-3.5 py-1.5 bg-slate-200/80 hover:bg-slate-300/80 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold text-xs rounded-xl transition-all shadow-sm shrink-0"
+                >
+                  Close
+                </button>
+              </div>
             </div>
 
             {/* Scrollable Fixed-Size Message Body */}
             <div className="p-6 overflow-y-auto flex-1 space-y-4">
               <div className="bg-slate-50 dark:bg-slate-800/60 rounded-2xl p-4 border border-slate-200/60 dark:border-slate-700/60">
-                <p className="text-sm md:text-base text-slate-700 dark:text-slate-200 font-medium whitespace-pre-line leading-relaxed">
-                  {formatNotificationMessage(selectedNotificationModal.message)}
-                </p>
+                <div className="text-sm md:text-base text-slate-700 dark:text-slate-200 font-medium whitespace-pre-line leading-relaxed prose prose-sm dark:prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(formatNotificationMessage(selectedNotificationModal.message, false)) }}>
+                </div>
               </div>
 
               {/* If there are invite action buttons or status badges, render them inside the modal too */}
@@ -457,6 +488,7 @@ export default function NotificationDropdown() {
                         onClick={() => {
                           handleAcceptInvite(selectedNotificationModal);
                           setSelectedNotificationModal(null);
+                          setIsFullScreen(false);
                         }}
                         className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-xl shadow-sm transition-all disabled:opacity-50 flex items-center gap-1.5"
                       >
@@ -474,6 +506,7 @@ export default function NotificationDropdown() {
                         onClick={() => {
                           handleRejectInvite(selectedNotificationModal);
                           setSelectedNotificationModal(null);
+                          setIsFullScreen(false);
                         }}
                         className="px-4 py-2 bg-slate-200 hover:bg-rose-500 hover:text-white text-slate-700 text-xs font-bold rounded-xl transition-all disabled:opacity-50 flex items-center gap-1.5"
                       >
