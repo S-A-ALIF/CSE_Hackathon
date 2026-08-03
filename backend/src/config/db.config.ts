@@ -14,11 +14,11 @@ const poolConfig: PoolConfig = {
     
     // Performance & Resource Tuning for Production Environments & Neon Serverless
     max: 20,                          // Maximum number of active clients allowed in the pool
-    idleTimeoutMillis: 15000,         // Close idle clients after 15 seconds before Neon drops TCP connection
-    connectionTimeoutMillis: 30000,   // 30 seconds to allow Neon Serverless DB to wake up from cold sleep
+    idleTimeoutMillis: 5000,          // Reduced to 5 seconds to recycle before Neon's 5m connection drop
+    connectionTimeoutMillis: 10000,   // 10 seconds timeout for connections
     maxUses: 7500,                    // Recreate allocations after 7500 queries to mitigate memory leaks
     keepAlive: true,
-    keepAliveInitialDelayMillis: 10000,
+    keepAliveInitialDelayMillis: 5000,
     
     // Explicitly enforce SSL when running in a production ecosystem or using Neon
     ssl: (envConfig.env === 'production' || envConfig.db.host.includes('.neon.tech')) ? { rejectUnauthorized: false } : false
@@ -59,6 +59,25 @@ export const closeDatabaseConnection = async (): Promise<void> => {
         console.log('✅ Database Infrastructure: Connection pool closed cleanly.');
     } catch (error) {
         console.error('❌ Error occurred while breaking down database connection pool:', error);
+        throw error;
+    }
+};
+
+/**
+ * Patch pool.query to automatically retry on "Connection terminated" errors.
+ * This is crucial for serverless databases like Neon which may drop idle connections ungracefully.
+ */
+const originalQuery = pool.query.bind(pool);
+(pool as any).query = async (...args: any[]) => {
+    try {
+        // @ts-ignore
+        return await originalQuery(...args);
+    } catch (error: any) {
+        if (error.message && (error.message.includes('Connection terminated') || error.message.includes('Client has encountered a connection error') || error.message.includes('timeout'))) {
+            console.warn('⚠️ Retrying query due to unexpected connection termination:', error.message);
+            // @ts-ignore
+            return await originalQuery(...args);
+        }
         throw error;
     }
 };

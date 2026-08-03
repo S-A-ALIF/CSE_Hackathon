@@ -7,6 +7,7 @@ import JoinTeamModal from '../features/team/JoinTeamModal';
 import ConfirmModal from '../components/ConfirmModal';
 import MemberInfoModal from '../features/team/MemberInfoModal';
 import InviteMentorModal from '../features/team/InviteMentorModal';
+import TeamManagementModal from '../features/team/TeamManagementModal';
 import { userCache } from '../utils/userCache';
 
 export default function TeamPage({ inDashboard = false }) {
@@ -20,6 +21,7 @@ export default function TeamPage({ inDashboard = false }) {
   const [isJoinModalOpen, setIsJoinModalOpen] = useState(false);
   const [isInviteMentorOpen, setIsInviteMentorOpen] = useState(false);
   const [isConfirmLeaveOpen, setIsConfirmLeaveOpen] = useState(false);
+  const [isManageModalOpen, setIsManageModalOpen] = useState(false);
   const [selectedMember, setSelectedMember] = useState(null);
   const [activeDropdownId, setActiveDropdownId] = useState(null);
   const [confirmConfig, setConfirmConfig] = useState({
@@ -325,12 +327,20 @@ export default function TeamPage({ inDashboard = false }) {
                       )}
                     </span>
                   </div>
-                  {team.leader_id !== currentUser?.id && (
+                  {team.leader_id !== currentUser?.id ? (
                     <button
                       onClick={handleLeaveTeam}
                       className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-bold rounded-xl text-xs sm:text-sm transition-colors shadow-sm"
                     >
                       Leave Team
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => setIsManageModalOpen(true)}
+                      className="px-4 py-2 bg-slate-800 hover:bg-slate-900 text-white font-bold rounded-xl text-xs sm:text-sm transition-colors shadow-sm flex items-center gap-2"
+                    >
+                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                      Manage Team
                     </button>
                   )}
                 </div>
@@ -386,17 +396,17 @@ export default function TeamPage({ inDashboard = false }) {
                               </svg>
                             </button>
                             {activeDropdownId === member.id && (
-                              <div className="origin-top-right absolute right-0 mt-2 w-40 rounded-xl shadow-lg bg-white ring-1 ring-black ring-opacity-5 divide-y divide-slate-100 z-10 animate-in fade-in slide-in-from-top-2">
+                              <div className="origin-top-right absolute right-0 mt-2 w-40 rounded-xl shadow-lg bg-white dark:bg-slate-800 ring-1 ring-black ring-opacity-5 divide-y divide-slate-100 dark:divide-slate-700 z-10 animate-in fade-in slide-in-from-top-2 border border-slate-200 dark:border-slate-700">
                                 <div className="py-1">
                                   <button
                                     onClick={(e) => handleTransferLeadership(e, member.id, member.email)}
-                                    className="group flex w-full items-center px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 hover:text-blue-600 transition-colors"
+                                    className="group flex w-full items-center px-4 py-2 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
                                   >
                                     Make Leader
                                   </button>
                                   <button
                                     onClick={(e) => handleRemoveMember(e, member.id, member.email)}
-                                    className="group flex w-full items-center px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors"
+                                    className="group flex w-full items-center px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors"
                                   >
                                     Remove
                                   </button>
@@ -454,6 +464,19 @@ export default function TeamPage({ inDashboard = false }) {
         onClose={() => setIsCreateModalOpen(false)}
         onSuccess={() => { userCache.invalidate(); fetchTeam(true); if (team) fetchActiveInvitations(true); }}
       />
+      {team && (
+        <TeamManagementModal
+          isOpen={isManageModalOpen}
+          onClose={() => setIsManageModalOpen(false)}
+          team={team}
+          currentUser={currentUser}
+          onTeamUpdated={() => { userCache.invalidate(); fetchTeam(true); }}
+          invitations={invitations}
+          invLoading={invLoading}
+          onFetchInvitations={fetchActiveInvitations}
+          onInvitationCancelled={(invId) => setInvitations(prev => prev.filter(i => i.id !== invId))}
+        />
+      )}
       <JoinTeamModal 
         isOpen={isJoinModalOpen} 
         onClose={() => setIsJoinModalOpen(false)}

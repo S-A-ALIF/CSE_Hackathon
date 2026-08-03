@@ -44,10 +44,10 @@ const formatNotificationMessage = (msg, stripHtml = true) => {
   if (!msg) return '';
   let cleaned = msg;
   if (stripHtml) {
+    // Decode HTML entities (like &lt;) first so DOMPurify can detect and strip the actual tags
+    cleaned = decodeHTMLEntities(msg);
     // Strip HTML using DOMPurify
-    cleaned = DOMPurify.sanitize(msg, { ALLOWED_TAGS: [] });
-    // Decode remaining HTML entities like &nbsp;
-    cleaned = decodeHTMLEntities(cleaned);
+    cleaned = DOMPurify.sanitize(cleaned, { ALLOWED_TAGS: [] });
   }
   cleaned = cleaned
     .replace(/\s*\[TeamID:[a-fA-F0-9-]+\]\.?/i, '.')
@@ -277,9 +277,9 @@ export default function NotificationDropdown() {
 
       {/* Dropdown Menu */}
       {isOpen && (
-        <div className="fixed sm:absolute left-3 right-3 sm:left-auto sm:right-0 top-16 sm:top-auto sm:mt-2 w-auto sm:w-80 md:w-96 bg-slate-900 rounded-2xl shadow-2xl border border-slate-800 py-2 z-50 animate-in fade-in slide-in-from-top-2 duration-200 overflow-hidden max-h-[85vh] sm:max-h-none">
-          <div className="px-4 py-3 border-b border-slate-800 flex items-center justify-between">
-            <h3 className="font-bold text-white">Notifications</h3>
+        <div className="fixed sm:absolute left-3 right-3 sm:left-auto sm:right-0 top-16 sm:top-auto sm:mt-2 w-auto sm:w-80 md:w-96 bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 py-2 z-50 animate-in fade-in slide-in-from-top-2 duration-200 overflow-hidden max-h-[85vh] sm:max-h-none">
+          <div className="px-4 py-3 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
+            <h3 className="font-bold text-slate-900 dark:text-white">Notifications</h3>
             {unreadCount > 0 && (
               <span className="text-xs bg-blue-500/10 text-blue-400 font-bold px-2.5 py-0.5 rounded-full">
                 {unreadCount} New
@@ -287,15 +287,15 @@ export default function NotificationDropdown() {
             )}
           </div>
 
-          <div className="max-h-72 sm:max-h-96 overflow-y-auto divide-y divide-slate-800">
+          <div className="max-h-72 sm:max-h-96 overflow-y-auto divide-y divide-slate-100 dark:divide-slate-800">
             {loading ? (
               <div className="p-4 text-center text-sm text-slate-500">Loading...</div>
             ) : notifications.length === 0 ? (
               <div className="p-8 text-center flex flex-col items-center">
-                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-10 h-10 text-slate-600 mb-2">
+                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-10 h-10 text-slate-400 dark:text-slate-600 mb-2">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M14.857 17.082a23.848 23.848 0 0 0 5.454-1.31A8.967 8.967 0 0 1 18 9.75V9A6 6 0 0 0 6 9v.75a8.967 8.967 0 0 1-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 0 1-5.714 0m5.714 0a3 3 0 1 1-5.714 0" />
                 </svg>
-                <p className="text-sm font-semibold text-slate-300">No Notifications</p>
+                <p className="text-sm font-semibold text-slate-600 dark:text-slate-300">No Notifications</p>
                 <p className="text-xs text-slate-500 mt-1">You're all caught up!</p>
               </div>
             ) : (
@@ -311,21 +311,21 @@ export default function NotificationDropdown() {
                         }
                         setSelectedNotificationModal(notification);
                     }}
-                    className={`p-4 border-b border-slate-800 cursor-pointer transition-all duration-200 hover:bg-slate-800 flex items-center justify-between group ${
-                      notification.is_read ? 'opacity-60' : 'bg-blue-500/5'
+                    className={`p-4 border-b border-slate-100 dark:border-slate-800 cursor-pointer transition-all duration-200 hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center justify-between group ${
+                      notification.is_read ? 'opacity-60' : 'bg-blue-50 dark:bg-blue-500/5'
                     }`}
                   >
                     <div className="flex gap-3 pr-2">
                       {!notification.is_read && (
                         <div className="mt-1.5 flex-shrink-0">
-                          <div className="h-2 w-2 rounded-full bg-blue-500"></div>
+                          <div className="h-2 w-2 rounded-full bg-blue-600 dark:bg-blue-500"></div>
                         </div>
                       )}
                       <div>
-                        <p className={`text-sm line-clamp-3 whitespace-pre-line leading-snug ${notification.is_read ? 'text-slate-400' : 'text-slate-200 font-medium'}`}>
+                        <p className={`text-sm line-clamp-3 whitespace-pre-line leading-snug ${notification.is_read ? 'text-slate-600 dark:text-slate-400' : 'text-slate-900 dark:text-slate-200 font-medium'}`}>
                           {clampNotificationMessage(notification.message)}
                         </p>
-                        <p className="text-xs text-slate-400 mt-1">
+                        <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
                           {formatGMT6(notification.created_at)}
                         </p>
                         {(notification.message.includes('You received a team invitation') || notification.message.includes('requested to join your team')) && (
@@ -393,10 +393,10 @@ export default function NotificationDropdown() {
               </div>
             )}
           </div>
-          <div className="bg-slate-900/50 border-t border-slate-800 px-4 py-3 flex justify-between items-center">
+          <div className="bg-slate-50 dark:bg-slate-900/50 border-t border-slate-100 dark:border-slate-800 px-4 py-3 flex justify-between items-center">
             <button
               onClick={handleMarkAllAsRead}
-              className="text-xs font-semibold text-slate-400 hover:text-slate-200 transition-colors flex items-center gap-1"
+              className="text-xs font-semibold text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 transition-colors flex items-center gap-1"
             >
               Mark all as read
             </button>

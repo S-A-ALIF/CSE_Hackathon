@@ -31,7 +31,7 @@ export default function TeamManagementModal({ isOpen, onClose, team, currentUser
   if (!isOpen || !team) return null;
 
   const isLeader = team.leader_id === currentUser?.id;
-  const pendingInvitations = invitations.filter(inv => inv.status === 'pending');
+  const pendingInvitations = invitations;
 
   const executeCancelInvitation = async (invitationId) => {
     const token = localStorage.getItem('token');
@@ -214,7 +214,7 @@ export default function TeamManagementModal({ isOpen, onClose, team, currentUser
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm">
-      <div className="bg-white w-full max-w-lg rounded-2xl shadow-2xl p-8 relative mx-4 animate-in fade-in zoom-in-95 duration-200 max-h-[90vh] overflow-y-auto">
+      <div className="bg-white dark:bg-slate-900 w-full max-w-lg rounded-2xl shadow-2xl p-8 relative mx-4 animate-in fade-in zoom-in-95 duration-200 max-h-[90vh] overflow-y-auto border border-slate-200 dark:border-slate-800">
         <button 
           onClick={onClose}
           className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 transition-colors"
@@ -231,7 +231,7 @@ export default function TeamManagementModal({ isOpen, onClose, team, currentUser
                   value={teamName}
                   onChange={(e) => setTeamName(e.target.value)}
                   disabled={nameLoading}
-                  className="flex-1 px-3 py-1.5 border border-slate-300 rounded-lg text-lg font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="flex-1 px-3 py-1.5 border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg text-lg font-bold text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                   placeholder="Enter team name"
                   autoFocus
                 />
@@ -260,8 +260,8 @@ export default function TeamManagementModal({ isOpen, onClose, team, currentUser
                 </button>
               </form>
             ) : (
-              <div className="flex items-center gap-2">
-                <h2 className="text-2xl font-black text-slate-900">{team.name} - Management</h2>
+              <>
+                <h2 className="text-2xl font-black text-slate-900 dark:text-white">{team.name} - Management</h2>
                 {isLeader && (
                   <button
                     type="button"
@@ -272,10 +272,10 @@ export default function TeamManagementModal({ isOpen, onClose, team, currentUser
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
                   </button>
                 )}
-              </div>
+              </>
             )}
           </div>
-          <p className="text-sm text-slate-500 mt-1">Manage team membership, roles, and settings.</p>
+          <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Manage team membership, roles, and settings.</p>
         </div>
 
         <div className="space-y-4 mb-8">
@@ -283,21 +283,20 @@ export default function TeamManagementModal({ isOpen, onClose, team, currentUser
             <h3 className="text-sm font-bold text-slate-700 uppercase tracking-wider">Team Status</h3>
             {isLeader && (
               <button
-                type="button"
-                onClick={() => handleToggleTeamFull(!team.is_full)}
                 disabled={statusLoading}
-                className={`px-3 py-1 font-bold rounded-lg text-xs transition-all flex items-center gap-1.5 ${
-                  team.is_full
-                    ? 'bg-amber-500 hover:bg-amber-600 text-white'
-                    : 'bg-slate-200 hover:bg-slate-300 text-slate-800'
+                onClick={() => handleToggleTeamFull(!team.is_full)}
+                className={`px-4 py-2 font-bold text-xs rounded-xl transition-all shadow-sm flex items-center justify-center sm:justify-start gap-2 ${
+                  team.is_full 
+                    ? 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200 dark:bg-emerald-900/50 dark:text-emerald-400 dark:hover:bg-emerald-900/70 border border-emerald-200 dark:border-emerald-800' 
+                    : 'bg-amber-100 text-amber-700 hover:bg-amber-200 dark:bg-amber-900/50 dark:text-amber-400 dark:hover:bg-amber-900/70 border border-amber-200 dark:border-amber-800'
                 }`}
               >
                 {statusLoading ? 'Updating...' : team.is_full ? '🔓 Reopen Team' : '🔒 Declare Full'}
               </button>
             )}
           </div>
-          <div className="p-4 bg-slate-50 border border-slate-200 rounded-xl">
-            <p className="text-sm text-slate-600">
+          <div className="p-4 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl">
+            <p className="text-sm text-slate-600 dark:text-slate-400">
               {team.is_full 
                 ? "Your team is currently marked as FULL. No one else can join your team, even if they have the invite code." 
                 : "Your team is OPEN. Anyone with the invite code can join until you reach the maximum member limit."}
@@ -331,30 +330,30 @@ export default function TeamManagementModal({ isOpen, onClose, team, currentUser
               </button>
             </div>
             {invLoading ? (
-              <div className="text-center py-4 text-slate-400 text-sm">Loading...</div>
+              <div className="text-center py-4 text-slate-400 dark:text-slate-500 text-sm">Loading...</div>
             ) : pendingInvitations.length === 0 ? (
-              <div className="text-center py-4 text-slate-400 text-xs border border-dashed border-slate-200 rounded-xl">
+              <div className="text-center py-4 text-slate-400 dark:text-slate-500 text-xs border border-dashed border-slate-200 dark:border-slate-700 rounded-xl">
                 No active pending invitations.
               </div>
             ) : (
-              <div className="divide-y divide-slate-100 border border-slate-200 rounded-xl overflow-hidden">
+              <div className="divide-y divide-slate-100 dark:divide-slate-800 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden">
                 {pendingInvitations.map((inv) => (
-                  <div key={inv.id} className="p-3 bg-slate-50/50 flex items-center justify-between gap-2">
+                  <div key={inv.id} className="p-3 bg-slate-50/50 dark:bg-slate-800/30 flex items-center justify-between gap-2 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
                     <div className="flex-1 min-w-0">
-                      <p className="font-semibold text-slate-800 text-sm truncate">
+                      <p className="font-semibold text-slate-800 dark:text-slate-200 text-sm truncate">
                         {inv.invitee_name !== inv.email ? inv.invitee_name : inv.email}
                       </p>
                       {inv.invitee_name !== inv.email && (
-                        <p className="text-xs text-slate-400 truncate">{inv.email}</p>
+                        <p className="text-xs text-slate-400 dark:text-slate-500 truncate">{inv.email}</p>
                       )}
-                      <p className="text-[10px] text-slate-400 mt-0.5">
+                      <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5">
                         Expires: {new Date(new Date(inv.expires_at).getTime() + 6 * 60 * 60 * 1000).toLocaleString('en-GB', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit', hour12: true })}
                       </p>
                     </div>
                     <button
                       disabled={!!cancelLoading[inv.id]}
                       onClick={() => handleCancelInvitation(inv)}
-                      className={`flex-shrink-0 text-red-500 hover:text-red-700 text-xs font-semibold px-2.5 py-1 rounded border border-red-200 hover:bg-red-50 transition-colors flex items-center gap-1.5 ${cancelLoading[inv.id] ? 'opacity-70 cursor-not-allowed' : ''}`}
+                      className={`flex-shrink-0 text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 text-xs font-semibold px-2.5 py-1 rounded border border-red-200 dark:border-red-800 hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors flex items-center gap-1.5 ${cancelLoading[inv.id] ? 'opacity-70 cursor-not-allowed' : ''}`}
                     >
                       {cancelLoading[inv.id] ? (
                         <>
@@ -375,11 +374,11 @@ export default function TeamManagementModal({ isOpen, onClose, team, currentUser
           </div>
         )}
 
-        <div className="border-t border-slate-100 pt-6 flex flex-col sm:flex-row justify-between gap-3">
+        <div className="border-t border-slate-100 dark:border-slate-800 pt-6 flex flex-col sm:flex-row justify-between gap-3">
           <button
             disabled={loading}
             onClick={handleLeaveTeam}
-            className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-sm rounded-xl transition-colors"
+            className="px-5 py-2.5 bg-red-50 text-red-600 hover:bg-red-100 dark:bg-red-900/20 dark:text-red-400 dark:hover:bg-red-900/40 font-bold rounded-xl text-sm transition-colors border border-red-100 dark:border-red-900/50 flex items-center justify-center gap-2"
           >
             Leave Team
           </button>
@@ -388,7 +387,7 @@ export default function TeamManagementModal({ isOpen, onClose, team, currentUser
             <button
               disabled={loading}
               onClick={handleDisbandTeam}
-              className="px-4 py-2.5 bg-red-600 hover:bg-red-700 text-white font-bold text-sm rounded-xl transition-colors shadow-sm"
+              className="px-5 py-2.5 bg-slate-900 text-white hover:bg-slate-800 dark:bg-white dark:text-slate-900 dark:hover:bg-slate-200 font-bold rounded-xl text-sm transition-colors shadow-md shadow-slate-900/20 dark:shadow-white/10 flex items-center justify-center gap-2"
             >
               Disband Team
             </button>

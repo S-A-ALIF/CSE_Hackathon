@@ -265,11 +265,17 @@ export const notificationService = {
                         [leaderRes.rows[0].email, `${user.email} has accepted your invitation and joined team "${leaderRes.rows[0].name}"!`]
                     );
                 }
-
                 const res = await client.query(
                     "UPDATE notifications SET action_status = 'accepted', is_read = true WHERE id = $1 RETURNING *",
                     [id]
                 );
+                
+                // Invalidate the invitation in the team_invitations table so it is no longer pending
+                await client.query(
+                    'UPDATE team_invitations SET is_used = true WHERE LOWER(email) = LOWER($1) AND team_id = $2 AND is_used = false',
+                    [userEmail, teamId]
+                );
+
                 await client.query('COMMIT');
                 return res.rows[0];
             } else if (notif.message.includes('requested to join your team')) {
