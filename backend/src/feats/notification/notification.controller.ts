@@ -19,7 +19,8 @@ export const getMyNotifications = async (req: Request, res: Response): Promise<v
             return;
         }
 
-        const notifications = await notificationService.getNotificationsByEmail(targetEmail);
+        const skipUpdate = req.query.skipUpdate === 'true';
+        const notifications = await notificationService.getNotificationsByEmail(targetEmail, skipUpdate);
         res.status(200).json({ success: true, status: 'success', data: notifications });
     } catch (error: any) {
         console.error('[NotificationController] Error in getMyNotifications:', error);

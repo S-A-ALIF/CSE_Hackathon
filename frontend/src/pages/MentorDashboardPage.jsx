@@ -6,6 +6,7 @@ import { toast } from 'sonner';
 import NotificationDropdown from '../components/NotificationDropdown';
 import ProfilePage from './ProfilePage';
 import SettingsPage from './SettingsPage';
+import MemberInfoModal from '../features/team/MemberInfoModal';
 
 export default function MentorDashboardPage() {
   const { currentUser, logout } = useAuth();
@@ -33,6 +34,10 @@ export default function MentorDashboardPage() {
     teamName: '',
     message: ''
   });
+
+  // Member modal state
+  const [selectedMember, setSelectedMember] = useState(null);
+  const [isMemberModalOpen, setIsMemberModalOpen] = useState(false);
 
   useEffect(() => {
     fetchData();
@@ -305,11 +310,35 @@ export default function MentorDashboardPage() {
               {invitations.map((inv) => (
                 <div key={inv.id} className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm hover:shadow-md transition-shadow flex flex-col">
                   <div className="flex-1">
-                    <h3 className="text-xl font-bold text-slate-900 mb-2 truncate" title={inv.team_name}>{inv.team_name}</h3>
-                    <p className="text-sm text-slate-600 mb-1">Invited by: <span className="font-semibold text-slate-800">{inv.leader_name}</span></p>
-                    <p className="text-xs text-slate-400 mb-6">{new Date(inv.created_at).toLocaleDateString()}</p>
+                    <h3 className="text-xl font-bold text-slate-900 mb-1 truncate" title={inv.team_name}>{inv.team_name}</h3>
+                    <p className="text-xs text-slate-400 mb-4">Invited on {new Date(inv.created_at).toLocaleDateString()}</p>
+                    
+                    <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">Team Members ({inv.members?.length || 0})</h4>
+                    <div className="grid gap-2 grid-cols-1 mb-6">
+                      {inv.members?.map(member => (
+                        <div 
+                          key={member.id} 
+                          onClick={() => {
+                            setSelectedMember(member);
+                            setIsMemberModalOpen(true);
+                          }}
+                          className="flex items-center space-x-3 p-2.5 rounded-xl bg-slate-50 border border-slate-100 cursor-pointer hover:border-blue-300 hover:bg-blue-50/50 transition-colors"
+                        >
+                          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-bold text-xs shrink-0">
+                            {member.name.charAt(0).toUpperCase()}
+                          </div>
+                          <div className="min-w-0">
+                            <p className="text-sm font-bold text-slate-900 truncate flex items-center gap-1.5">
+                              {member.name} 
+                              {member.id === inv.leader_id && <span className="text-[9px] bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded-full uppercase">Leader</span>}
+                            </p>
+                            <p className="text-[10px] text-slate-500 truncate">ID: {member.student_id !== 'N/A' ? member.student_id : member.email}</p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
                   </div>
-                  <div className="flex gap-3">
+                  <div className="flex gap-3 mt-auto">
                     <button
                       disabled={processingId === inv.id}
                       onClick={() => handleRespond(inv.id, true)}
@@ -366,7 +395,14 @@ export default function MentorDashboardPage() {
                     <h4 className="text-sm font-bold text-slate-500 uppercase tracking-wider mb-4">Team Members ({team.members?.length || 0})</h4>
                     <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                       {team.members?.map(member => (
-                        <div key={member.id} className="flex items-center space-x-3 p-3 rounded-xl bg-slate-50 border border-slate-100">
+                        <div 
+                          key={member.id} 
+                          onClick={() => {
+                            setSelectedMember(member);
+                            setIsMemberModalOpen(true);
+                          }}
+                          className="flex items-center space-x-3 p-3 rounded-xl bg-slate-50 border border-slate-100 cursor-pointer hover:border-blue-300 hover:bg-blue-50/50 transition-colors"
+                        >
                           <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-bold text-sm shrink-0">
                             {member.name.charAt(0).toUpperCase()}
                           </div>
@@ -444,6 +480,16 @@ export default function MentorDashboardPage() {
           </div>
         </div>
       )}
+
+      {/* Member Info Modal */}
+      <MemberInfoModal
+        isOpen={isMemberModalOpen}
+        onClose={() => {
+          setIsMemberModalOpen(false);
+          setSelectedMember(null);
+        }}
+        member={selectedMember}
+      />
     </div>
   );
 }

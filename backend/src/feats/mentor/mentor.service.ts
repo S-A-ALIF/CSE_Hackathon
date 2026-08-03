@@ -39,8 +39,16 @@ export const mentorService = {
 
             // 3. Verify mentor team count
             const countRes = await client.query('SELECT COUNT(*) as count FROM teams WHERE mentor_id = $1', [mentorId]);
-            if (parseInt(countRes.rows[0].count, 10) >= 3) {
-                throw new Error('Mentor already has 3 teams and cannot accept more');
+            const currentCount = parseInt(countRes.rows[0].count, 10);
+            
+            const limitRes = await client.query("SELECT value FROM platform_settings WHERE key = 'max_teams_per_mentor'");
+            let maxTeams = 3;
+            if (limitRes.rows.length > 0 && limitRes.rows[0].value !== 'none' && !isNaN(parseInt(limitRes.rows[0].value, 10))) {
+                maxTeams = parseInt(limitRes.rows[0].value, 10);
+            }
+
+            if (currentCount >= maxTeams) {
+                throw new Error(`Mentor already has ${maxTeams} teams and cannot accept more`);
             }
 
             // 4. Verify no existing pending invite
@@ -71,7 +79,7 @@ export const mentorService = {
 
     async getInvitations(mentorId: string) {
         const query = `
-            SELECT mi.id, mi.team_id, mi.status, mi.created_at, t.name as team_name,
+            SELECT mi.id, mi.team_id, mi.status, mi.created_at, t.name as team_name, t.leader_id,
                    COALESCE(ui.name, u.email) as leader_name
             FROM mentor_invitations mi
             JOIN teams t ON mi.team_id = t.id
@@ -81,7 +89,27 @@ export const mentorService = {
             ORDER BY mi.created_at DESC
         `;
         const res = await pool.query(query, [mentorId]);
-        return res.rows;
+        const invitations = res.rows;
+
+        if (invitations.length === 0) return [];
+
+        const teamIds = invitations.map(inv => inv.team_id);
+        const membersQuery = `
+            SELECT tm.team_id, u.id, u.email, u.role,
+                   COALESCE(ui.name, u.email) as name,
+                   COALESCE(ui.student_id, 'N/A') as student_id,
+                   COALESCE(ui.batch_session, 'N/A') as batch_session
+            FROM team_members tm
+            JOIN users u ON tm.user_id = u.id
+            LEFT JOIN user_info ui ON u.id = ui.user_id
+            WHERE tm.team_id = ANY($1)
+        `;
+        const membersRes = await pool.query(membersQuery, [teamIds]);
+
+        return invitations.map(inv => ({
+            ...inv,
+            members: membersRes.rows.filter(m => m.team_id === inv.team_id)
+        }));
     },
 
     async respondToInvitation(mentorId: string, invitationId: string, accept: boolean, message?: string) {
@@ -112,10 +140,18 @@ export const mentorService = {
                     throw new Error('Team already has a mentor');
                 }
 
-                // Verify mentor has < 3 teams
+                // Verify mentor has < max teams
                 const countRes = await client.query('SELECT COUNT(*) as count FROM teams WHERE mentor_id = $1', [mentorId]);
-                if (parseInt(countRes.rows[0].count, 10) >= 3) {
-                    throw new Error('You cannot mentor more than 3 teams');
+                const currentCount = parseInt(countRes.rows[0].count, 10);
+                
+                const limitRes = await client.query("SELECT value FROM platform_settings WHERE key = 'max_teams_per_mentor'");
+                let maxTeams = 3;
+                if (limitRes.rows.length > 0 && limitRes.rows[0].value !== 'none' && !isNaN(parseInt(limitRes.rows[0].value, 10))) {
+                    maxTeams = parseInt(limitRes.rows[0].value, 10);
+                }
+
+                if (currentCount >= maxTeams) {
+                    throw new Error(`You cannot mentor more than ${maxTeams} teams`);
                 }
 
                 // Assign mentor

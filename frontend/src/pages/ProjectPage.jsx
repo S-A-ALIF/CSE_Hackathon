@@ -20,33 +20,8 @@ export default function ProjectPage({ inDashboard = false }) {
   const [isEditingRepo, setIsEditingRepo] = useState(false);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
-  const [readmeStatus, setReadmeStatus] = useState('not_connected');
   const [showSubmitModal, setShowSubmitModal] = useState(false);
   const [submitError, setSubmitError] = useState('');
-
-  useEffect(() => {
-    if (!team?.repo_url) {
-      setReadmeStatus('not_connected');
-      return;
-    }
-    let isMounted = true;
-    setReadmeStatus('checking');
-    const verifyReadme = async () => {
-      try {
-        const res = await fetch(`${API_URL}/api/v1/teams/check-readme?repo_url=${encodeURIComponent(team.repo_url)}`, {
-          headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
-        });
-        const data = await res.json();
-        if (isMounted && data.success) {
-          setReadmeStatus(data.status || 'unknown');
-        }
-      } catch (e) {
-        if (isMounted) setReadmeStatus('unknown');
-      }
-    };
-    verifyReadme();
-    return () => { isMounted = false; };
-  }, [team?.repo_url]);
 
   useEffect(() => {
     const fetchMyTeam = async () => {
@@ -86,7 +61,7 @@ export default function ProjectPage({ inDashboard = false }) {
   );
 
   const isM1Red = !isTeamFormed;
-  const isM2Red = !isSubmitted && isDeadlineEnded;
+  const isM2Red = !team?.mentor_id;
   const isM3Red = !isSubmitted && (!team?.repo_url || isDeadlineEnded);
   const isAnyMilestoneRed = !isSubmitted && (isM1Red || isM2Red || isM3Red);
   const progressCount = (!isM1Red ? 1 : 0) + (!isM2Red ? 1 : 0) + (!isM3Red ? 1 : 0);
@@ -138,6 +113,12 @@ export default function ProjectPage({ inDashboard = false }) {
     }
     if (isM1Red) {
       const err = `Submission Failed: Your team must have at least ${minRequired} members to submit.`;
+      setSubmitError(err);
+      toast.error(err);
+      return;
+    }
+    if (isM2Red) {
+      const err = 'Submission Failed: Your team must have a mentor to submit.';
       setSubmitError(err);
       toast.error(err);
       return;
@@ -285,29 +266,29 @@ export default function ProjectPage({ inDashboard = false }) {
                     </div>
                   )}
 
-                  {/* Milestone 2: MVP Development & APIs */}
-                  {isSubmitted ? (
+                  {/* Milestone 2: Select Mentor */}
+                  {!isM2Red ? (
                     <div className="p-3.5 rounded-2xl bg-emerald-50/80 dark:bg-emerald-950/30 border border-emerald-200/80 dark:border-emerald-900/50 flex items-start gap-3">
                       <span className="w-6 h-6 rounded-full bg-emerald-600 text-white flex items-center justify-center text-xs font-bold shrink-0 mt-0.5 shadow-sm">✓</span>
                       <div>
-                        <h4 className="font-bold text-slate-900 dark:text-slate-100 text-xs sm:text-sm">2. MVP Development & APIs</h4>
-                        <p className="text-[11px] text-emerald-700 dark:text-emerald-400 font-semibold mt-0.5">MVP Development completed & submitted ✓</p>
+                        <h4 className="font-bold text-slate-900 dark:text-slate-100 text-xs sm:text-sm">2. Select Mentor</h4>
+                        <p className="text-[11px] text-emerald-700 dark:text-emerald-400 font-semibold mt-0.5">Mentor assigned ✓</p>
                       </div>
                     </div>
                   ) : isDeadlineEnded ? (
                     <div className="p-3.5 rounded-2xl bg-rose-50/90 dark:bg-rose-950/40 border border-rose-300 dark:border-rose-800 flex items-start gap-3">
                       <span className="w-6 h-6 rounded-full bg-rose-600 text-white flex items-center justify-center text-xs font-bold shrink-0 mt-0.5 shadow-sm">✕</span>
                       <div>
-                        <h4 className="font-bold text-rose-700 dark:text-rose-300 text-xs sm:text-sm">2. MVP Development & APIs (Overdue)</h4>
-                        <p className="text-[11px] text-rose-600 dark:text-rose-400 font-bold mt-0.5">Submission deadline passed without official submission ❌</p>
+                        <h4 className="font-bold text-rose-700 dark:text-rose-300 text-xs sm:text-sm">2. Select Mentor (Overdue)</h4>
+                        <p className="text-[11px] text-rose-600 dark:text-rose-400 font-bold mt-0.5">Submission deadline passed without a mentor ❌</p>
                       </div>
                     </div>
                   ) : (
-                    <div className="p-3.5 rounded-2xl bg-blue-50/80 dark:bg-blue-950/30 border border-blue-200/80 dark:border-blue-900/50 flex items-start gap-3">
-                      <span className="w-6 h-6 rounded-full bg-blue-600 text-white flex items-center justify-center text-xs font-bold shrink-0 mt-0.5 shadow-sm">2</span>
+                    <div className="p-3.5 rounded-2xl bg-rose-50/90 dark:bg-rose-950/40 border border-rose-300 dark:border-rose-800 flex items-start gap-3">
+                      <span className="w-6 h-6 rounded-full bg-rose-600 text-white flex items-center justify-center text-xs font-bold shrink-0 mt-0.5 shadow-sm">✕</span>
                       <div>
-                        <h4 className="font-bold text-slate-900 dark:text-slate-100 text-xs sm:text-sm">2. MVP Development & APIs</h4>
-                        <p className="text-[11px] text-blue-700 dark:text-blue-400 font-semibold mt-0.5">Building real-time auction bidding & server endpoints (Active ⚡)</p>
+                        <h4 className="font-bold text-rose-700 dark:text-rose-300 text-xs sm:text-sm">2. Select Mentor</h4>
+                        <p className="text-[11px] text-rose-600 dark:text-rose-400 font-bold mt-0.5">Invite a mentor to your team to work under ❌</p>
                       </div>
                     </div>
                   )}
@@ -391,30 +372,6 @@ export default function ProjectPage({ inDashboard = false }) {
                       <span className="font-bold text-emerald-600 dark:text-emerald-400">✅ Submitted</span>
                     ) : (
                       <span className="font-bold text-amber-600 dark:text-amber-400">Pending</span>
-                    )}
-                  </div>
-                  <div className="flex justify-between items-center text-xs sm:text-sm">
-                    <span className="text-slate-500 dark:text-slate-400 font-medium">Readme.md</span>
-                    {readmeStatus === 'checking' && (
-                      <span className="font-bold text-slate-400 flex items-center gap-1">
-                        <span className="w-3 h-3 border-2 border-slate-400 border-t-transparent rounded-full animate-spin"></span>
-                        <span>Checking</span>
-                      </span>
-                    )}
-                    {readmeStatus === 'ready' && (
-                      <span className="font-bold text-emerald-600 dark:text-emerald-400">✅ Ready</span>
-                    )}
-                    {readmeStatus === 'missing' && (
-                      <span className="font-bold text-rose-600 dark:text-rose-400">❌ Missing</span>
-                    )}
-                    {readmeStatus === 'invalid' && (
-                      <span className="font-bold text-amber-600 dark:text-amber-400">⚠️ Invalid URL</span>
-                    )}
-                    {readmeStatus === 'not_connected' && (
-                      <span className="font-bold text-slate-400">Not Connected</span>
-                    )}
-                    {readmeStatus === 'unknown' && (
-                      <span className="font-bold text-amber-600 dark:text-amber-400">Private / Unknown</span>
                     )}
                   </div>
                 </div>

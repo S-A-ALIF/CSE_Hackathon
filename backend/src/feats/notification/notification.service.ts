@@ -4,27 +4,29 @@ export const notificationService = {
     /**
      * Get all notifications for a specific email
      */
-    async getNotificationsByEmail(email: string) {
+    async getNotificationsByEmail(email: string, skipUpdate: boolean = false) {
         try {
-            await pool.query(
-                `UPDATE notifications
-                 SET action_status = 'expired'
-                 WHERE LOWER(recipient_email) = LOWER($1)
-                   AND (message LIKE '%You received a team invitation%' OR message LIKE '%requested to join your team%')
-                   AND (action_status IS NULL OR action_status = 'pending')
-                   AND (
-                       created_at < NOW() - INTERVAL '48 hours'
-                       OR (message LIKE '%You received a team invitation%' AND NOT EXISTS (
-                           SELECT 1 FROM team_invitations 
-                           WHERE LOWER(email) = LOWER($1) AND is_used = false AND expires_at > NOW()
-                       ))
-                       OR (message LIKE '%requested to join your team%' AND NOT EXISTS (
-                           SELECT 1 FROM team_join_requests 
-                           WHERE status = 'pending' AND created_at > NOW() - INTERVAL '48 hours'
-                       ))
-                   )`,
-                [email]
-            );
+            if (!skipUpdate) {
+                await pool.query(
+                    `UPDATE notifications
+                     SET action_status = 'expired'
+                     WHERE LOWER(recipient_email) = LOWER($1)
+                       AND (message LIKE '%You received a team invitation%' OR message LIKE '%requested to join your team%')
+                       AND (action_status IS NULL OR action_status = 'pending')
+                       AND (
+                           created_at < NOW() - INTERVAL '48 hours'
+                           OR (message LIKE '%You received a team invitation%' AND NOT EXISTS (
+                               SELECT 1 FROM team_invitations 
+                               WHERE LOWER(email) = LOWER($1) AND is_used = false AND expires_at > NOW()
+                           ))
+                           OR (message LIKE '%requested to join your team%' AND NOT EXISTS (
+                               SELECT 1 FROM team_join_requests 
+                               WHERE status = 'pending' AND created_at > NOW() - INTERVAL '48 hours'
+                           ))
+                       )`,
+                    [email]
+                );
+            }
 
             const result = await pool.query(
                 'SELECT * FROM notifications WHERE recipient_email = $1 ORDER BY created_at DESC',

@@ -6,6 +6,9 @@ export default function Requirements() {
     highlight: '3 – 5 Members',
     desc: 'Each team must have a minimum of 3 and a maximum of 5 student participants. Team sizes outside this range will not be accepted.',
   });
+  const [mentorLimitInfo, setMentorLimitInfo] = useState({
+    desc: 'Each team must have one mentor from the senior club students. One mentor can guide up to 3 teams.',
+  });
 
   useEffect(() => {
     const fetchSettings = async () => {
@@ -40,6 +43,12 @@ export default function Requirements() {
               desc: `There are no minimum or maximum team size restrictions for participating teams.`,
             });
           }
+
+          const maxMentorVal = data.data.max_teams_per_mentor;
+          const maxMentorNum = maxMentorVal && maxMentorVal !== 'none' && !isNaN(parseInt(maxMentorVal, 10)) ? parseInt(maxMentorVal, 10) : 3;
+          setMentorLimitInfo({
+            desc: `Each team must have one mentor from the senior club students. One mentor can guide up to ${maxMentorNum} teams.`,
+          });
         }
       } catch (err) {
         console.error('Failed to load team size requirements:', err);
@@ -84,7 +93,7 @@ export default function Requirements() {
       icon: '🎓',
       title: 'Team Mentor',
       highlight: 'Senior Student Mentor',
-      desc: 'Each team must have one mentor from the senior club students. One mentor can guide up to 3 teams.',
+      desc: mentorLimitInfo.desc,
     },
   ];
 

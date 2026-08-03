@@ -27,7 +27,8 @@ export const adminSchemas = {
     teamLimits: z.object({
         body: z.object({
             min_team_members: z.union([z.number(), z.string()]).optional(),
-            max_team_members: z.union([z.number(), z.string()]).optional()
+            max_team_members: z.union([z.number(), z.string()]).optional(),
+            max_teams_per_mentor: z.union([z.number(), z.string()]).optional()
         })
     }),
     toggleRegistration: z.object({

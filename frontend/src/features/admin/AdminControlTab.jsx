@@ -15,6 +15,9 @@ export default function AdminControlTab() {
   const [maxTeamSize, setMaxTeamSize] = useState(
     adminCache.settings ? (adminCache.settings.max_team_members === 'none' ? '' : (adminCache.settings.max_team_members || '5')) : ''
   );
+  const [maxTeamsPerMentor, setMaxTeamsPerMentor] = useState(
+    adminCache.settings ? (adminCache.settings.max_teams_per_mentor === 'none' ? '' : (adminCache.settings.max_teams_per_mentor || '3')) : ''
+  );
   const toLocalDatetimeString = (isoString) => {
     if (!isoString) return '';
     if (!isoString.includes('Z')) return isoString; // fallback if not ISO
@@ -50,6 +53,7 @@ export default function AdminControlTab() {
       setSettings(adminCache.settings);
       setMinTeamSize(adminCache.settings.min_team_members === 'none' ? '' : (adminCache.settings.min_team_members || '3'));
       setMaxTeamSize(adminCache.settings.max_team_members === 'none' ? '' : (adminCache.settings.max_team_members || '5'));
+      setMaxTeamsPerMentor(adminCache.settings.max_teams_per_mentor === 'none' ? '' : (adminCache.settings.max_teams_per_mentor || '3'));
       setRegStartTime(adminCache.settings.reg_start_time || '');
       setRegEndTime(adminCache.settings.reg_end_time || '');
       setHackStartTime(adminCache.settings.hack_start_time || '');
@@ -73,6 +77,7 @@ export default function AdminControlTab() {
         adminCache.set('settings', data.data);
         setMinTeamSize(data.data.min_team_members === 'none' ? '' : (data.data.min_team_members || '3'));
         setMaxTeamSize(data.data.max_team_members === 'none' ? '' : (data.data.max_team_members || '5'));
+        setMaxTeamsPerMentor(data.data.max_teams_per_mentor === 'none' ? '' : (data.data.max_teams_per_mentor || '3'));
         setRegStartTime(toLocalDatetimeString(data.data.reg_start_time) || '');
         setRegEndTime(toLocalDatetimeString(data.data.reg_end_time) || '');
         setHackStartTime(toLocalDatetimeString(data.data.hack_start_time) || '');
@@ -196,6 +201,7 @@ export default function AdminControlTab() {
       const token = localStorage.getItem('token');
       const minVal = minTeamSize.trim() === '' ? 'none' : minTeamSize.trim();
       const maxVal = maxTeamSize.trim() === '' ? 'none' : maxTeamSize.trim();
+      const mentorLimitVal = maxTeamsPerMentor.trim() === '' ? 'none' : maxTeamsPerMentor.trim();
 
       const res = await fetch(`${API_URL}/api/v1/admin/settings/team-limits`, {
         method: 'POST',
@@ -205,7 +211,8 @@ export default function AdminControlTab() {
         },
         body: JSON.stringify({
           min_team_members: minVal,
-          max_team_members: maxVal
+          max_team_members: maxVal,
+          max_teams_per_mentor: mentorLimitVal
         })
       });
       const data = await res.json();
@@ -214,7 +221,8 @@ export default function AdminControlTab() {
         const updated = {
           ...settings,
           min_team_members: minVal,
-          max_team_members: maxVal
+          max_team_members: maxVal,
+          max_teams_per_mentor: mentorLimitVal
         };
         adminCache.set('settings', updated);
         adminCache.invalidate('stats');
@@ -602,7 +610,7 @@ export default function AdminControlTab() {
         </div>
 
         <form onSubmit={handleSaveTeamLimits} className="space-y-6">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div>
               <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-2">
                 Minimum Members Required
@@ -658,6 +666,35 @@ export default function AdminControlTab() {
               </div>
               <p className="text-xs text-slate-500 mt-1">
                 {maxTeamSize ? `Teams can have up to ${maxTeamSize} members.` : 'No maximum team size restriction set.'}
+              </p>
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-2">
+                Max Teams Per Mentor
+              </label>
+              <div className="relative">
+                <input
+                  type="number"
+                  min="1"
+                  max="100"
+                  value={maxTeamsPerMentor}
+                  onChange={(e) => setMaxTeamsPerMentor(e.target.value)}
+                  placeholder="e.g. 3"
+                  className="w-full px-4 py-3 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent text-slate-800 font-bold"
+                />
+                {maxTeamsPerMentor && (
+                  <button
+                    type="button"
+                    onClick={() => setMaxTeamsPerMentor('')}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400 hover:text-red-500"
+                  >
+                    Clear (Default 3)
+                  </button>
+                )}
+              </div>
+              <p className="text-xs text-slate-500 mt-1">
+                {maxTeamsPerMentor ? `A mentor can guide up to ${maxTeamsPerMentor} teams.` : 'Defaults to 3 teams.'}
               </p>
             </div>
           </div>

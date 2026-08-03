@@ -431,7 +431,7 @@ export const toggleProblems = async (req: Request, res: Response) => {
  */
 export const updateTeamLimits = async (req: Request, res: Response) => {
     try {
-        const { min_team_members, max_team_members } = req.body;
+        const { min_team_members, max_team_members, max_teams_per_mentor } = req.body;
         if (min_team_members !== undefined) {
             const val = min_team_members === '' || min_team_members === null || min_team_members === 'none' ? 'none' : String(min_team_members);
             await pool.query(
@@ -443,6 +443,13 @@ export const updateTeamLimits = async (req: Request, res: Response) => {
             const val = max_team_members === '' || max_team_members === null || max_team_members === 'none' ? 'none' : String(max_team_members);
             await pool.query(
                 "INSERT INTO platform_settings (key, value) VALUES ('max_team_members', $1) ON CONFLICT (key) DO UPDATE SET value = $1",
+                [val]
+            );
+        }
+        if (max_teams_per_mentor !== undefined) {
+            const val = max_teams_per_mentor === '' || max_teams_per_mentor === null || max_teams_per_mentor === 'none' ? 'none' : String(max_teams_per_mentor);
+            await pool.query(
+                "INSERT INTO platform_settings (key, value) VALUES ('max_teams_per_mentor', $1) ON CONFLICT (key) DO UPDATE SET value = $1",
                 [val]
             );
         }
@@ -712,5 +719,42 @@ export const updateAdminMessage = async (req: Request, res: Response) => {
     } catch (error: any) {
         console.error('Error updating admin message:', error);
         res.status(500).json({ success: false, status: 'error', message: error.message || 'Failed to update message' });
+    }
+};
+
+
+export const getAllSubmissions = async (req: Request, res: Response): Promise<void> => {
+    try {
+        const query = `
+            SELECT 
+                t.id,
+                t.name,
+                t.leader_id,
+                t.created_at,
+                t.mentor_id,
+                t.repo_url,
+                t.submitted_at,
+                u.email as leader_email,
+                ui.name as leader_name
+            FROM teams t
+            LEFT JOIN users u ON t.leader_id = u.id
+            LEFT JOIN user_info ui ON u.id = ui.user_id
+            WHERE t.is_submitted = true
+            ORDER BY t.submitted_at DESC
+        `;
+        const result = await pool.query(query);
+
+        res.status(200).json({
+            status: 'success',
+            success: true,
+            data: result.rows
+        });
+    } catch (error: any) {
+        console.error('[AdminController] Error fetching submissions:', error);
+        res.status(500).json({
+            status: 'error',
+            success: false,
+            message: 'Internal server error while fetching submissions'
+        });
     }
 };

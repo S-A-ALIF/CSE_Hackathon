@@ -27,7 +27,7 @@ export default function AdminMessagePopup() {
     if (!currentUser || !currentUser.email) return;
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch(`${API_URL}/api/v1/notifications?email=${encodeURIComponent(currentUser.email)}`, {
+      const res = await fetch(`${API_URL}/api/v1/notifications?email=${encodeURIComponent(currentUser.email)}&skipUpdate=true`, {
         headers: token ? { 'Authorization': `Bearer ${token}` } : {}
       });
       const data = await res.json();
