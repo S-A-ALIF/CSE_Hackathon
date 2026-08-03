@@ -8,7 +8,7 @@ export default function AdminControlTab() {
   const { fetchPlatformSettings } = useAuth();
   const [settings, setSettings] = useState(adminCache.settings || {});
   const [loading, setLoading] = useState(!adminCache.settings);
-  const [togglingAction, setTogglingAction] = useState(null); // Tracks 'registration', 'workspace', or 'problems'
+  const [togglingAction, setTogglingAction] = useState(null); // Tracks 'registration', 'workspace', 'problems', 'feedback'
   const [minTeamSize, setMinTeamSize] = useState(
     adminCache.settings ? (adminCache.settings.min_team_members === 'none' ? '' : (adminCache.settings.min_team_members || '3')) : ''
   );
@@ -194,6 +194,38 @@ export default function AdminControlTab() {
     }
   };
 
+  const handleToggleFeedback = async () => {
+    setTogglingAction('feedback');
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch(`${API_URL}/api/v1/admin/settings/toggle-feedback`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        toast.success(data.message);
+        const updated = {
+          ...settings,
+          feedback_open: data.data.feedback_open
+        };
+        adminCache.set('settings', updated);
+        setSettings(updated);
+        if (fetchPlatformSettings) fetchPlatformSettings();
+      } else {
+        toast.error(data.message || 'Failed to toggle feedback visibility');
+      }
+    } catch (error) {
+      console.error('Error toggling feedback:', error);
+      toast.error('Error toggling feedback');
+    } finally {
+      setTogglingAction(null);
+    }
+  };
+
   const handleSaveTeamLimits = async (e) => {
     e.preventDefault();
     setSavingLimits(true);
@@ -315,6 +347,7 @@ export default function AdminControlTab() {
     if (type === 'registration') handleToggleRegistration();
     else if (type === 'workspace') handleToggleWorkspace();
     else if (type === 'problems') handleToggleProblems();
+    else if (type === 'feedback') handleToggleFeedback();
   };
 
   const requestToggle = (type, actionStr) => {
@@ -596,6 +629,31 @@ export default function AdminControlTab() {
             ? '🔴 Close Problems'
             : '🟢 Open Problems'}
         </button>
+      </div>
+
+      <div className="bg-slate-50 border border-slate-200 rounded-xl p-5 mb-6">
+        <h4 className="text-lg font-bold text-slate-900 mb-2">Feedback & Questions Widget</h4>
+        <p className="text-sm text-slate-600 mb-4">
+          Toggle the visibility of the Feedback widget from the hamburger menu across the platform.
+        </p>
+        <div className="flex items-center gap-4">
+          <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${
+            (settings.feedback_open === 'true' || settings.feedback_open === true || settings.feedback_open === undefined) ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'
+          }`}>
+            {(settings.feedback_open === 'true' || settings.feedback_open === true || settings.feedback_open === undefined) ? 'Visible' : 'Hidden'}
+          </span>
+          <button
+            onClick={() => requestToggle('feedback', (settings.feedback_open === 'true' || settings.feedback_open === true || settings.feedback_open === undefined) ? 'Hide Feedback' : 'Show Feedback')}
+            disabled={togglingAction === 'feedback'}
+            className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center min-w-[140px]"
+          >
+            {togglingAction === 'feedback' ? (
+              <span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
+            ) : (
+              (settings.feedback_open === 'true' || settings.feedback_open === true || settings.feedback_open === undefined) ? 'Hide Feedback' : 'Show Feedback'
+            )}
+          </button>
+        </div>
       </div>
 
       {/* Team Size Requirements Card */}

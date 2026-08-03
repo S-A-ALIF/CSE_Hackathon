@@ -11,6 +11,7 @@ import AdminProblemsTab from '../features/admin/AdminProblemsTab';
 import AdminRulesTab from '../features/admin/AdminRulesTab';
 import AdminSubmissionsTab from '../features/admin/AdminSubmissionsTab';
 import AdminMessagesTab from '../features/admin/AdminMessagesTab';
+import AdminFeedbackTab from '../features/admin/AdminFeedbackTab';
 import NotificationDropdown from '../components/NotificationDropdown';
 import ProfilePage from './ProfilePage';
 
@@ -190,6 +191,11 @@ export default function AdminPage() {
             {visitedTabs.messages && (
               <div className={activeTab === 'messages' ? 'block' : 'hidden'}>
                 <AdminMessagesTab />
+              </div>
+            )}
+            {visitedTabs.feedback && (
+              <div className={activeTab === 'feedback' ? 'block' : 'hidden'}>
+                <AdminFeedbackTab />
               </div>
             )}
             {visitedTabs.settings && (

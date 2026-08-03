@@ -14,6 +14,7 @@ import {
     toggleRegistration,
     toggleWorkspace,
     toggleProblems,
+    toggleFeedback,
     updateTeamLimits,
     updateRegistrationTimeline,
     updateHackathonTimeline,
@@ -56,6 +57,7 @@ router.get('/settings', getSettings);
 router.post('/settings/toggle-registration', toggleRegistration);
 router.post('/settings/toggle-workspace', toggleWorkspace);
 router.post('/settings/toggle-problems', toggleProblems);
+router.post('/settings/toggle-feedback', toggleFeedback);
 router.post('/settings/team-limits', validateRequest(adminSchemas.teamLimits), updateTeamLimits);
 router.post('/settings/registration-timeline', updateRegistrationTimeline);
 router.post('/settings/hackathon-timeline', updateHackathonTimeline);

@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import NotificationDropdown from '../components/NotificationDropdown';
+import FeedbackModal from '../components/FeedbackModal';
 import TeamPage from './TeamPage';
 import ProjectPage from './ProjectPage';
 import ProblemsPage from './ProblemsPage';
@@ -12,12 +13,13 @@ import SettingsPage from './SettingsPage';
 import QnAPage from './QnAPage';
 
 export default function DashboardPage() {
-  const { currentUser, logout, workspaceOpen, problemsOpen, fetchPlatformSettings } = useAuth();
+  const { currentUser, logout, workspaceOpen, problemsOpen, feedbackOpen, fetchPlatformSettings } = useAuth();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState(() => {
     return localStorage.getItem('hackathon_active_tab') || 'team';
   });
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isFeedbackOpen, setIsFeedbackOpen] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const menuRef = useRef(null);
 
@@ -191,6 +193,18 @@ export default function DashboardPage() {
                   </svg>
                   QnA's
                 </button>
+
+                {feedbackOpen && (
+                  <button 
+                    onClick={() => { setIsFeedbackOpen(true); setIsMenuOpen(false); }}
+                    className="w-full text-left px-4 py-2 text-slate-700 hover:bg-slate-50 transition-colors flex items-center gap-2 font-medium"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5 text-slate-500">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-5l-5 5v-5z" />
+                    </svg>
+                    Feedback
+                  </button>
+                )}
                 
                 <div className="h-px bg-slate-100 my-2"></div>
                 
@@ -315,6 +329,8 @@ export default function DashboardPage() {
           {activeTab === 'qna' && <QnAPage />}
         </main>
       </div>
+
+      <FeedbackModal isOpen={isFeedbackOpen} onClose={() => setIsFeedbackOpen(false)} />
     </div>
   );
 }

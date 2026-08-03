@@ -95,6 +95,20 @@ const initAllTables = async () => {
             INSERT INTO platform_settings (key, value) VALUES ('registration_open', 'true') ON CONFLICT (key) DO NOTHING;
         `);
 
+        console.log("6️⃣ Creating 'feedback' table...");
+        await client.query(`
+            CREATE TABLE IF NOT EXISTS feedback (
+                id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+                subject VARCHAR(255) NOT NULL,
+                type VARCHAR(50) NOT NULL,
+                description TEXT NOT NULL,
+                status VARCHAR(20) DEFAULT 'open',
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                resolved_at TIMESTAMP DEFAULT NULL
+            );
+        `);
+
         await client.query('COMMIT');
         console.log("✅ All database tables initialized successfully!");
         process.exit(0);

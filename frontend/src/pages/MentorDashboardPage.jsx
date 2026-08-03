@@ -4,12 +4,13 @@ import { API_URL } from '../config';
 import { useAuth } from '../contexts/AuthContext';
 import { toast } from 'sonner';
 import NotificationDropdown from '../components/NotificationDropdown';
+import FeedbackModal from '../components/FeedbackModal';
 import ProfilePage from './ProfilePage';
 import SettingsPage from './SettingsPage';
 import MemberInfoModal from '../features/team/MemberInfoModal';
 
 export default function MentorDashboardPage() {
-  const { currentUser, logout } = useAuth();
+  const { currentUser, logout, feedbackOpen } = useAuth();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState(() => {
     return localStorage.getItem('hackathon_mentor_tab') || 'dashboard';
@@ -24,6 +25,7 @@ export default function MentorDashboardPage() {
   const [loading, setLoading] = useState(true);
   const [processingId, setProcessingId] = useState(null);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isFeedbackOpen, setIsFeedbackOpen] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const menuRef = useRef(null);
 
@@ -160,6 +162,9 @@ export default function MentorDashboardPage() {
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col h-screen overflow-hidden">
+      {/* Feedback Modal */}
+      <FeedbackModal isOpen={isFeedbackOpen} onClose={() => setIsFeedbackOpen(false)} />
+      
       {/* Top Navbar with Logo on Left, Notif/Profile/Hamburger on Right */}
       <nav className="bg-slate-900 text-white py-4 px-6 lg:px-12 flex justify-between items-center shadow-md relative z-50 shrink-0">
         <Link to="/" className="text-2xl font-black tracking-tighter hover:opacity-80 transition-opacity">
@@ -209,6 +214,18 @@ export default function MentorDashboardPage() {
                   </svg>
                   Settings
                 </button>
+
+                {feedbackOpen && (
+                  <button 
+                    onClick={() => { setIsFeedbackOpen(true); setIsMenuOpen(false); }}
+                    className="w-full text-left px-4 py-2 text-slate-700 hover:bg-slate-50 transition-colors flex items-center gap-2 font-medium"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5 text-slate-500">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-5l-5 5v-5z" />
+                    </svg>
+                    Feedback
+                  </button>
+                )}
                 
                 <div className="h-px bg-slate-100 my-2"></div>
 

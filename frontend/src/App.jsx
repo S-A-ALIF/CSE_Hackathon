@@ -1,7 +1,8 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { Toaster } from 'sonner';
-import { AuthProvider } from './contexts/AuthContext';
+import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { ThemeProvider } from './contexts/ThemeContext';
+import AdminMessagePopup from './components/AdminMessagePopup';
 import LandingPage from './pages/LandingPage';
 import RegisterPage from './pages/RegisterPage';
 import DashboardPage from './pages/DashboardPage';
@@ -12,7 +13,6 @@ import ProblemsPage from './pages/ProblemsPage';
 import RulesPage from './pages/RulesPage';
 import AdminPage from './pages/AdminPage';
 import MentorDashboardPage from './pages/MentorDashboardPage';
-import AdminMessagePopup from './components/AdminMessagePopup';
 
 function App() {
   return (

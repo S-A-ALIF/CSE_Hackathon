@@ -18,6 +18,7 @@ export function AuthProvider({ children }) {
   const [registrationOpen, setRegistrationOpen] = useState(true);
   const [workspaceOpen, setWorkspaceOpen] = useState(false);
   const [problemsOpen, setProblemsOpen] = useState(false);
+  const [feedbackOpen, setFeedbackOpen] = useState(true);
   const [regStartTime, setRegStartTime] = useState('');
   const [regEndTime, setRegEndTime] = useState('');
   const [hackStartTime, setHackStartTime] = useState('');
@@ -32,10 +33,12 @@ export function AuthProvider({ children }) {
         const isRegOpen = data.data.registration_open !== 'false' && data.data.registration_open !== false;
         const isWorkOpen = data.data.workspace_open === 'true' || data.data.workspace_open === true;
         const isProbOpen = data.data.problems_open === 'true' || data.data.problems_open === true;
+        const isFeedOpen = data.data.feedback_open !== 'false' && data.data.feedback_open !== false; // Default to true
 
         setRawRegistrationOpen(isRegOpen);
         setWorkspaceOpen(isWorkOpen);
         setProblemsOpen(isProbOpen);
+        setFeedbackOpen(isFeedOpen);
         setRegStartTime(data.data.reg_start_time || '');
         setRegEndTime(data.data.reg_end_time || '');
         setHackStartTime(data.data.hack_start_time || '');
@@ -210,7 +213,7 @@ export function AuthProvider({ children }) {
   const effectiveWorkspaceOpen = workspaceOpen || isSpecialUser;
 
   return (
-    <AuthContext.Provider value={{ currentUser, userProfile, setUserProfile, login, register, logout, registrationOpen, workspaceOpen: effectiveWorkspaceOpen, problemsOpen, regStartTime, regEndTime, hackStartTime, hackEndTime, isSubmissionOpen, fetchPlatformSettings }}>
+    <AuthContext.Provider value={{ currentUser, userProfile, setUserProfile, login, register, logout, registrationOpen, workspaceOpen: effectiveWorkspaceOpen, problemsOpen, feedbackOpen, regStartTime, regEndTime, hackStartTime, hackEndTime, isSubmissionOpen, fetchPlatformSettings }}>
       {children}
     </AuthContext.Provider>
   );

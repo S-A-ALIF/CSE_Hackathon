@@ -758,3 +758,31 @@ export const getAllSubmissions = async (req: Request, res: Response): Promise<vo
         });
     }
 };
+
+/**
+ * POST /api/v1/admin/settings/toggle-feedback
+ * Toggle feedback_open open/close
+ */
+export const toggleFeedback = async (req: Request, res: Response) => {
+    try {
+        const currentRes = await pool.query("SELECT value FROM platform_settings WHERE key = 'feedback_open'");
+        // Default to 'true' if not set, so the first toggle makes it 'false'
+        const currentVal = currentRes.rows.length > 0 ? currentRes.rows[0].value : 'true';
+        const newVal = currentVal === 'true' ? 'false' : 'true';
+
+        await pool.query(
+            "INSERT INTO platform_settings (key, value) VALUES ('feedback_open', $1) ON CONFLICT (key) DO UPDATE SET value = $1",
+            [newVal]
+        );
+
+        res.status(200).json({
+            status: 'success',
+            success: true,
+            data: { feedback_open: newVal },
+            message: `Feedback is now ${newVal === 'true' ? 'VISIBLE' : 'HIDDEN'}`
+        });
+    } catch (error) {
+        console.error('Error toggling feedback:', error);
+        res.status(500).json({ status: 'error', success: false, message: 'Failed to toggle feedback access' });
+    }
+};

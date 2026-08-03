@@ -606,7 +606,7 @@ export const teamService = {
      * Permanently submit project repository (Leader only)
      */
     async submitProject(leaderId: string) {
-        const teamRes = await pool.query('SELECT id, name, repo_url, COALESCE(is_submitted, false) as is_submitted FROM teams WHERE leader_id = $1', [leaderId]);
+        const teamRes = await pool.query('SELECT id, name, repo_url, mentor_id, COALESCE(is_submitted, false) as is_submitted FROM teams WHERE leader_id = $1', [leaderId]);
         const team = teamRes.rows[0];
         if (!team) {
             throw new Error('Only the team leader can submit the project.');
@@ -629,7 +629,19 @@ export const teamService = {
             if (m.email) {
                 await pool.query(
                     'INSERT INTO notifications (recipient_email, message) VALUES ($1, $2)',
-                    [m.email, `Team "${team.name}" has officially submitted the project repository!`]
+                    [m.email, 'Your Team has officially submitted the project repository!']
+                );
+            }
+        }
+
+        // Notify the mentor (if the team has one)
+        if (team.mentor_id) {
+            const mentorRes = await pool.query('SELECT email FROM users WHERE id = $1', [team.mentor_id]);
+            const mentorEmail = mentorRes.rows[0]?.email;
+            if (mentorEmail) {
+                await pool.query(
+                    'INSERT INTO notifications (recipient_email, message) VALUES ($1, $2)',
+                    [mentorEmail, `Team "${team.name}" has officially submitted the project repository!`]
                 );
             }
         }
