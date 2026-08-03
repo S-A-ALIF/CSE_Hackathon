@@ -229,19 +229,19 @@ export const cancelInvitation = async (req: Request, res: Response): Promise<voi
     }
 };
 
-export const updateRepoUrl = async (req: Request, res: Response): Promise<void> => {
+export const updateSubmissionLinks = async (req: Request, res: Response): Promise<void> => {
     try {
         const leaderId = (req as any).user.id;
-        const { repo_url } = req.body;
-        if (!repo_url || typeof repo_url !== 'string') {
-            res.status(400).json({ success: false, message: 'Valid repository URL is required' });
+        const { repo_url, live_url, video_url } = req.body;
+        if (!repo_url || typeof repo_url !== 'string' || !live_url || typeof live_url !== 'string' || !video_url || typeof video_url !== 'string') {
+            res.status(400).json({ success: false, message: 'All three submission links are required' });
             return;
         }
-        const result = await teamService.updateRepoUrl(leaderId, repo_url.trim());
-        res.status(200).json({ success: true, message: 'Repository URL saved successfully!', data: result });
+        const result = await teamService.updateSubmissionLinks(leaderId, repo_url.trim(), live_url.trim(), video_url.trim());
+        res.status(200).json({ success: true, message: 'Submission links saved successfully!', data: result });
     } catch (error: any) {
-        console.error('[TeamController] Error updating repository URL:', error);
-        res.status(400).json({ success: false, message: error.message || 'Error updating repository URL' });
+        console.error('[TeamController] Error updating submission links:', error);
+        res.status(400).json({ success: false, message: error.message || 'Error updating submission links' });
     }
 };
 

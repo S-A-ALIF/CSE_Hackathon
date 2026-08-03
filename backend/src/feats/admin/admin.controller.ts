@@ -733,6 +733,8 @@ export const getAllSubmissions = async (req: Request, res: Response): Promise<vo
                 t.created_at,
                 t.mentor_id,
                 t.repo_url,
+                t.live_url,
+                t.video_url,
                 t.submitted_at,
                 u.email as leader_email,
                 ui.name as leader_name
@@ -784,5 +786,44 @@ export const toggleFeedback = async (req: Request, res: Response) => {
     } catch (error) {
         console.error('Error toggling feedback:', error);
         res.status(500).json({ status: 'error', success: false, message: 'Failed to toggle feedback access' });
+    }
+};
+
+/**
+ * POST /api/v1/admin/submissions/:teamId/cancel
+ * Cancels a team's submission
+ */
+export const cancelSubmission = async (req: Request, res: Response): Promise<void> => {
+    const { teamId } = req.params;
+    try {
+        const query = `
+            UPDATE teams
+            SET is_submitted = false, submitted_at = NULL
+            WHERE id = $1
+            RETURNING id, name
+        `;
+        const result = await pool.query(query, [teamId]);
+
+        if (result.rowCount === 0) {
+            res.status(404).json({
+                status: 'error',
+                success: false,
+                message: 'Team not found'
+            });
+            return;
+        }
+
+        res.status(200).json({
+            status: 'success',
+            success: true,
+            message: `Submission for team ${result.rows[0].name} has been cancelled.`
+        });
+    } catch (error: any) {
+        console.error('[AdminController] Error cancelling submission:', error);
+        res.status(500).json({
+            status: 'error',
+            success: false,
+            message: 'Internal server error while cancelling submission'
+        });
     }
 };

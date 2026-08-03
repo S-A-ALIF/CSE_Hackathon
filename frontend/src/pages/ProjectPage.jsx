@@ -17,7 +17,9 @@ export default function ProjectPage({ inDashboard = false }) {
 
   const [team, setTeam] = useState(null);
   const [repoUrl, setRepoUrl] = useState('');
-  const [isEditingRepo, setIsEditingRepo] = useState(false);
+  const [liveUrl, setLiveUrl] = useState('');
+  const [videoUrl, setVideoUrl] = useState('');
+  const [isEditingLinks, setIsEditingLinks] = useState(false);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [showSubmitModal, setShowSubmitModal] = useState(false);
@@ -32,11 +34,9 @@ export default function ProjectPage({ inDashboard = false }) {
         const data = await res.json();
         if (data.success && data.data) {
           setTeam(data.data);
-          if (data.data.repo_url) {
-            setRepoUrl(data.data.repo_url);
-          } else {
-            setRepoUrl('');
-          }
+          setRepoUrl(data.data.repo_url || '');
+          setLiveUrl(data.data.live_url || '');
+          setVideoUrl(data.data.video_url || '');
         }
       } catch (err) {
         console.error('Failed to fetch team details:', err);
@@ -62,18 +62,18 @@ export default function ProjectPage({ inDashboard = false }) {
 
   const isM1Red = !isTeamFormed;
   const isM2Red = !team?.mentor_id;
-  const isM3Red = !isSubmitted && (!team?.repo_url || isDeadlineEnded);
+  const isM3Red = !isSubmitted && (!team?.repo_url || !team?.live_url || !team?.video_url || isDeadlineEnded);
   const isAnyMilestoneRed = !isSubmitted && (isM1Red || isM2Red || isM3Red);
   const progressCount = (!isM1Red ? 1 : 0) + (!isM2Red ? 1 : 0) + (!isM3Red ? 1 : 0);
 
-  const handleSaveRepo = async (e) => {
+  const handleSaveLinks = async (e) => {
     e.preventDefault();
     if (!isLeader) {
-      toast.error('Only the team leader can update the repository URL.');
+      toast.error('Only the team leader can update the submission links.');
       return;
     }
-    if (!repoUrl || !repoUrl.trim()) {
-      toast.error('Please enter a valid GitHub repository URL.');
+    if (!repoUrl.trim() || !liveUrl.trim() || !videoUrl.trim()) {
+      toast.error('Please enter all three submission links (Live Site, Video, GitHub).');
       return;
     }
     try {
@@ -83,15 +83,24 @@ export default function ProjectPage({ inDashboard = false }) {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         },
-        body: JSON.stringify({ repo_url: repoUrl.trim() })
+        body: JSON.stringify({ 
+          repo_url: repoUrl.trim(),
+          live_url: liveUrl.trim(),
+          video_url: videoUrl.trim()
+        })
       });
       const data = await res.json();
       if (data.success) {
-        setTeam(prev => ({ ...prev, repo_url: repoUrl.trim() }));
-        setIsEditingRepo(false);
-        toast.success('Repository URL saved permanently!');
+        setTeam(prev => ({ 
+          ...prev, 
+          repo_url: repoUrl.trim(),
+          live_url: liveUrl.trim(),
+          video_url: videoUrl.trim()
+        }));
+        setIsEditingLinks(false);
+        toast.success('Submission links saved successfully!');
       } else {
-        toast.error(data.message || 'Failed to update repository URL');
+        toast.error(data.message || 'Failed to update submission links');
       }
     } catch (err) {
       toast.error('Error connecting to server.');
@@ -124,7 +133,7 @@ export default function ProjectPage({ inDashboard = false }) {
       return;
     }
     if (isM3Red) {
-      const err = 'Submission Failed: Please link your GitHub repository in the "Repository & Git" tab.';
+      const err = 'Submission Failed: Please provide all three links (Live Site, Video, GitHub Repo) in the "Submission Links" tab.';
       setSubmitError(err);
       toast.error(err);
       return;
@@ -151,7 +160,7 @@ export default function ProjectPage({ inDashboard = false }) {
       const data = await res.json();
       if (data.success) {
         setTeam(prev => ({ ...prev, is_submitted: true, submitted_at: new Date().toISOString() }));
-        toast.success('Project repository permanently submitted & locked!');
+        toast.success('Project permanently submitted & locked!');
         setShowSubmitModal(false);
       } else {
         toast.error(data.message || 'Failed to submit project');
@@ -185,7 +194,7 @@ export default function ProjectPage({ inDashboard = false }) {
               </div>
             )}
             <h1 className="text-3xl sm:text-4xl font-black tracking-tight text-slate-900 break-words">Project Workspace</h1>
-            <p className="mt-1.5 sm:mt-2 text-sm sm:text-lg text-slate-600">Submit and manage your team's hackathon project repository.</p>
+            <p className="mt-1.5 sm:mt-2 text-sm sm:text-lg text-slate-600">Submit and manage your team's hackathon project.</p>
           </div>
 
           <div className="flex items-center gap-3 self-start sm:self-center">
@@ -217,7 +226,7 @@ export default function ProjectPage({ inDashboard = false }) {
         <div className="flex border-b border-slate-200 gap-4 sm:gap-6 overflow-x-auto">
           {[
             { id: 'overview', label: 'Overview' },
-            { id: 'repository', label: 'Repository & Git' }
+            { id: 'repository', label: 'Submission Links' }
           ].map((tab) => (
             <button
               key={tab.id}
@@ -310,12 +319,12 @@ export default function ProjectPage({ inDashboard = false }) {
                         <p className="text-[11px] text-rose-600 dark:text-rose-400 font-bold mt-0.5">Project unsubmitted — Deadline Ended ❌</p>
                       </div>
                     </div>
-                  ) : team?.repo_url ? (
+                  ) : (team?.repo_url && team?.live_url && team?.video_url) ? (
                     <div className="p-3.5 rounded-2xl bg-blue-50/80 dark:bg-blue-950/30 border border-blue-200/80 dark:border-blue-900/50 flex items-start gap-3">
                       <span className="w-6 h-6 rounded-full bg-blue-600 text-white flex items-center justify-center text-xs font-bold shrink-0 mt-0.5 shadow-sm">3</span>
                       <div>
                         <h4 className="font-bold text-slate-900 dark:text-slate-100 text-xs sm:text-sm">3. Pitch Deck & Submission</h4>
-                        <p className="text-[11px] text-blue-700 dark:text-blue-400 font-semibold mt-0.5">GitHub repository linked — Ready to submit! (Active ⚡)</p>
+                        <p className="text-[11px] text-blue-700 dark:text-blue-400 font-semibold mt-0.5">All 3 submission links added — Ready to submit! (Active ⚡)</p>
                       </div>
                     </div>
                   ) : (
@@ -323,7 +332,7 @@ export default function ProjectPage({ inDashboard = false }) {
                       <span className="w-6 h-6 rounded-full bg-rose-600 text-white flex items-center justify-center text-xs font-bold shrink-0 mt-0.5 shadow-sm">!</span>
                       <div>
                         <h4 className="font-bold text-rose-700 dark:text-rose-300 text-xs sm:text-sm">3. Pitch Deck & Submission (Incomplete)</h4>
-                        <p className="text-[11px] text-rose-600 dark:text-rose-400 font-bold mt-0.5">Please link your GitHub repository in the "Repository & Git" tab ❌</p>
+                        <p className="text-[11px] text-rose-600 dark:text-rose-400 font-bold mt-0.5">Please provide Live URL, Video URL, and GitHub Repo in the "Submission Links" tab ❌</p>
                       </div>
                     </div>
                   )}
@@ -357,13 +366,11 @@ export default function ProjectPage({ inDashboard = false }) {
 
                 <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 space-y-3">
                   <div className="flex justify-between items-center text-xs sm:text-sm">
-                    <span className="text-slate-500 dark:text-slate-400 font-medium">Repository</span>
-                    {team?.repo_url ? (
-                      <a href={team.repo_url} target="_blank" rel="noreferrer" className="font-bold text-blue-600 dark:text-blue-400 hover:underline truncate max-w-[140px]">
-                        Linked
-                      </a>
+                    <span className="text-slate-500 dark:text-slate-400 font-medium">Links Required</span>
+                    {(team?.repo_url && team?.live_url && team?.video_url) ? (
+                      <span className="font-bold text-blue-600 dark:text-blue-400">All 3 Links Provided</span>
                     ) : (
-                      <span className="font-bold text-slate-400">Not Connected</span>
+                      <span className="font-bold text-slate-400">Not Completed</span>
                     )}
                   </div>
                   <div className="flex justify-between items-center text-xs sm:text-sm">
@@ -418,8 +425,8 @@ export default function ProjectPage({ inDashboard = false }) {
           <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 sm:p-8 border border-slate-200 dark:border-slate-800 shadow-sm space-y-6 overflow-hidden">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div>
-                <h2 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white">GitHub Repository</h2>
-                <p className="text-xs sm:text-base text-slate-600 dark:text-slate-400 mt-1">Connect your team's Git repository so judges and mentors can inspect your code.</p>
+                <h2 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white">Submission Links</h2>
+                <p className="text-xs sm:text-base text-slate-600 dark:text-slate-400 mt-1">Provide the final URLs required for your project submission.</p>
               </div>
               {team?.is_submitted && (
                 <span className="px-3.5 sm:px-4 py-1.5 bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 font-bold rounded-full text-xs flex items-center gap-1.5 self-start">
@@ -430,67 +437,126 @@ export default function ProjectPage({ inDashboard = false }) {
             </div>
 
             {team?.is_submitted ? (
-              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-4 sm:p-5 rounded-2xl bg-emerald-50/50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-900/60 overflow-hidden w-full">
-                <div className="flex items-center gap-3 min-w-0 w-full overflow-hidden">
-                  <svg className="w-5 sm:w-6 h-5 sm:h-6 text-emerald-700 dark:text-emerald-400 shrink-0" fill="currentColor" viewBox="0 0 24 24">
-                    <path fillRule="evenodd" clipRule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.53 1.032 1.53 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z" />
-                  </svg>
-                  <a href={team.repo_url} target="_blank" rel="noreferrer" className="font-mono text-xs sm:text-sm text-blue-600 dark:text-blue-400 hover:underline truncate block min-w-0">
-                    {team.repo_url}
-                  </a>
+              <div className="space-y-3 p-4 sm:p-5 rounded-2xl bg-emerald-50/50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-900/60">
+                <div className="flex flex-col gap-3">
+                  <div className="flex items-center gap-3">
+                    <span className="font-bold text-sm text-emerald-800 dark:text-emerald-300 w-24">Live Site:</span>
+                    <a href={team.live_url} target="_blank" rel="noreferrer" className="font-mono text-xs sm:text-sm text-blue-600 dark:text-blue-400 hover:underline truncate min-w-0">
+                      {team.live_url}
+                    </a>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <span className="font-bold text-sm text-emerald-800 dark:text-emerald-300 w-24">Video:</span>
+                    <a href={team.video_url} target="_blank" rel="noreferrer" className="font-mono text-xs sm:text-sm text-blue-600 dark:text-blue-400 hover:underline truncate min-w-0">
+                      {team.video_url}
+                    </a>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <span className="font-bold text-sm text-emerald-800 dark:text-emerald-300 w-24">Repository:</span>
+                    <a href={team.repo_url} target="_blank" rel="noreferrer" className="font-mono text-xs sm:text-sm text-blue-600 dark:text-blue-400 hover:underline truncate min-w-0">
+                      {team.repo_url}
+                    </a>
+                  </div>
                 </div>
-                <span className="text-xs font-bold text-slate-500 dark:text-slate-400 shrink-0">Cannot Edit</span>
               </div>
-            ) : isEditingRepo ? (
-              <form onSubmit={handleSaveRepo} className="flex flex-col sm:flex-row gap-3">
-                <input
-                  type="url"
-                  required
-                  placeholder="https://github.com/username/repository-name"
-                  value={repoUrl}
-                  onChange={(e) => setRepoUrl(e.target.value)}
-                  className="w-full sm:flex-1 px-4 py-3 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none text-xs sm:text-sm"
-                />
-                <div className="flex gap-2">
+            ) : isEditingLinks ? (
+              <form onSubmit={handleSaveLinks} className="flex flex-col gap-4 p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">Live Website URL</label>
+                  <input
+                    type="url"
+                    required
+                    placeholder="https://your-deployed-site.com"
+                    value={liveUrl}
+                    onChange={(e) => setLiveUrl(e.target.value)}
+                    className="w-full px-4 py-3 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none text-xs sm:text-sm"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">Video Walkthrough URL</label>
+                  <input
+                    type="url"
+                    required
+                    placeholder="https://youtube.com/watch?v=..."
+                    value={videoUrl}
+                    onChange={(e) => setVideoUrl(e.target.value)}
+                    className="w-full px-4 py-3 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none text-xs sm:text-sm"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">GitHub Repository URL</label>
+                  <input
+                    type="url"
+                    required
+                    placeholder="https://github.com/username/repository-name"
+                    value={repoUrl}
+                    onChange={(e) => setRepoUrl(e.target.value)}
+                    className="w-full px-4 py-3 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none text-xs sm:text-sm"
+                  />
+                </div>
+                <div className="flex gap-2 pt-2">
                   <button
                     type="submit"
-                    className="flex-1 sm:flex-initial px-6 py-3 bg-blue-600 hover:bg-blue-700 dark:bg-blue-600 dark:hover:bg-blue-500 text-white font-bold rounded-xl transition-colors text-xs sm:text-sm"
+                    className="flex-1 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl transition-colors text-xs sm:text-sm"
                   >
-                    Save
+                    Save Links
                   </button>
                   <button
                     type="button"
-                    onClick={() => setIsEditingRepo(false)}
-                    className="flex-1 sm:flex-initial px-6 py-3 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold rounded-xl hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors text-xs sm:text-sm"
+                    onClick={() => setIsEditingLinks(false)}
+                    className="flex-1 px-6 py-3 bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold rounded-xl hover:bg-slate-300 dark:hover:bg-slate-600 transition-colors text-xs sm:text-sm"
                   >
                     Cancel
                   </button>
                 </div>
               </form>
             ) : (
-              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 overflow-hidden w-full">
-                <div className="flex items-center gap-3 min-w-0 w-full sm:w-auto overflow-hidden">
-                  <svg className="w-5 sm:w-6 h-5 sm:h-6 text-slate-700 dark:text-slate-300 shrink-0" fill="currentColor" viewBox="0 0 24 24">
-                    <path fillRule="evenodd" clipRule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.53 1.032 1.53 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z" />
-                  </svg>
-                  {team?.repo_url ? (
-                    <a href={team.repo_url} target="_blank" rel="noreferrer" className="font-mono text-xs sm:text-sm text-blue-600 dark:text-blue-400 hover:underline truncate block min-w-0">
-                      {team.repo_url}
-                    </a>
+              <div className="flex flex-col gap-4 p-5 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700">
+                <div className="space-y-3">
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
+                    <span className="font-bold text-xs sm:text-sm text-slate-700 dark:text-slate-300 w-24 shrink-0">Live Site:</span>
+                    {team?.live_url ? (
+                      <a href={team.live_url} target="_blank" rel="noreferrer" className="font-mono text-xs sm:text-sm text-blue-600 dark:text-blue-400 hover:underline truncate">
+                        {team.live_url}
+                      </a>
+                    ) : (
+                      <span className="font-mono text-xs sm:text-sm text-slate-400 italic">Not provided</span>
+                    )}
+                  </div>
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
+                    <span className="font-bold text-xs sm:text-sm text-slate-700 dark:text-slate-300 w-24 shrink-0">Video:</span>
+                    {team?.video_url ? (
+                      <a href={team.video_url} target="_blank" rel="noreferrer" className="font-mono text-xs sm:text-sm text-blue-600 dark:text-blue-400 hover:underline truncate">
+                        {team.video_url}
+                      </a>
+                    ) : (
+                      <span className="font-mono text-xs sm:text-sm text-slate-400 italic">Not provided</span>
+                    )}
+                  </div>
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
+                    <span className="font-bold text-xs sm:text-sm text-slate-700 dark:text-slate-300 w-24 shrink-0">Repository:</span>
+                    {team?.repo_url ? (
+                      <a href={team.repo_url} target="_blank" rel="noreferrer" className="font-mono text-xs sm:text-sm text-blue-600 dark:text-blue-400 hover:underline truncate">
+                        {team.repo_url}
+                      </a>
+                    ) : (
+                      <span className="font-mono text-xs sm:text-sm text-slate-400 italic">Not provided</span>
+                    )}
+                  </div>
+                </div>
+                
+                <div className="mt-4 pt-4 border-t border-slate-200 dark:border-slate-700 flex justify-end">
+                  {isLeader ? (
+                    <button
+                      onClick={() => setIsEditingLinks(true)}
+                      className="px-5 py-2.5 text-xs sm:text-sm font-bold text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                    >
+                      {(team?.repo_url || team?.live_url || team?.video_url) ? 'Edit Links' : 'Add Links'}
+                    </button>
                   ) : (
-                    <span className="font-mono text-xs sm:text-sm text-slate-400 italic">No GitHub repository URL connected yet.</span>
+                    <span className="text-xs font-semibold text-slate-400">Leader Only</span>
                   )}
                 </div>
-                {isLeader ? (
-                  <button
-                    onClick={() => setIsEditingRepo(true)}
-                    className="px-4 py-2 text-xs sm:text-sm font-bold text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-700 shrink-0"
-                  >
-                    {team?.repo_url ? 'Edit URL' : 'Connect Repo'}
-                  </button>
-                ) : (
-                  <span className="text-xs font-semibold text-slate-400 shrink-0">Leader Only</span>
-                )}
               </div>
             )}
           </div>

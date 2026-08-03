@@ -42,10 +42,6 @@ export default function Home() {
     if (regEndTime && endTimeTime > now) {
       return `Registration closes in: ${getCountdown(regEndTime)}`;
     }
-
-    if (!registrationOpen) {
-      return "Registration closed for now";
-    }
     
     return null;
   };
@@ -55,15 +51,15 @@ export default function Home() {
     const hackEnd = hackEndTime ? new Date(hackEndTime).getTime() : 0;
 
     if (hackStartTime && hackStart > now) {
-      return { text: `Hackathon starts in: ${getCountdown(hackStartTime)}`, type: 'upcoming' };
+      return { text: `Project submission starts in: ${getCountdown(hackStartTime)}`, type: 'upcoming' };
     }
 
     if (hackEndTime && hackEnd > now) {
-      return { text: `Submission closes in: ${getCountdown(hackEndTime)}`, type: 'closing' };
+      return { text: `Project submission closes in: ${getCountdown(hackEndTime)}`, type: 'closing' };
     }
 
     if (hackStartTime && hackEndTime && hackEnd <= now) {
-      return { text: 'Hackathon submission has ended', type: 'ended' };
+      return { text: 'Project submission has ended', type: 'ended' };
     }
 
     return null;

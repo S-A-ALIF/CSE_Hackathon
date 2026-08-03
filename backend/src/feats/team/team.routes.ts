@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { createTeam, inviteToTeam, joinTeam, requestToJoinByCode, getMyTeam, removeMember, leaveTeam, disbandTeam, updateTeamName, transferLeadership, updateTeamStatus, getActiveInvitations, cancelInvitation, updateRepoUrl, submitProject, checkRepoReadme } from './team.controller';
+import { createTeam, inviteToTeam, joinTeam, requestToJoinByCode, getMyTeam, removeMember, leaveTeam, disbandTeam, updateTeamName, transferLeadership, updateTeamStatus, getActiveInvitations, cancelInvitation, updateSubmissionLinks, submitProject, checkRepoReadme } from './team.controller';
 import { authMiddleware } from '../auth/auth.middleware';
 import { validateRequest } from '../../middlewares/validateRequest';
 import { teamSchemas } from './team.validator';
@@ -19,7 +19,7 @@ router.post('/join', validateRequest(teamSchemas.joinWithPin), joinTeam);
 router.post('/join-by-code', validateRequest(teamSchemas.requestJoinByCode), requestToJoinByCode);
 router.patch('/name', validateRequest(teamSchemas.updateName), updateTeamName);
 router.patch('/status', validateRequest(teamSchemas.updateStatus), updateTeamStatus);
-router.patch('/repo', updateRepoUrl);
+router.patch('/repo', updateSubmissionLinks);
 router.post('/submit', submitProject);
 router.post('/transfer-leadership', validateRequest(teamSchemas.transferLeadership), transferLeadership);
 router.delete('/members/:userId', removeMember);

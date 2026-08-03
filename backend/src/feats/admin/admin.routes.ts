@@ -23,7 +23,8 @@ import {
     sendAdminMessage,
     getAdminMessageHistory,
     updateAdminMessage,
-    getAllSubmissions
+    getAllSubmissions,
+    cancelSubmission
 } from './admin.controller';
 
 const router = Router();
@@ -42,6 +43,7 @@ router.put('/messages/:id', updateAdminMessage);
 // Teams Management
 router.get('/teams', getAllTeams);
 router.get('/submissions', getAllSubmissions);
+router.post('/submissions/:teamId/cancel', cancelSubmission);
 router.post('/teams/bulk-delete', deleteMultipleTeams);
 router.patch('/teams/:id', validateRequest(adminSchemas.updateTeam), updateTeam);
 router.delete('/teams/:id', deleteTeam);
