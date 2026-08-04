@@ -8,9 +8,10 @@ import FeedbackModal from '../components/FeedbackModal';
 import ProfilePage from './ProfilePage';
 import SettingsPage from './SettingsPage';
 import MemberInfoModal from '../features/team/MemberInfoModal';
+import ProblemsPage from './ProblemsPage';
 
 export default function MentorDashboardPage() {
-  const { currentUser, logout, feedbackOpen } = useAuth();
+  const { currentUser, logout, feedbackOpen, problemsOpen } = useAuth();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState(() => {
     return localStorage.getItem('hackathon_mentor_tab') || 'dashboard';
@@ -19,6 +20,15 @@ export default function MentorDashboardPage() {
   useEffect(() => {
     localStorage.setItem('hackathon_mentor_tab', activeTab);
   }, [activeTab]);
+
+  useEffect(() => {
+    if (activeTab === 'problems' && !problemsOpen) {
+      toast.info('The admin has closed the Problem Statement.', {
+        id: 'problem-closed-toast',
+      });
+      setActiveTab('dashboard');
+    }
+  }, [problemsOpen, activeTab]);
 
   const [invitations, setInvitations] = useState([]);
   const [teams, setTeams] = useState([]);
@@ -135,6 +145,15 @@ export default function MentorDashboardPage() {
       icon: (
         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
           <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6A2.25 2.25 0 0 1 6 3.75h2.25A2.25 2.25 0 0 1 10.5 6v2.25a2.25 2.25 0 0 1-2.25 2.25H6a2.25 2.25 0 0 1-2.25-2.25V6ZM3.75 15.75A2.25 2.25 0 0 1 6 13.5h2.25a2.25 2.25 0 0 1 2.25 2.25V18a2.25 2.25 0 0 1-2.25 2.25H6A2.25 2.25 0 0 1 3.75 18v-2.25ZM13.5 6a2.25 2.25 0 0 1 2.25-2.25H18A2.25 2.25 0 0 1 20.25 6v2.25A2.25 2.25 0 0 1 18 10.5h-2.25a2.25 2.25 0 0 1-2.25-2.25V6ZM13.5 15.75a2.25 2.25 0 0 1 2.25-2.25H18a2.25 2.25 0 0 1 2.25 2.25V18A2.25 2.25 0 0 1 18 20.25h-2.25A2.25 2.25 0 0 1 13.5 18v-2.25Z" />
+        </svg>
+      )
+    },
+    {
+      id: 'problems',
+      label: 'Problem Statement',
+      icon: (
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" />
         </svg>
       )
     },
@@ -286,7 +305,7 @@ export default function MentorDashboardPage() {
                       isActive
                         ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/30'
                         : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
-                    } ${!isSidebarOpen ? 'md:justify-center md:px-2' : ''}`}
+                    } ${!isSidebarOpen ? 'md:justify-center md:px-2' : ''} ${(item.id === 'problems' && !problemsOpen) ? 'opacity-50 line-through pointer-events-none' : ''}`}
                   >
                     <span className="shrink-0">{item.icon}</span>
                     <span className={`truncate text-[10px] sm:text-xs md:text-sm ${!isSidebarOpen ? 'md:hidden' : ''}`}>{item.label}</span>
@@ -306,6 +325,14 @@ export default function MentorDashboardPage() {
 
         {/* Right Content Area */}
         <main className="flex-grow p-4 sm:p-6 lg:p-12 overflow-y-auto w-full h-full">
+          {activeTab === 'problems' && (
+            problemsOpen ? <ProblemsPage inDashboard={true} /> : 
+            <div className="flex flex-col items-center justify-center h-full text-slate-500 mt-20">
+              <h2 className="text-xl font-bold text-slate-800">Problem Statement is Hidden</h2>
+              <p className="mt-2 text-center max-w-sm">The problem statement will be revealed once the hackathon officially starts.</p>
+            </div>
+          )}
+
           {activeTab === 'dashboard' && (
             <div className="max-w-7xl mx-auto space-y-12">
 
