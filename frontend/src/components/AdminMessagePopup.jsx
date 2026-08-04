@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { API_URL } from '../config';
 import { useAuth } from '../contexts/AuthContext';
+import { useLocation } from 'react-router-dom';
 import DOMPurify from 'dompurify';
 
 export default function AdminMessagePopup() {
@@ -8,6 +9,14 @@ export default function AdminMessagePopup() {
   const [activePopup, setActivePopup] = useState(null);
   const [isOpen, setIsOpen] = useState(false);
   const [isFullScreen, setIsFullScreen] = useState(false);
+  const location = useLocation();
+
+  // Close popup on route change
+  useEffect(() => {
+    setIsOpen(false);
+    setActivePopup(null);
+    setIsFullScreen(false);
+  }, [location.pathname]);
 
   useEffect(() => {
     if (!currentUser || !currentUser.email) return;
@@ -101,9 +110,9 @@ export default function AdminMessagePopup() {
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className={`bg-white dark:bg-slate-900 shadow-2xl border border-slate-200 dark:border-slate-800 flex flex-col overflow-hidden transform transition-all duration-300 ${isFullScreen ? 'w-full h-full rounded-none m-0 max-w-none' : 'max-w-md w-full rounded-3xl scale-100'}`}>
+      <div className={`bg-white dark:bg-slate-900 shadow-2xl border border-slate-200 dark:border-slate-800 flex flex-col overflow-hidden transform transition-all duration-300 ${isFullScreen ? 'fixed inset-0 w-full h-full rounded-none m-0 max-w-none' : 'max-w-md w-full max-h-[70vh] rounded-3xl scale-100'}`}>
         {/* Top Header Bar with Close text button at Top Right instead of Cross */}
-        <div className="p-6 pb-4 flex items-start justify-between gap-4 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30">
+        <div className="p-6 pb-4 flex items-start justify-between gap-4 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30 shrink-0">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-2xl bg-blue-100 dark:bg-blue-900/50 text-blue-600 dark:text-blue-400 flex items-center justify-center text-xl shrink-0 shadow-sm">
               📢
@@ -139,8 +148,8 @@ export default function AdminMessagePopup() {
         </div>
 
         {/* Message Content Body */}
-        <div className="p-6 space-y-4">
-          <div className="flex items-center gap-2">
+        <div className="p-6 flex-1 min-h-0 flex flex-col space-y-4 relative">
+          <div className="flex items-center gap-2 shrink-0">
             <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border ${badgeColor}`}>
               <span className={`w-1.5 h-1.5 rounded-full ${dotColor}`}></span>
               {badgeText}
@@ -150,15 +159,15 @@ export default function AdminMessagePopup() {
             </span>
           </div>
 
-          <div className="bg-slate-50 dark:bg-slate-800/60 rounded-2xl p-4 border border-slate-200/60 dark:border-slate-700/60 overflow-y-auto">
+          <div className={`bg-slate-50 dark:bg-slate-800/60 rounded-2xl p-4 border border-slate-200/60 dark:border-slate-700/60 w-full flex-1 min-h-0 relative overflow-y-auto`}>
             <div 
-              className="text-sm text-slate-700 dark:text-slate-200 font-medium whitespace-pre-line leading-relaxed prose prose-sm dark:prose-invert max-w-none [overflow-wrap:anywhere]"
+              className={`text-sm text-slate-700 dark:text-slate-200 font-medium whitespace-pre-line leading-relaxed prose prose-sm dark:prose-invert max-w-none [overflow-wrap:anywhere]`}
               dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(cleanMsg || rawMsg) }}
             >
             </div>
           </div>
 
-          <p className="text-xs text-slate-500 dark:text-slate-400 text-center">
+          <p className="text-xs text-slate-500 dark:text-slate-400 text-center shrink-0">
             You can view this message anytime in your Notifications menu (bell icon at top right).
           </p>
         </div>

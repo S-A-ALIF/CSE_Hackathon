@@ -44,6 +44,7 @@ export default function AdminFeedbackTab() {
       if (res.ok && data.success) {
         toast.success('Feedback marked as resolved');
         setFeedbacks(feedbacks.map(f => f.id === id ? { ...f, status: 'resolved', resolved_at: data.data.resolved_at } : f));
+        window.dispatchEvent(new Event('feedbackChanged'));
       } else {
         toast.error(data.message || 'Failed to resolve feedback');
       }
@@ -118,7 +119,16 @@ export default function AdminFeedbackTab() {
                       <span className="px-2.5 py-1 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 rounded-lg text-xs font-bold">Resolved</span>
                     )}
                     <span className="text-xs text-slate-500 dark:text-slate-400 ml-auto sm:ml-2">
-                      {new Date(f.created_at).toLocaleString()}
+                      {(() => {
+                        try {
+                          const date = new Date(f.created_at);
+                          const dateFormatted = date.toLocaleDateString('en-GB', { timeZone: 'Asia/Dhaka', day: '2-digit', month: 'short', year: 'numeric' });
+                          const timeFormatted = date.toLocaleTimeString('en-US', { timeZone: 'Asia/Dhaka', hour: '2-digit', minute: '2-digit', hour12: true });
+                          return `${dateFormatted} at ${timeFormatted}`;
+                        } catch (err) {
+                          return new Date(f.created_at).toLocaleString();
+                        }
+                      })()}
                     </span>
                   </div>
                   <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-2">{f.subject}</h3>

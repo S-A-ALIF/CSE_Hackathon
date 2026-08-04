@@ -19,8 +19,8 @@ function App() {
     <ThemeProvider>
       <AuthProvider>
         <Toaster richColors position="top-right" closeButton duration={4000} />
-        <AdminMessagePopup />
         <BrowserRouter>
+          <AdminMessagePopup />
           <Routes>
             <Route path="/" element={<LandingPage />} />
             <Route path="/register" element={<RegisterPage />} />

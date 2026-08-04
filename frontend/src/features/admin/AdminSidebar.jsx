@@ -1,7 +1,34 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { API_URL } from '../../config';
 
 export default function AdminSidebar({ activeTab, setActiveTab }) {
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const [unresolvedCount, setUnresolvedCount] = useState(0);
+
+  useEffect(() => {
+    const fetchCount = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        if (!token) return;
+        const res = await fetch(`${API_URL}/api/v1/feedback/admin/unresolved-count`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const data = await res.json();
+        if (res.ok) setUnresolvedCount(data.count);
+      } catch (e) {
+        console.error(e);
+      }
+    };
+    
+    fetchCount();
+    window.addEventListener('feedbackChanged', fetchCount);
+    // Refresh every 30 seconds to stay updated
+    const interval = setInterval(fetchCount, 30000);
+    return () => {
+      window.removeEventListener('feedbackChanged', fetchCount);
+      clearInterval(interval);
+    };
+  }, []);
 
   const navItems = [
     {
@@ -83,7 +110,8 @@ export default function AdminSidebar({ activeTab, setActiveTab }) {
         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5 shrink-0">
           <path strokeLinecap="round" strokeLinejoin="round" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-5l-5 5v-5z" />
         </svg>
-      )
+      ),
+      count: unresolvedCount
     }
   ];
 
@@ -128,7 +156,14 @@ export default function AdminSidebar({ activeTab, setActiveTab }) {
                     : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
                 }`}
               >
-                {item.icon}
+                <div className="relative">
+                  {item.icon}
+                  {item.count > 0 && (
+                    <span className="absolute -top-1.5 -right-2 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[9px] font-bold text-white shadow-sm ring-2 ring-slate-900">
+                      {item.count > 9 ? '9+' : item.count}
+                    </span>
+                  )}
+                </div>
                 <span className={`truncate text-[10px] sm:text-xs md:text-sm ${isCollapsed ? 'md:hidden' : ''}`}>{item.label}</span>
               </button>
             );

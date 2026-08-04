@@ -9,6 +9,7 @@ import ProfilePage from './ProfilePage';
 import SettingsPage from './SettingsPage';
 import MemberInfoModal from '../features/team/MemberInfoModal';
 import ProblemsPage from './ProblemsPage';
+import Rules from '../features/landing/Rules';
 
 export default function MentorDashboardPage() {
   const { currentUser, logout, feedbackOpen, problemsOpen } = useAuth();
@@ -32,6 +33,7 @@ export default function MentorDashboardPage() {
 
   const [invitations, setInvitations] = useState([]);
   const [teams, setTeams] = useState([]);
+  const [maxTeams, setMaxTeams] = useState(3);
   const [loading, setLoading] = useState(true);
   const [processingId, setProcessingId] = useState(null);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -47,6 +49,13 @@ export default function MentorDashboardPage() {
     message: ''
   });
 
+  // Resign modal state
+  const [resignModalState, setResignModalState] = useState({
+    isOpen: false,
+    teamId: null,
+    teamName: ''
+  });
+
   // Member modal state
   const [selectedMember, setSelectedMember] = useState(null);
   const [isMemberModalOpen, setIsMemberModalOpen] = useState(false);
@@ -59,15 +68,21 @@ export default function MentorDashboardPage() {
     setLoading(true);
     try {
       const token = localStorage.getItem('token');
-      const [invRes, teamsRes] = await Promise.all([
+      const [invRes, teamsRes, settingsRes] = await Promise.all([
         fetch(`${API_URL}/api/v1/mentors/invitations`, { headers: { 'Authorization': `Bearer ${token}` } }),
-        fetch(`${API_URL}/api/v1/mentors/teams`, { headers: { 'Authorization': `Bearer ${token}` } })
+        fetch(`${API_URL}/api/v1/mentors/teams`, { headers: { 'Authorization': `Bearer ${token}` } }),
+        fetch(`${API_URL}/api/v1/settings`)
       ]);
       const invData = await invRes.json();
       const teamsData = await teamsRes.json();
+      const settingsData = await settingsRes.json();
 
       if (invData.success) setInvitations(invData.data);
       if (teamsData.success) setTeams(teamsData.data);
+      if (settingsData.success && settingsData.data.max_teams_per_mentor) {
+        const parsedMax = parseInt(settingsData.data.max_teams_per_mentor, 10);
+        if (!isNaN(parsedMax)) setMaxTeams(parsedMax);
+      }
     } catch (error) {
       console.error('Error fetching mentor data:', error);
       toast.error('Network error loading mentor dashboard');
@@ -133,9 +148,32 @@ export default function MentorDashboardPage() {
     });
   };
 
-  const handleLeaveTeam = async (teamId) => {
-    // Optional: Let mentor leave team (implemented if backend supports it, for now we will just show a toast or leave it out as the backend doesn't have an endpoint for mentors leaving teams yet)
-    toast.info("Leaving teams as a mentor must be requested through admin currently.");
+  const handleLeaveTeam = (teamId, teamName) => {
+    setResignModalState({ isOpen: true, teamId, teamName });
+  };
+
+  const handleConfirmResign = async () => {
+    setProcessingId(resignModalState.teamId);
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch(`${API_URL}/api/v1/mentors/teams/${resignModalState.teamId}/resign`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        toast.success('Successfully resigned from the team');
+        fetchData();
+        setResignModalState({ isOpen: false, teamId: null, teamName: '' });
+      } else {
+        toast.error(data.message || 'Failed to resign from team');
+      }
+    } catch (error) {
+      console.error('Error resigning:', error);
+      toast.error('Network error while resigning');
+    } finally {
+      setProcessingId(null);
+    }
   };
 
   const navItems = [
@@ -158,12 +196,11 @@ export default function MentorDashboardPage() {
       )
     },
     {
-      id: 'settings',
-      label: 'Settings',
+      id: 'rules',
+      label: 'Rules & Regulations',
       icon: (
         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
-          <path strokeLinecap="round" strokeLinejoin="round" d="M10.343 3.94c.09-.542.56-.94 1.11-.94h1.093c.55 0 1.02.398 1.11.94l.149.894c.07.424.384.764.78.93.398.164.855.142 1.205-.108l.737-.527a1.125 1.125 0 0 1 1.45.12l.773.774c.39.389.44 1.002.12 1.45l-.527.737c-.25.35-.272.806-.107 1.204.165.397.505.71.93.78l.893.15c.543.09.94.56.94 1.109v1.094c0 .55-.397 1.02-.94 1.11l-.893.149c-.425.07-.765.383-.93.78-.165.398-.143.854.107 1.204l.527.738c.32.447.269 1.06-.12 1.45l-.774.773a1.125 1.125 0 0 1-1.449.12l-.738-.527c-.35-.25-.806-.272-1.203-.107-.397.165-.71.505-.781.929l-.149.894c-.09.542-.56.94-1.11.94h-1.094c-.55 0-1.019-.398-1.11-.94l-.148-.894c-.071-.424-.384-.764-.781-.93-.398-.164-.854-.142-1.204.108l-.738.527c-.447.32-1.06.269-1.45-.12l-.773-.774a1.125 1.125 0 0 1-.12-1.45l.527-.737c.25-.35.273-.806.108-1.204-.165-.397-.505-.71-.93-.78l-.894-.15c-.542-.09-.94-.56-.94-1.109v-1.094c0-.55.398-1.02.94-1.11l.894-.149c.424-.07.765-.383.93-.78.165-.398.143-.854-.107-1.204l-.527-.738a1.125 1.125 0 0 1 .12-1.45l.773-.773a1.125 1.125 0 0 1 1.45-.12l.737.527c.35.25.807.272 1.204.107.397-.165.71-.505.78-.929l.15-.894Z" />
-          <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
+          <path strokeLinecap="round" strokeLinejoin="round" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-5l-5 5v-5z" />
         </svg>
       )
     }
@@ -335,81 +372,12 @@ export default function MentorDashboardPage() {
 
           {activeTab === 'dashboard' && (
             <div className="max-w-7xl mx-auto space-y-12">
-
-        {/* Pending Invitations Section */}
-        <section>
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-2xl font-bold text-slate-900">Pending Invitations</h2>
-            <span className="bg-blue-100 text-blue-700 font-bold px-3 py-1 rounded-full text-sm">
-              {invitations.length} Pending
-            </span>
-          </div>
-
-          {invitations.length === 0 ? (
-            <div className="bg-white rounded-3xl p-8 border border-slate-200 text-center text-slate-500 shadow-sm">
-              You have no pending invitations.
-            </div>
-          ) : (
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-              {invitations.map((inv) => (
-                <div key={inv.id} className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm hover:shadow-md transition-shadow flex flex-col">
-                  <div className="flex-1">
-                    <h3 className="text-xl font-bold text-slate-900 mb-1 truncate" title={inv.team_name}>{inv.team_name}</h3>
-                    <p className="text-xs text-slate-400 mb-4">Invited on {new Date(inv.created_at).toLocaleDateString()}</p>
-                    
-                    <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">Team Members ({inv.members?.length || 0})</h4>
-                    <div className="grid gap-2 grid-cols-1 mb-6">
-                      {inv.members?.map(member => (
-                        <div 
-                          key={member.id} 
-                          onClick={() => {
-                            setSelectedMember(member);
-                            setIsMemberModalOpen(true);
-                          }}
-                          className="flex items-center space-x-3 p-2.5 rounded-xl bg-slate-50 border border-slate-100 cursor-pointer hover:border-blue-300 hover:bg-blue-50/50 transition-colors"
-                        >
-                          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-bold text-xs shrink-0">
-                            {member.name.charAt(0).toUpperCase()}
-                          </div>
-                          <div className="min-w-0">
-                            <p className="text-sm font-bold text-slate-900 truncate flex items-center gap-1.5">
-                              {member.name} 
-                              {member.id === inv.leader_id && <span className="text-[9px] bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded-full uppercase">Leader</span>}
-                            </p>
-                            <p className="text-[10px] text-slate-500 truncate">ID: {member.student_id !== 'N/A' ? member.student_id : member.email}</p>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                  <div className="flex gap-3 mt-auto">
-                    <button
-                      disabled={processingId === inv.id}
-                      onClick={() => handleRespond(inv.id, true)}
-                      className="flex-1 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white font-bold py-2 rounded-xl transition-colors"
-                    >
-                      Accept
-                    </button>
-                    <button
-                      disabled={processingId === inv.id}
-                      onClick={() => openRejectModal(inv.id, inv.team_name)}
-                      className="flex-1 bg-slate-100 hover:bg-slate-200 disabled:bg-slate-50 text-slate-700 font-bold py-2 rounded-xl border border-slate-200 transition-colors"
-                    >
-                      Reject
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </section>
-
         {/* Mentored Teams Section */}
         <section>
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-2xl font-bold text-slate-900">My Mentored Teams</h2>
-            <span className={`font-bold px-3 py-1 rounded-full text-sm ${teams.length >= 3 ? 'bg-red-100 text-red-700' : 'bg-emerald-100 text-emerald-700'}`}>
-              {teams.length} / 3 Teams
+            <span className={`font-bold px-3 py-1 rounded-full text-sm ${teams.length >= maxTeams ? 'bg-red-100 text-red-700' : 'bg-emerald-100 text-emerald-700'}`}>
+              {teams.length} / {maxTeams} Teams
             </span>
           </div>
 
@@ -430,7 +398,7 @@ export default function MentorDashboardPage() {
                       <h3 className="text-2xl font-black text-slate-900">{team.name}</h3>
                       <p className="text-sm text-slate-500 mt-1">Created on {new Date(team.created_at).toLocaleDateString()}</p>
                     </div>
-                    <button onClick={() => handleLeaveTeam(team.id)} className="mt-4 sm:mt-0 px-4 py-2 bg-red-50 text-red-600 hover:bg-red-100 font-bold rounded-xl text-sm transition-colors border border-red-100">
+                    <button onClick={() => handleLeaveTeam(team.id, team.name)} className="mt-4 sm:mt-0 px-4 py-2 bg-red-50 text-red-600 hover:bg-red-100 font-bold rounded-xl text-sm transition-colors border border-red-100">
                       Resign Mentorship
                     </button>
                   </div>
@@ -467,6 +435,7 @@ export default function MentorDashboardPage() {
         </section>
             </div>
           )}
+          {activeTab === 'rules' && <Rules inDashboard={true} />}
           {activeTab === 'profile' && <ProfilePage inDashboard={true} />}
           {activeTab === 'settings' && <SettingsPage />}
         </main>
@@ -518,6 +487,53 @@ export default function MentorDashboardPage() {
                     </svg>
                   )}
                   Confirm Decline
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Resign Modal */}
+      {resignModalState.isOpen && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+            <div className="px-6 py-4 border-b border-red-100 bg-red-50 flex items-center justify-between">
+              <h3 className="text-lg font-bold text-red-900">Resign Mentorship</h3>
+              <button 
+                onClick={() => setResignModalState({ isOpen: false, teamId: null, teamName: '' })}
+                className="text-red-400 hover:text-red-600 transition-colors"
+              >
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+              </button>
+            </div>
+            <div className="p-6">
+              <p className="text-sm text-slate-600 mb-4">
+                Are you sure you want to resign as the mentor for <span className="font-bold text-slate-900">{resignModalState.teamName}</span>?
+              </p>
+              <p className="text-sm text-slate-500 mb-6 italic">
+                This action cannot be undone. The team will be notified, and they will need to invite a new mentor.
+              </p>
+              <div className="flex gap-3 justify-end">
+                <button
+                  onClick={() => setResignModalState({ isOpen: false, teamId: null, teamName: '' })}
+                  className="px-4 py-2 text-slate-600 hover:bg-slate-100 font-bold rounded-xl transition-colors"
+                  disabled={processingId === resignModalState.teamId}
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleConfirmResign}
+                  className="px-6 py-2 bg-red-600 hover:bg-red-700 text-white font-bold rounded-xl transition-colors disabled:opacity-50 flex items-center gap-2"
+                  disabled={processingId === resignModalState.teamId}
+                >
+                  {processingId === resignModalState.teamId && (
+                    <svg className="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                  )}
+                  Confirm Resignation
                 </button>
               </div>
             </div>

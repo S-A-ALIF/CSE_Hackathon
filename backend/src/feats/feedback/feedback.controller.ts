@@ -40,6 +40,16 @@ export const getAllFeedback = async (req: Request, res: Response): Promise<void>
     }
 };
 
+export const getUnresolvedFeedbackCount = async (req: Request, res: Response): Promise<void> => {
+    try {
+        const result = await pool.query("SELECT COUNT(*) as count FROM feedback WHERE status = 'pending'");
+        res.status(200).json({ success: true, status: 'success', count: parseInt(result.rows[0].count, 10) });
+    } catch (error) {
+        console.error('[FeedbackController] Error fetching unresolved feedback count:', error);
+        res.status(500).json({ success: false, status: 'error', message: 'Failed to fetch count' });
+    }
+};
+
 export const resolveFeedback = async (req: Request, res: Response): Promise<void> => {
     try {
         const { id } = req.params;

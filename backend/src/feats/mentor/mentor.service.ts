@@ -226,5 +226,42 @@ export const mentorService = {
             ...team,
             members: membersRes.rows.filter(m => m.team_id === team.id)
         }));
+    },
+
+    async resignMentorship(mentorId: string, teamId: string) {
+        const client = await pool.connect();
+        try {
+            await client.query('BEGIN');
+
+            const teamRes = await client.query('SELECT mentor_id, name, leader_id FROM teams WHERE id = $1', [teamId]);
+            const team = teamRes.rows[0];
+            if (!team) throw new Error('Team not found');
+            if (team.mentor_id !== mentorId) throw new Error('You are not the mentor of this team');
+
+            // Remove mentor from team
+            await client.query('UPDATE teams SET mentor_id = NULL WHERE id = $1', [teamId]);
+
+            // Notify team leader
+            const leaderEmailRes = await client.query('SELECT email FROM users WHERE id = $1', [team.leader_id]);
+            const leaderEmail = leaderEmailRes.rows[0]?.email;
+            if (leaderEmail) {
+                const mentorUserRes = await client.query('SELECT COALESCE(ui.name, u.email) as name FROM users u LEFT JOIN user_info ui ON u.id = ui.user_id WHERE u.id = $1', [mentorId]);
+                const mentorName = mentorUserRes.rows[0]?.name || 'Your mentor';
+                
+                await notificationService.createNotification(
+                    leaderEmail,
+                    `${mentorName} has resigned as the mentor for your team "${team.name}".`,
+                    null
+                );
+            }
+
+            await client.query('COMMIT');
+            return { success: true };
+        } catch (error) {
+            await client.query('ROLLBACK');
+            throw error;
+        } finally {
+            client.release();
+        }
     }
 };

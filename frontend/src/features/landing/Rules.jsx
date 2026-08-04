@@ -68,7 +68,7 @@ const categoryColors = {
   Presentation: 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20',
 };
 
-export default function Rules() {
+export default function Rules({ inDashboard = false }) {
   const [customRules, setCustomRules] = useState([]);
 
   useEffect(() => {
@@ -87,8 +87,8 @@ export default function Rules() {
   }, []);
 
   return (
-    <section id="rules" className="bg-slate-900 py-28 text-white">
-      <div className="container mx-auto px-6 lg:px-16">
+    <section id="rules" className={inDashboard ? "bg-slate-900 rounded-3xl py-12 text-white my-4 shadow-xl border border-slate-800" : "bg-slate-900 py-28 text-white"}>
+      <div className={inDashboard ? "max-w-6xl mx-auto px-6" : "container mx-auto px-6 lg:px-16"}>
         {/* Header */}
         <div className="max-w-3xl mx-auto text-center mb-16">
           <span className="inline-block text-xs font-bold tracking-widest text-red-400 uppercase border border-red-400/20 bg-red-400/10 px-4 py-1.5 rounded-full mb-5">

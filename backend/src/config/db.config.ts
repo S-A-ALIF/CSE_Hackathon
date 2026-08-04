@@ -1,5 +1,10 @@
-import { Pool, PoolConfig } from 'pg';
+import pg, { Pool, PoolConfig } from 'pg';
 import { envConfig } from './env.config';
+
+// Force pg driver to parse TIMESTAMP WITHOUT TIME ZONE (OID 1114) as UTC instead of local server time
+pg.types.setTypeParser(1114, function(stringValue) {
+    return new Date(stringValue + 'Z');
+});
 
 /**
  * Robust Pool Configuration Matrix

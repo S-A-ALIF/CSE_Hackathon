@@ -84,3 +84,20 @@ export const getMentoredTeams = async (req: Request, res: Response): Promise<voi
         res.status(500).json({ success: false, message: 'Failed to get mentored teams' });
     }
 };
+
+export const resignMentorship = async (req: Request, res: Response): Promise<void> => {
+    try {
+        const mentorId = (req as any).user.id;
+        if ((req as any).user.role !== 'mentor') {
+            res.status(403).json({ success: false, message: 'Only mentors can access this' });
+            return;
+        }
+
+        const { id } = req.params;
+        await mentorService.resignMentorship(mentorId, id);
+        res.status(200).json({ success: true, message: 'Resigned successfully' });
+    } catch (error: any) {
+        console.error('[MentorController] Error resigning mentorship:', error);
+        res.status(400).json({ success: false, message: error.message || 'Failed to resign mentorship' });
+    }
+};

@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { authMiddleware } from '../auth/auth.middleware';
-import { getMentorsList, inviteMentor, getInvitations, respondToInvitation, getMentoredTeams } from './mentor.controller';
+import { getMentorsList, inviteMentor, getInvitations, respondToInvitation, getMentoredTeams, resignMentorship } from './mentor.controller';
 
 const router = Router();
 
@@ -15,5 +15,6 @@ router.post('/invite', inviteMentor);
 router.get('/invitations', getInvitations);
 router.post('/invitations/:id/respond', respondToInvitation);
 router.get('/teams', getMentoredTeams);
+router.delete('/teams/:id/resign', resignMentorship);
 
 export default router;

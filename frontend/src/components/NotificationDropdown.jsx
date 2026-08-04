@@ -4,21 +4,22 @@ import { useAuth } from '../contexts/AuthContext';
 import { toast } from 'sonner';
 import JoinTeamModal from '../features/team/JoinTeamModal';
 import { createPortal } from 'react-dom';
+import { useLocation } from 'react-router-dom';
 import DOMPurify from 'dompurify';
 
 // Utility to format timestamp in GMT+6:00 directly without offset text
 const formatGMT6 = (dateString) => {
   if (!dateString) return '';
   try {
-    const baseDate = new Date(dateString);
-    // Add 6 hours (in ms) to adjust database timestamp directly to Bangladesh Standard Time (9:24 PM)
-    const date = new Date(baseDate.getTime() + 6 * 60 * 60 * 1000);
+    const date = new Date(dateString);
     const dateFormatted = date.toLocaleDateString('en-GB', {
+      timeZone: 'Asia/Dhaka',
       day: '2-digit',
       month: 'short',
       year: 'numeric'
     });
     const timeFormatted = date.toLocaleTimeString('en-US', {
+      timeZone: 'Asia/Dhaka',
       hour: '2-digit',
       minute: '2-digit',
       hour12: true
@@ -80,6 +81,13 @@ export default function NotificationDropdown() {
   const [selectedNotificationModal, setSelectedNotificationModal] = useState(null);
   const [isFullScreen, setIsFullScreen] = useState(false);
   const dropdownRef = useRef(null);
+  const location = useLocation();
+
+  // Close modal on route change
+  useEffect(() => {
+    setSelectedNotificationModal(null);
+    setIsFullScreen(false);
+  }, [location.pathname]);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -315,14 +323,14 @@ export default function NotificationDropdown() {
                       notification.is_read ? 'opacity-60' : 'bg-blue-50 dark:bg-blue-500/5'
                     }`}
                   >
-                    <div className="flex gap-3 pr-2">
+                    <div className="flex flex-1 min-w-0 gap-3 pr-2">
                       {!notification.is_read && (
                         <div className="mt-1.5 flex-shrink-0">
                           <div className="h-2 w-2 rounded-full bg-blue-600 dark:bg-blue-500"></div>
                         </div>
                       )}
-                      <div>
-                        <p className={`text-sm line-clamp-3 whitespace-pre-line leading-snug ${notification.is_read ? 'text-slate-600 dark:text-slate-400' : 'text-slate-900 dark:text-slate-200 font-medium'}`}>
+                      <div className="flex-1 min-w-0">
+                        <p className={`text-sm line-clamp-3 whitespace-pre-line break-words leading-snug ${notification.is_read ? 'text-slate-600 dark:text-slate-400' : 'text-slate-900 dark:text-slate-200 font-medium'}`}>
                           {clampNotificationMessage(notification.message)}
                         </p>
                         <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
@@ -429,26 +437,26 @@ export default function NotificationDropdown() {
 
       {/* Full Message Reader Popup Modal */}
       {selectedNotificationModal && createPortal(
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className={`bg-white dark:bg-slate-900 shadow-2xl border border-slate-200 dark:border-slate-800 flex flex-col overflow-hidden transform transition-all duration-300 ${isFullScreen ? 'w-full h-full rounded-none m-0' : 'max-w-lg w-full max-h-[80vh] rounded-3xl scale-100'}`}>
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className={`bg-white dark:bg-slate-900 shadow-2xl border border-slate-200 dark:border-slate-800 flex flex-col overflow-hidden transform transition-all duration-300 ${isFullScreen ? 'fixed inset-0 w-full h-full rounded-none m-0' : 'max-w-lg w-full max-h-[70vh] rounded-3xl scale-100'}`}>
             {/* Header with Close button at Top Right */}
-            <div className="p-6 pb-4 flex items-center justify-between gap-4 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30">
+            <div className="p-4 sm:p-6 pb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30 shrink-0">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-2xl bg-blue-100 dark:bg-blue-900/50 text-blue-600 dark:text-blue-400 flex items-center justify-center text-xl shrink-0">
                   🔔
                 </div>
-                <div>
-                  <h3 className="font-black text-slate-900 dark:text-white text-base leading-tight">
+                <div className="min-w-0">
+                  <h3 className="font-black text-slate-900 dark:text-white text-base leading-tight truncate">
                     Notification Details
                   </h3>
-                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 truncate">
                     {formatGMT6(selectedNotificationModal.created_at)}
                   </p>
                 </div>
               </div>
 
               {/* Buttons on Top Right */}
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 self-end sm:self-auto">
                 <button
                   type="button"
                   onClick={() => setIsFullScreen(!isFullScreen)}
@@ -470,10 +478,10 @@ export default function NotificationDropdown() {
               </div>
             </div>
 
-            {/* Scrollable Fixed-Size Message Body */}
-            <div className="p-6 overflow-y-auto flex-1 space-y-4">
-              <div className="bg-slate-50 dark:bg-slate-800/60 rounded-2xl p-4 border border-slate-200/60 dark:border-slate-700/60">
-                <div className="text-sm md:text-base text-slate-700 dark:text-slate-200 font-medium whitespace-pre-line leading-relaxed prose prose-sm dark:prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(formatNotificationMessage(selectedNotificationModal.message, false)) }}>
+            {/* Message Body */}
+            <div className={`p-4 sm:p-6 flex-1 min-h-0 space-y-4 relative overflow-y-auto overflow-x-hidden`}>
+              <div className="bg-slate-50 dark:bg-slate-800/60 rounded-2xl p-4 border border-slate-200/60 dark:border-slate-700/60 w-full h-full relative">
+                <div className={`text-sm md:text-base text-slate-700 dark:text-slate-200 font-medium whitespace-pre-wrap break-words leading-relaxed prose prose-sm dark:prose-invert max-w-none w-full prose-pre:whitespace-pre-wrap prose-pre:break-words prose-p:break-words`} dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(formatNotificationMessage(selectedNotificationModal.message, false)) }}>
                 </div>
               </div>
 

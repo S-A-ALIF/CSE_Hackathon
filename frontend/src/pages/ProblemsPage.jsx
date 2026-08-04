@@ -6,7 +6,7 @@ import FormattedContent from '../components/FormattedContent';
 import { exportWebpageToPDF } from '../utils/pdfExport';
 
 export default function ProblemsPage({ inDashboard = false }) {
-  const { workspaceOpen } = useAuth();
+  const { workspaceOpen, currentUser } = useAuth();
   const [problems, setProblems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [downloading, setDownloading] = useState(false);
@@ -92,21 +92,23 @@ export default function ProblemsPage({ inDashboard = false }) {
                         </>
                       )}
                     </button>
-                    {workspaceOpen ? (
-                      <Link
-                        to="/project"
-                        className="w-full sm:w-auto px-8 py-3 bg-slate-900 dark:bg-blue-600 hover:bg-slate-800 dark:hover:bg-blue-500 text-white font-bold text-sm rounded-xl transition-colors text-center"
-                      >
-                        Select & Start Hacking
-                      </Link>
-                    ) : (
-                      <button
-                        disabled
-                        className="w-full sm:w-auto px-8 py-3 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-400 dark:text-slate-500 font-bold text-sm rounded-xl cursor-not-allowed flex items-center justify-center gap-1.5"
-                        title="Workspace is currently locked by admin"
-                      >
-                        <span>🔒</span> Workspace Locked
-                      </button>
+                    {currentUser?.role !== 'mentor' && (
+                      workspaceOpen ? (
+                        <Link
+                          to="/project"
+                          className="w-full sm:w-auto px-8 py-3 bg-slate-900 dark:bg-blue-600 hover:bg-slate-800 dark:hover:bg-blue-500 text-white font-bold text-sm rounded-xl transition-colors text-center"
+                        >
+                          Select & Start Hacking
+                        </Link>
+                      ) : (
+                        <button
+                          disabled
+                          className="w-full sm:w-auto px-8 py-3 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-400 dark:text-slate-500 font-bold text-sm rounded-xl cursor-not-allowed flex items-center justify-center gap-1.5"
+                          title="Workspace is currently locked by admin"
+                        >
+                          <span>🔒</span> Workspace Locked
+                        </button>
+                      )
                     )}
                   </div>
                 </div>
