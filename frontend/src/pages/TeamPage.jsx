@@ -10,7 +10,7 @@ import InviteMentorModal from '../features/team/InviteMentorModal';
 import TeamManagementModal from '../features/team/TeamManagementModal';
 import { userCache } from '../utils/userCache';
 
-export default function TeamPage({ inDashboard = false }) {
+export default function TeamPage({ inDashboard = false, readOnly = false }) {
   const { currentUser } = useAuth();
   const [team, setTeam] = useState(userCache.team || null);
   const [loading, setLoading] = useState(!userCache.lastFetched.team);
@@ -249,18 +249,22 @@ export default function TeamPage({ inDashboard = false }) {
             <h3 className="text-2xl font-bold text-slate-900 mb-2">You haven't joined a team yet</h3>
             <p className="text-slate-500 mb-8">Create your own hackathon team or join an existing one using an invite code.</p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <button
-                onClick={() => setIsJoinModalOpen(true)}
-                className="px-8 py-4 bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold rounded-xl transition-all"
-              >
-                Join with Code
-              </button>
-              <button
-                onClick={() => setIsCreateModalOpen(true)}
-                className="px-8 py-4 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl shadow-lg shadow-blue-500/30 transition-all"
-              >
-                Create a New Team
-              </button>
+              {!readOnly && (
+                <>
+                  <button
+                    onClick={() => setIsJoinModalOpen(true)}
+                    className="px-8 py-4 bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold rounded-xl transition-all"
+                  >
+                    Join with Code
+                  </button>
+                  <button
+                    onClick={() => setIsCreateModalOpen(true)}
+                    className="px-8 py-4 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl shadow-lg shadow-blue-500/30 transition-all"
+                  >
+                    Create a New Team
+                  </button>
+                </>
+              )}
             </div>
           </div>
         ) : (
@@ -327,21 +331,23 @@ export default function TeamPage({ inDashboard = false }) {
                       )}
                     </span>
                   </div>
-                  {team.leader_id !== currentUser?.id ? (
-                    <button
-                      onClick={handleLeaveTeam}
-                      className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-bold rounded-xl text-xs sm:text-sm transition-colors shadow-sm"
-                    >
-                      Leave Team
-                    </button>
-                  ) : (
-                    <button
-                      onClick={() => setIsManageModalOpen(true)}
-                      className="px-4 py-2 bg-slate-800 hover:bg-slate-900 text-white font-bold rounded-xl text-xs sm:text-sm transition-colors shadow-sm flex items-center gap-2"
-                    >
-                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
-                      Manage Team
-                    </button>
+                  {!readOnly && (
+                    team.leader_id !== currentUser?.id ? (
+                      <button
+                        onClick={handleLeaveTeam}
+                        className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-bold rounded-xl text-xs sm:text-sm transition-colors shadow-sm"
+                      >
+                        Leave Team
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => setIsManageModalOpen(true)}
+                        className="px-4 py-2 bg-slate-800 hover:bg-slate-900 text-white font-bold rounded-xl text-xs sm:text-sm transition-colors shadow-sm flex items-center gap-2"
+                      >
+                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                        Manage Team
+                      </button>
+                    )
                   )}
                 </div>
               </div>
@@ -382,7 +388,7 @@ export default function TeamPage({ inDashboard = false }) {
                           <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" /></svg>
                         </span>
                         
-                        {team.leader_id === currentUser?.id && member.id !== team.leader_id && (
+                        {!readOnly && team.leader_id === currentUser?.id && member.id !== team.leader_id && (
                           <div className="relative inline-block text-left" onClick={e => e.stopPropagation()}>
                             <button 
                               onClick={(e) => {
@@ -423,7 +429,7 @@ export default function TeamPage({ inDashboard = false }) {
             </div>
             
             {/* If user is leader, they might want to invite more people */}
-            {team.leader_id === currentUser?.id && (
+            {!readOnly && team.leader_id === currentUser?.id && (
               <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mt-8">
                 {(team.maxMembers === null || team.members.length < (team.maxMembers || 5)) && !team.is_full ? (
                   <button 

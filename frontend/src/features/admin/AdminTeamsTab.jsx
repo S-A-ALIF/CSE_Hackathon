@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { API_URL } from '../../config';
 import { toast } from 'sonner';
 import DetailsInfoModal from './DetailsInfoModal';
+import BanModal from './BanModal';
 import EditModal from './EditModal';
 import ConfirmModal from '../../components/ConfirmModal';
 import { adminCache } from './adminCache';
@@ -24,6 +25,7 @@ export default function AdminTeamsTab({ activeTab }) {
   const [detailsModalData, setDetailsModalData] = useState(null);
   const [detailsModalType, setDetailsModalType] = useState('team');
   const [editModalData, setEditModalData] = useState(null);
+  const [banModalConfig, setBanModalConfig] = useState({ isOpen: false, target: null, isBanning: false });
   const [editModalType, setEditModalType] = useState('team');
 
   // Menu open state
@@ -189,7 +191,9 @@ export default function AdminTeamsTab({ activeTab }) {
     });
   };
 
-  const executeBanToggleTeam = async (team) => {
+  const executeBanToggleTeam = async (reason) => {
+    if (!banModalConfig.target) return;
+    const team = banModalConfig.target;
     const nextBan = !team.is_banned;
     try {
       const token = localStorage.getItem('token');
@@ -201,13 +205,13 @@ export default function AdminTeamsTab({ activeTab }) {
         },
         body: JSON.stringify({
           is_banned: nextBan,
-          ban_reason: nextBan ? 'Banned by Admin' : null
+          ban_reason: nextBan ? reason : null
         })
       });
       const data = await res.json();
       if (res.ok && data.success) {
         toast.success(nextBan ? 'Team has been banned' : 'Team is unbanned');
-        setConfirmConfig(prev => ({ ...prev, isOpen: false }));
+        setBanModalConfig({ isOpen: false, target: null, isBanning: false });
         adminCache.invalidate();
         fetchTeams(true);
       } else {
@@ -221,16 +225,10 @@ export default function AdminTeamsTab({ activeTab }) {
 
   const handleBanToggleTeam = (team) => {
     const nextBan = !team.is_banned;
-    setConfirmConfig({
+    setBanModalConfig({
       isOpen: true,
-      title: nextBan ? "Ban Team?" : "Unban Team?",
-      message: nextBan
-        ? `Are you sure you want to ban team "${team.name}"? Their members will be restricted from participating.`
-        : `Are you sure you want to unban team "${team.name}"? They will be allowed to participate again.`,
-      confirmText: nextBan ? "Ban Team" : "Unban Team",
-      variant: nextBan ? "warning" : "info",
-      requireInput: false,
-      onConfirm: () => executeBanToggleTeam(team)
+      target: team,
+      isBanning: nextBan
     });
   };
 
@@ -694,6 +692,14 @@ export default function AdminTeamsTab({ activeTab }) {
         variant={confirmConfig.variant}
         requireInput={confirmConfig.requireInput}
         requireInputText={confirmConfig.requireInputText}
+      />
+
+      <BanModal
+        isOpen={banModalConfig.isOpen}
+        onClose={() => setBanModalConfig({ isOpen: false, target: null, isBanning: false })}
+        onConfirm={executeBanToggleTeam}
+        entityName={banModalConfig.target?.name || 'Team'}
+        isBanning={banModalConfig.isBanning}
       />
     </div>
   );

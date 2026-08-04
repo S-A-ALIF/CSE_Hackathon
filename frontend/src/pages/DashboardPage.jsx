@@ -11,9 +11,10 @@ import ProfilePage from './ProfilePage';
 import { toast } from 'sonner';
 import SettingsPage from './SettingsPage';
 import QnAPage from './QnAPage';
+import BanBanner from '../components/BanBanner';
 
 export default function DashboardPage() {
-  const { currentUser, logout, workspaceOpen, problemsOpen, feedbackOpen, fetchPlatformSettings } = useAuth();
+  const { currentUser, userProfile, logout, workspaceOpen, problemsOpen, feedbackOpen, fetchPlatformSettings } = useAuth();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState(() => {
     return localStorage.getItem('hackathon_active_tab') || 'team';
@@ -35,21 +36,27 @@ export default function DashboardPage() {
     return () => clearInterval(interval);
   }, [fetchPlatformSettings]);
 
-  // Force redirect to team tab if the current active tab gets closed by admin
+  // Force redirect to team tab if the current active tab gets closed by admin or user is banned
   useEffect(() => {
-    if (activeTab === 'project' && !workspaceOpen) {
-      toast.info('The admin has closed the Project Workspace.', {
-        description: 'You have been redirected to your team dashboard.'
-      });
-      setActiveTab('team');
+    if (userProfile?.isBanned) {
+      if (['project', 'problems'].includes(activeTab)) {
+        setActiveTab('team');
+      }
+    } else {
+      if (activeTab === 'project' && !workspaceOpen) {
+        toast.info('The admin has closed the Project Workspace.', {
+          description: 'You have been redirected to your team dashboard.'
+        });
+        setActiveTab('team');
+      }
+      if (activeTab === 'problems' && !problemsOpen) {
+        toast.info('The admin has closed the Problem Statement.', {
+          description: 'You have been redirected to your team dashboard.'
+        });
+        setActiveTab('team');
+      }
     }
-    if (activeTab === 'problems' && !problemsOpen) {
-      toast.info('The admin has closed the Problem Statement.', {
-        description: 'You have been redirected to your team dashboard.'
-      });
-      setActiveTab('team');
-    }
-  }, [workspaceOpen, problemsOpen, activeTab]);
+  }, [workspaceOpen, problemsOpen, activeTab, userProfile?.isBanned]);
 
   useEffect(() => {
     if (!currentUser) {
@@ -133,18 +140,15 @@ export default function DashboardPage() {
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col h-screen overflow-hidden">
-      {/* Top Navbar with Logo on Left, Notif/Profile/Hamburger on Right */}
       <nav className="bg-slate-900 text-white py-4 px-6 lg:px-12 flex justify-between items-center shadow-md relative z-50 shrink-0">
         <Link to="/" className="text-2xl font-black tracking-tighter hover:opacity-80 transition-opacity">
           GSTU<span className="text-blue-500">Hackathon</span>
         </Link>
         
         <div className="flex items-center space-x-4">
-          {/* Notification Bell */}
           <NotificationDropdown />
           
           <div className="relative flex items-center space-x-4" ref={menuRef}>
-            {/* Profile Icon */}
             <button 
               onClick={() => setActiveTab('profile')}
               className="w-10 h-10 rounded-full bg-slate-800 hover:bg-slate-700 border-2 border-slate-700 flex items-center justify-center transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -155,7 +159,6 @@ export default function DashboardPage() {
               </svg>
             </button>
 
-            {/* Hamburger Menu */}
             <button 
               onClick={() => setIsMenuOpen(!isMenuOpen)}
               className="p-2 rounded-lg text-slate-300 hover:bg-slate-800 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -165,7 +168,6 @@ export default function DashboardPage() {
               </svg>
             </button>
 
-            {/* Dropdown Menu */}
             {isMenuOpen && (
               <div className="absolute top-full right-0 mt-2 w-56 bg-white text-slate-900 rounded-xl shadow-xl py-2 border border-slate-200 animate-in fade-in slide-in-from-top-2 z-50">
                 <div className="px-4 py-2 border-b border-slate-100 mb-1">
@@ -223,16 +225,12 @@ export default function DashboardPage() {
         </div>
       </nav>
 
-      {/* Main Body: Left Sidebar + Right Active Tab Content */}
       <div className="flex-grow flex flex-col md:flex-row h-[calc(100vh-73px)] overflow-hidden">
-        {/* Left Fixed Sidebar */}
-        {/* Left Fixed Sidebar (Horizontal Topbar on Mobile) */}
         <aside 
           className={`bg-slate-900 text-white border-b md:border-b-0 md:border-r border-slate-800 p-2 md:p-4 flex flex-col justify-between shrink-0 relative transition-all duration-300 md:h-full w-full ${
             isSidebarOpen ? 'md:w-64' : 'md:w-20'
           }`}
         >
-          {/* Toggle Button (Hidden on Mobile) */}
           <button
             onClick={() => setIsSidebarOpen(!isSidebarOpen)}
             className="hidden md:flex absolute -right-3.5 top-6 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 w-7 h-7 rounded-full items-center justify-center shadow-lg transition-transform focus:outline-none z-50"
@@ -265,8 +263,9 @@ export default function DashboardPage() {
               {navItems.map((item) => {
                 const isActive = activeTab === item.id;
                 
-                // Determine if item should be disabled
-                const isDisabled = (item.id === 'project' && !workspaceOpen) || 
+                const isBannedLock = userProfile?.isBanned && ['project', 'problems'].includes(item.id);
+                const isDisabled = isBannedLock ||
+                                   (item.id === 'project' && !workspaceOpen) || 
                                    (item.id === 'problems' && !problemsOpen);
 
                 return (
@@ -302,31 +301,33 @@ export default function DashboardPage() {
           )}
         </aside>
 
-        {/* Right Content Area */}
-        <main className="flex-grow p-4 sm:p-6 lg:p-12 overflow-y-auto w-full h-full">
-          {activeTab === 'team' && <TeamPage inDashboard={true} />}
+        <main className="flex-grow overflow-y-auto w-full h-full flex flex-col bg-slate-50">
+          <BanBanner />
+          <div className="p-4 sm:p-6 lg:p-12 flex-grow relative">
+            {activeTab === 'team' && <TeamPage inDashboard={true} readOnly={userProfile?.isBanned} />}
           
-          {activeTab === 'project' && (
-            workspaceOpen ? <ProjectPage inDashboard={true} /> : 
-            <div className="flex flex-col items-center justify-center h-full text-slate-500 animate-in fade-in">
-              <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mb-4">🔒</div>
-              <h2 className="text-xl font-bold text-slate-800">Workspace is Closed</h2>
-              <p className="mt-2 text-center max-w-sm">The project workspace is currently locked by the administrators.</p>
-            </div>
-          )}
-          
-          {activeTab === 'problems' && (
-            problemsOpen ? <ProblemsPage inDashboard={true} /> :
-            <div className="flex flex-col items-center justify-center h-full text-slate-500 animate-in fade-in">
-              <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mb-4">🔒</div>
-              <h2 className="text-xl font-bold text-slate-800">Problem Statement is Hidden</h2>
-              <p className="mt-2 text-center max-w-sm">The problem statement will be revealed once the hackathon officially starts.</p>
-            </div>
-          )}
-          {activeTab === 'rules' && <RulesPage inDashboard={true} />}
-          {activeTab === 'profile' && <ProfilePage inDashboard={true} />}
-          {activeTab === 'settings' && <SettingsPage />}
-          {activeTab === 'qna' && <QnAPage />}
+            {activeTab === 'project' && (
+              workspaceOpen ? <ProjectPage inDashboard={true} /> : 
+              <div className="flex flex-col items-center justify-center h-full text-slate-500 animate-in fade-in">
+                <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mb-4">🔒</div>
+                <h2 className="text-xl font-bold text-slate-800">Workspace is Closed</h2>
+                <p className="mt-2 text-center max-w-sm">The project workspace is currently locked by the administrators.</p>
+              </div>
+            )}
+            
+            {activeTab === 'problems' && (
+              problemsOpen ? <ProblemsPage inDashboard={true} /> :
+              <div className="flex flex-col items-center justify-center h-full text-slate-500 animate-in fade-in">
+                <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mb-4">🔒</div>
+                <h2 className="text-xl font-bold text-slate-800">Problem Statement is Hidden</h2>
+                <p className="mt-2 text-center max-w-sm">The problem statement will be revealed once the hackathon officially starts.</p>
+              </div>
+            )}
+            {activeTab === 'rules' && <RulesPage inDashboard={true} />}
+            {activeTab === 'profile' && <ProfilePage inDashboard={true} readOnly={userProfile?.isBanned} />}
+            {activeTab === 'settings' && <SettingsPage inDashboard={true} readOnly={userProfile?.isBanned} />}
+            {activeTab === 'qna' && <QnAPage inDashboard={true} />}
+          </div>
         </main>
       </div>
 

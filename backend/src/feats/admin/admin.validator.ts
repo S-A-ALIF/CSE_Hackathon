@@ -9,7 +9,7 @@ export const adminSchemas = {
             name: z.string().min(1, { message: "Team name must not be empty" }).max(100).optional(),
             leader_id: z.string().uuid({ message: "Invalid leader UUID" }).optional(),
             is_banned: z.boolean().optional(),
-            ban_reason: z.string().optional()
+            ban_reason: z.string().nullable().optional()
         })
     }),
     updateMember: z.object({
@@ -21,7 +21,7 @@ export const adminSchemas = {
             batch_session: z.string().optional(),
             phone_number: z.string().optional(),
             is_banned: z.boolean().optional(),
-            ban_reason: z.string().optional()
+            ban_reason: z.string().nullable().optional()
         })
     }),
     teamLimits: z.object({

@@ -5,12 +5,14 @@ import DetailsInfoModal from './DetailsInfoModal';
 import EditModal from './EditModal';
 import ConfirmModal from '../../components/ConfirmModal';
 import { adminCache } from './adminCache';
+import BanModal from './BanModal';
 
 export default function AdminMembersTab({ setParentActiveTab }) {
   const [members, setMembers] = useState(adminCache.members || []);
   const [loading, setLoading] = useState(!adminCache.members);
   const [searchTerm, setSearchTerm] = useState('');
   const [roleFilter, setRoleFilter] = useState('all');
+  const [banModalConfig, setBanModalConfig] = useState({ isOpen: false, target: null, isBanning: false });
   const [confirmConfig, setConfirmConfig] = useState({
     isOpen: false,
     title: '',
@@ -69,7 +71,9 @@ export default function AdminMembersTab({ setParentActiveTab }) {
     fetchMembers(false);
   }, []);
 
-  const executeBanToggleMember = async (member) => {
+  const executeBanToggleMember = async (reason) => {
+    if (!banModalConfig.target) return;
+    const member = banModalConfig.target;
     const nextBan = !member.is_banned;
     try {
       const token = localStorage.getItem('token');
@@ -81,13 +85,13 @@ export default function AdminMembersTab({ setParentActiveTab }) {
         },
         body: JSON.stringify({
           is_banned: nextBan,
-          ban_reason: nextBan ? 'Banned by Admin' : null
+          ban_reason: nextBan ? reason : null
         })
       });
       const data = await res.json();
       if (res.ok && data.success) {
         toast.success(nextBan ? 'Member has been banned' : 'Member is unbanned');
-        setConfirmConfig(prev => ({ ...prev, isOpen: false }));
+        setBanModalConfig({ isOpen: false, target: null, isBanning: false });
         adminCache.invalidate();
         fetchMembers(true);
       } else {
@@ -101,16 +105,10 @@ export default function AdminMembersTab({ setParentActiveTab }) {
 
   const handleBanToggleMember = (member) => {
     const nextBan = !member.is_banned;
-    setConfirmConfig({
+    setBanModalConfig({
       isOpen: true,
-      title: nextBan ? "Ban Member?" : "Unban Member?",
-      message: nextBan
-        ? `Are you sure you want to ban user "${member.email}"? They will be restricted from participating.`
-        : `Are you sure you want to unban user "${member.email}"? They will be allowed to participate again.`,
-      confirmText: nextBan ? "Ban Member" : "Unban Member",
-      variant: nextBan ? "warning" : "info",
-      requireInput: false,
-      onConfirm: () => executeBanToggleMember(member)
+      target: member,
+      isBanning: nextBan
     });
   };
 
@@ -671,6 +669,14 @@ export default function AdminMembersTab({ setParentActiveTab }) {
         variant={confirmConfig.variant}
         requireInput={confirmConfig.requireInput}
         requireInputText={confirmConfig.requireInputText}
+      />
+
+      <BanModal
+        isOpen={banModalConfig.isOpen}
+        onClose={() => setBanModalConfig({ isOpen: false, target: null, isBanning: false })}
+        onConfirm={executeBanToggleMember}
+        entityName={banModalConfig.target?.email || 'Member'}
+        isBanning={banModalConfig.isBanning}
       />
     </div>
   );

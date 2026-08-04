@@ -88,9 +88,12 @@ export const loginUser = async (email: string, password: string) => {
     try {
         // 1. Fetch user by email with user_info in a single JOIN
         const query = `
-            SELECT u.*, ui.name, ui.student_id, ui.batch_session, ui.phone_number
+            SELECT u.*, ui.name, ui.student_id, ui.batch_session, ui.phone_number,
+                   t.is_banned as team_is_banned, t.ban_reason as team_ban_reason
             FROM users u
             LEFT JOIN user_info ui ON u.id = ui.user_id
+            LEFT JOIN team_members tm ON u.id = tm.user_id
+            LEFT JOIN teams t ON tm.team_id = t.id
             WHERE u.email = $1
         `;
         const result = await pool.query(query, [email]);
@@ -99,11 +102,6 @@ export const loginUser = async (email: string, password: string) => {
         // 2. Validate user existence
         if (!user) {
             throw new CustomError('Invalid email or password', 401);
-        }
-
-        // 2.5 Check if user is banned
-        if (user.is_banned) {
-            throw new CustomError(`Your account has been banned: ${user.ban_reason || 'Violation of platform rules.'}`, 403);
         }
 
         // 3. Compare passwords
@@ -116,12 +114,19 @@ export const loginUser = async (email: string, password: string) => {
         // 4. Generate JWT
         const token = generateToken({ id: user.id, email: user.email, role: user.role });
 
+        const derivedIsBanned = user.is_banned || user.team_is_banned || false;
+        const derivedBanReason = user.is_banned 
+            ? (user.ban_reason || 'Violation of platform rules.') 
+            : (user.team_is_banned ? (user.team_ban_reason || 'Your team has been banned.') : null);
+
         return {
             token,
             user: {
                 id: user.id,
                 email: user.email,
                 role: user.role,
+                is_banned: derivedIsBanned,
+                ban_reason: derivedBanReason,
                 profile: {
                     name: user.name || '',
                     student_id: user.student_id || '',
@@ -141,9 +146,10 @@ export const loginUser = async (email: string, password: string) => {
 export const getMe = async (userId: string, role?: string) => {
     try {
         const userQuery = `
-            SELECT u.id, u.email, u.role, u.created_at,
+            SELECT u.id, u.email, u.role, u.created_at, u.is_banned, u.ban_reason,
                    ui.name, ui.student_id, ui.batch_session, ui.phone_number,
-                   t.id as team_id, t.name as team_name, t.leader_id
+                   t.id as team_id, t.name as team_name, t.leader_id,
+                   t.is_banned as team_is_banned, t.ban_reason as team_ban_reason
             FROM users u
             LEFT JOIN user_info ui ON u.id = ui.user_id
             LEFT JOIN team_members tm ON u.id = tm.user_id
@@ -156,6 +162,14 @@ export const getMe = async (userId: string, role?: string) => {
         if (!profile) {
             throw new CustomError('User not found', 404);
         }
+
+        const derivedIsBanned = profile.is_banned || profile.team_is_banned || false;
+        const derivedBanReason = profile.is_banned 
+            ? (profile.ban_reason || 'Violation of platform rules.') 
+            : (profile.team_is_banned ? (profile.team_ban_reason || 'Your team has been banned.') : null);
+
+        profile.is_banned = derivedIsBanned;
+        profile.ban_reason = derivedBanReason;
 
         return profile;
     } catch (error: any) {

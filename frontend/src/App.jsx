@@ -3,6 +3,7 @@ import { Toaster } from 'sonner';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { ThemeProvider } from './contexts/ThemeContext';
 import AdminMessagePopup from './components/AdminMessagePopup';
+import ErrorBoundary from './components/ErrorBoundary';
 import LandingPage from './pages/LandingPage';
 import RegisterPage from './pages/RegisterPage';
 import DashboardPage from './pages/DashboardPage';
@@ -19,21 +20,23 @@ function App() {
     <ThemeProvider>
       <AuthProvider>
         <Toaster richColors position="top-right" closeButton duration={4000} />
-        <BrowserRouter>
-          <AdminMessagePopup />
-          <Routes>
-            <Route path="/" element={<LandingPage />} />
-            <Route path="/register" element={<RegisterPage />} />
-            <Route path="/dashboard" element={<DashboardPage />} />
-            <Route path="/profile" element={<ProfilePage />} />
-            <Route path="/team" element={<TeamPage />} />
-            <Route path="/project" element={<ProjectPage />} />
-            <Route path="/problems" element={<ProblemsPage />} />
-            <Route path="/rules" element={<RulesPage />} />
-            <Route path="/admin" element={<AdminPage />} />
-            <Route path="/mentor" element={<MentorDashboardPage />} />
-          </Routes>
-        </BrowserRouter>
+        <ErrorBoundary>
+          <BrowserRouter>
+            <AdminMessagePopup />
+            <Routes>
+              <Route path="/" element={<LandingPage />} />
+              <Route path="/register" element={<RegisterPage />} />
+              <Route path="/dashboard" element={<DashboardPage />} />
+              <Route path="/profile" element={<ProfilePage />} />
+              <Route path="/team" element={<TeamPage />} />
+              <Route path="/project" element={<ProjectPage />} />
+              <Route path="/problems" element={<ProblemsPage />} />
+              <Route path="/rules" element={<RulesPage />} />
+              <Route path="/admin" element={<AdminPage />} />
+              <Route path="/mentor" element={<MentorDashboardPage />} />
+            </Routes>
+          </BrowserRouter>
+        </ErrorBoundary>
       </AuthProvider>
     </ThemeProvider>
   );

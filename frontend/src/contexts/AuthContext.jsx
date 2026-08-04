@@ -114,7 +114,9 @@ export function AuthProvider({ children }) {
               name: data.data.name || '',
               student_id: data.data.student_id || '',
               batch_session: data.data.batch_session || '',
-              phone_number: data.data.phone_number || ''
+              phone_number: data.data.phone_number || '',
+              isBanned: data.data.is_banned || false,
+              banReason: data.data.ban_reason || ''
             });
             localStorage.setItem('currentUser', JSON.stringify(freshUser));
           } else if (res.status === 401) {
@@ -156,7 +158,11 @@ export function AuthProvider({ children }) {
       localStorage.setItem('currentUser', JSON.stringify(data.data));
       setCurrentUser(data.data);
       if (data.data.profile) {
-        setUserProfile(data.data.profile);
+        setUserProfile({
+          ...data.data.profile,
+          isBanned: data.data.is_banned || false,
+          banReason: data.data.ban_reason || ''
+        });
       }
       return { success: true, user: data.data };
     } catch (err) {
