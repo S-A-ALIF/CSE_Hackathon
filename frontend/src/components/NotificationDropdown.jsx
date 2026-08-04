@@ -314,7 +314,7 @@ export default function NotificationDropdown() {
                   <div 
                     key={notification.id} 
                     onClick={() => {
-                        const isInviteOrRequest = notification.message.includes('You received a team invitation') || notification.message.includes('requested to join your team');
+                        const isInviteOrRequest = notification.message.includes('You received a team invitation') || notification.message.includes('requested to join your team') || notification.message.includes('invited to mentor the team');
                         const isPendingAction = !notification.action_status || notification.action_status === 'pending';
                         if (!notification.is_read && !(isInviteOrRequest && isPendingAction)) {
                           handleMarkAsRead(notification.id);
@@ -338,7 +338,7 @@ export default function NotificationDropdown() {
                         <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
                           {formatGMT6(notification.created_at)}
                         </p>
-                        {(notification.message.includes('You received a team invitation') || notification.message.includes('requested to join your team')) && (
+                        {(notification.message.includes('You received a team invitation') || notification.message.includes('requested to join your team') || notification.message.includes('invited to mentor the team')) && (
                           <div className="mt-2.5" onClick={(e) => e.stopPropagation()}>
                             {(!notification.action_status || notification.action_status === 'pending') ? (
                               <div className="flex items-center gap-2">
@@ -488,7 +488,7 @@ export default function NotificationDropdown() {
               </div>
 
               {/* If there are invite action buttons or status badges, render them inside the modal too */}
-              {(selectedNotificationModal.message.includes('You received a team invitation') || selectedNotificationModal.message.includes('requested to join your team')) && (
+              {(selectedNotificationModal.message.includes('You received a team invitation') || selectedNotificationModal.message.includes('requested to join your team') || selectedNotificationModal.message.includes('invited to mentor the team')) && (
                 <div className="pt-2">
                   {(!selectedNotificationModal.action_status || selectedNotificationModal.action_status === 'pending') ? (
                     <div className="flex items-center gap-3">

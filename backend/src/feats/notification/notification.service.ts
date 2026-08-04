@@ -11,7 +11,7 @@ export const notificationService = {
                     `UPDATE notifications
                      SET action_status = 'expired'
                      WHERE LOWER(recipient_email) = LOWER($1)
-                       AND (message LIKE '%You received a team invitation%' OR message LIKE '%requested to join your team%')
+                       AND (message LIKE '%You received a team invitation%' OR message LIKE '%requested to join your team%' OR message LIKE '%invited to mentor the team%')
                        AND (action_status IS NULL OR action_status = 'pending')
                        AND (
                            created_at < NOW() - INTERVAL '48 hours'
@@ -22,6 +22,13 @@ export const notificationService = {
                            OR (message LIKE '%requested to join your team%' AND NOT EXISTS (
                                SELECT 1 FROM team_join_requests 
                                WHERE status = 'pending' AND created_at > NOW() - INTERVAL '48 hours'
+                           ))
+                           OR (message LIKE '%invited to mentor the team%' AND NOT EXISTS (
+                               SELECT 1 FROM mentor_invitations mi
+                               JOIN teams t ON mi.team_id = t.id
+                               JOIN users u ON mi.mentor_id = u.id
+                               WHERE LOWER(u.email) = LOWER($1) AND mi.status = 'pending'
+                                 AND (message LIKE '%invited to mentor the team "' || t.name || '"%')
                            ))
                        )`,
                     [email]
@@ -49,7 +56,7 @@ export const notificationService = {
                  SET is_read = true 
                  WHERE id = $1 
                    AND NOT (
-                       (message LIKE '%You received a team invitation%' OR message LIKE '%requested to join your team%')
+                       (message LIKE '%You received a team invitation%' OR message LIKE '%requested to join your team%' OR message LIKE '%invited to mentor the team%')
                        AND (action_status IS NULL OR action_status = 'pending')
                    )
                  RETURNING *`,
@@ -88,7 +95,7 @@ export const notificationService = {
                  SET is_read = true 
                  WHERE recipient_email = $1 
                    AND NOT (
-                       (message LIKE '%You received a team invitation%' OR message LIKE '%requested to join your team%')
+                       (message LIKE '%You received a team invitation%' OR message LIKE '%requested to join your team%' OR message LIKE '%invited to mentor the team%')
                        AND (action_status IS NULL OR action_status = 'pending')
                    )
                  RETURNING *`,
@@ -173,6 +180,35 @@ export const notificationService = {
                             );
                         }
                     }
+                }
+            } else if (notif.message.includes('invited to mentor the team')) {
+                const userEmailToUse = userEmail;
+                if (!userEmailToUse) throw new Error('User email is required.');
+                const userRes = await client.query('SELECT id FROM users WHERE LOWER(email) = LOWER($1)', [userEmailToUse]);
+                const user = userRes.rows[0];
+                if (!user) throw new Error('User not found.');
+
+                const match = notif.message.match(/invited to mentor the team "([^"]+)"/);
+                if (!match) throw new Error('Invalid mentor invitation format.');
+                const teamName = match[1];
+
+                const invRes = await client.query(`
+                    SELECT mi.id, mi.team_id, t.leader_id 
+                    FROM mentor_invitations mi
+                    JOIN teams t ON mi.team_id = t.id
+                    WHERE mi.mentor_id = $1 AND t.name = $2 AND mi.status = 'pending'
+                `, [user.id, teamName]);
+                const inv = invRes.rows[0];
+
+                if (inv) {
+                     await client.query("UPDATE mentor_invitations SET status = 'rejected' WHERE id = $1", [inv.id]);
+                     
+                     const leaderRes = await client.query('SELECT email FROM users WHERE id = $1', [inv.leader_id]);
+                     if (leaderRes.rows[0]) {
+                         const mentorUserRes = await client.query('SELECT COALESCE(ui.name, u.email) as name FROM users u LEFT JOIN user_info ui ON u.id = ui.user_id WHERE u.id = $1', [user.id]);
+                         const mentorName = mentorUserRes.rows[0]?.name || 'A mentor';
+                         await client.query('INSERT INTO notifications (recipient_email, message) VALUES ($1, $2)', [leaderRes.rows[0].email, `${mentorName} has declined your invitation to mentor "${teamName}".`]);
+                     }
                 }
             }
 
@@ -330,6 +366,63 @@ export const notificationService = {
                     "UPDATE notifications SET action_status = 'accepted', is_read = true WHERE id = $1 RETURNING *",
                     [id]
                 );
+                await client.query('COMMIT');
+                return res.rows[0];
+            } else if (notif.message.includes('invited to mentor the team')) {
+                const userEmailToUse = userEmail;
+                if (!userEmailToUse) throw new Error('User email is required.');
+                const userRes = await client.query('SELECT id, email, role FROM users WHERE LOWER(email) = LOWER($1)', [userEmailToUse]);
+                const user = userRes.rows[0];
+                if (!user || user.role !== 'mentor') throw new Error('Mentor not found or invalid role.');
+
+                const match = notif.message.match(/invited to mentor the team "([^"]+)"/);
+                if (!match) throw new Error('Invalid mentor invitation format.');
+                const teamName = match[1];
+
+                const invRes = await client.query(`
+                    SELECT mi.id, mi.team_id, t.mentor_id, t.leader_id 
+                    FROM mentor_invitations mi
+                    JOIN teams t ON mi.team_id = t.id
+                    WHERE mi.mentor_id = $1 AND t.name = $2 AND mi.status = 'pending'
+                `, [user.id, teamName]);
+                const inv = invRes.rows[0];
+
+                if (!inv) {
+                     await client.query("UPDATE notifications SET action_status = 'expired', is_read = true WHERE id = $1", [id]);
+                     throw new Error('Invitation is no longer pending or does not exist.');
+                }
+
+                if (inv.mentor_id) {
+                     await client.query("UPDATE mentor_invitations SET status = 'rejected' WHERE id = $1", [inv.id]);
+                     await client.query("UPDATE notifications SET action_status = 'expired', is_read = true WHERE id = $1", [id]);
+                     throw new Error('Team already has a mentor.');
+                }
+
+                const countRes = await client.query('SELECT COUNT(*) as count FROM teams WHERE mentor_id = $1', [user.id]);
+                const currentCount = parseInt(countRes.rows[0].count, 10);
+                
+                const limitRes = await client.query("SELECT value FROM platform_settings WHERE key = 'max_teams_per_mentor'");
+                let maxTeams = 3;
+                if (limitRes.rows.length > 0 && limitRes.rows[0].value !== 'none' && !isNaN(parseInt(limitRes.rows[0].value, 10))) {
+                    maxTeams = parseInt(limitRes.rows[0].value, 10);
+                }
+
+                if (currentCount >= maxTeams) {
+                    throw new Error(`You cannot mentor more than ${maxTeams} teams`);
+                }
+
+                await client.query('UPDATE teams SET mentor_id = $1 WHERE id = $2', [user.id, inv.team_id]);
+                await client.query("UPDATE mentor_invitations SET status = 'accepted' WHERE id = $1", [inv.id]);
+                await client.query("UPDATE mentor_invitations SET status = 'rejected' WHERE team_id = $1 AND status = 'pending'", [inv.team_id]);
+
+                const leaderRes = await client.query('SELECT email FROM users WHERE id = $1', [inv.leader_id]);
+                if (leaderRes.rows[0]) {
+                    const mentorUserRes = await client.query('SELECT COALESCE(ui.name, u.email) as name FROM users u LEFT JOIN user_info ui ON u.id = ui.user_id WHERE u.id = $1', [user.id]);
+                    const mentorName = mentorUserRes.rows[0]?.name || 'A mentor';
+                    await client.query('INSERT INTO notifications (recipient_email, message) VALUES ($1, $2)', [leaderRes.rows[0].email, `${mentorName} has accepted your invitation to mentor "${teamName}"`]);
+                }
+
+                const res = await client.query("UPDATE notifications SET action_status = 'accepted', is_read = true WHERE id = $1 RETURNING *", [id]);
                 await client.query('COMMIT');
                 return res.rows[0];
             } else {
