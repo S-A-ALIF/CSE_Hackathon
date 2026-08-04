@@ -197,7 +197,12 @@ export const getAllMembers = async (req: Request, res: Response) => {
                 COALESCE(ui.batch_session, '') as batch_session,
                 COALESCE(ui.phone_number, '') as phone_number,
                 t.name as team_name,
-                t.id as team_id
+                t.id as team_id,
+                (
+                    SELECT json_agg(json_build_object('id', mt.id, 'name', mt.name))
+                    FROM teams mt
+                    WHERE mt.mentor_id = u.id
+                ) as mentor_teams
             FROM users u
             LEFT JOIN user_info ui ON u.id = ui.user_id
             LEFT JOIN team_members tm ON u.id = tm.user_id

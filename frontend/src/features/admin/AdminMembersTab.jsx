@@ -6,7 +6,7 @@ import EditModal from './EditModal';
 import ConfirmModal from '../../components/ConfirmModal';
 import { adminCache } from './adminCache';
 
-export default function AdminMembersTab() {
+export default function AdminMembersTab({ setParentActiveTab }) {
   const [members, setMembers] = useState(adminCache.members || []);
   const [loading, setLoading] = useState(!adminCache.members);
   const [searchTerm, setSearchTerm] = useState('');
@@ -339,15 +339,70 @@ export default function AdminMembersTab() {
         </td>
         <td className="py-3 px-4 font-mono text-slate-700">{m.student_id || '—'}</td>
         <td className="py-3 px-4 text-slate-700">{m.batch_session || '—'}</td>
-        <td className="py-3 px-4">
-          {m.team_name ? (
-            <span className="px-2.5 py-1 rounded-md bg-blue-50 text-blue-700 font-bold text-xs">
+        {activeTab !== 'admins' && (
+          <td className="py-3 px-4">
+          {m.role === 'mentor' && m.mentor_teams ? (
+            m.mentor_teams.length === 0 ? (
+              <span className="text-slate-400 text-xs italic">No Team</span>
+            ) : m.mentor_teams.length === 1 ? (
+              <button 
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (setParentActiveTab) setParentActiveTab('teams');
+                  localStorage.setItem('admin_open_team_id', m.mentor_teams[0].id);
+                }}
+                className="px-2.5 py-1 rounded-md bg-indigo-50 text-indigo-700 font-bold text-xs hover:bg-indigo-100 transition-colors"
+              >
+                {m.mentor_teams[0].name}
+              </button>
+            ) : (
+              <div className="relative">
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setOpenMenuId(openMenuId === `team-menu-${m.id}` ? null : `team-menu-${m.id}`);
+                  }}
+                  className="px-2.5 py-1 rounded-md bg-indigo-50 text-indigo-700 font-bold text-xs flex items-center gap-1 hover:bg-indigo-100 transition-colors"
+                >
+                  {m.mentor_teams.length} Teams <span className="text-[10px]">▼</span>
+                </button>
+                {openMenuId === `team-menu-${m.id}` && (
+                  <div className="absolute left-0 mt-1 w-48 bg-white rounded-lg shadow-lg border border-slate-200 py-1 z-30">
+                    {m.mentor_teams.map(team => (
+                      <button
+                        key={team.id}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setOpenMenuId(null);
+                          if (setParentActiveTab) setParentActiveTab('teams');
+                          localStorage.setItem('admin_open_team_id', team.id);
+                        }}
+                        className="w-full text-left px-3 py-1.5 text-sm font-semibold text-slate-700 hover:bg-slate-50 transition-colors"
+                      >
+                        {team.name}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )
+          ) : m.team_name ? (
+            <button
+               onClick={(e) => {
+                 e.stopPropagation();
+                 if (setParentActiveTab) setParentActiveTab('teams');
+                 localStorage.setItem('admin_open_team_id', m.team_id);
+               }}
+               className="px-2.5 py-1 rounded-md bg-blue-50 text-blue-700 font-bold text-xs hover:bg-blue-100 transition-colors"
+            >
               {m.team_name}
-            </span>
+            </button>
           ) : (
             <span className="text-slate-400 text-xs italic">No Team</span>
           )}
         </td>
+        )}
+        {activeTab !== 'admins' && (
         <td className="py-3 px-4">
           {m.is_banned ? (
             <span className="text-red-600 font-bold text-xs">🚫 Banned</span>
@@ -355,6 +410,8 @@ export default function AdminMembersTab() {
             <span className="text-emerald-600 font-bold text-xs">✅ Active</span>
           )}
         </td>
+        )}
+        {activeTab !== 'admins' && (
         <td className="py-3 px-4 text-right relative">
           <button
             onClick={() => setOpenMenuId(isMenuOpen ? null : menuKey)}
@@ -417,6 +474,7 @@ export default function AdminMembersTab() {
             </div>
           )}
         </td>
+        )}
       </tr>
     );
   };
@@ -553,9 +611,9 @@ export default function AdminMembersTab() {
                   <th className="py-3 px-4">Member Name & Email</th>
                   <th className="py-3 px-4">Student ID</th>
                   <th className="py-3 px-4">Session</th>
-                  <th className="py-3 px-4">Team</th>
-                  <th className="py-3 px-4">Status</th>
-                  <th className="py-3 px-4 text-right">Actions</th>
+                  {activeTab !== 'admins' && <th className="py-3 px-4">Team</th>}
+                  {activeTab !== 'admins' && <th className="py-3 px-4">Status</th>}
+                  {activeTab !== 'admins' && <th className="py-3 px-4 text-right">Actions</th>}
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 text-sm">

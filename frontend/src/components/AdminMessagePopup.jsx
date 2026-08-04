@@ -67,6 +67,8 @@ export default function AdminMessagePopup() {
         }
       }
     } catch (err) {
+      // Silently ignore 'Failed to fetch' which happens normally during dev server restarts
+      if (err.name === 'TypeError' && err.message === 'Failed to fetch') return;
       console.error('Error checking admin notifications for popup:', err);
     }
   };

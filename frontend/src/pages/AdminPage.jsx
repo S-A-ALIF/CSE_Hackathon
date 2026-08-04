@@ -160,12 +160,12 @@ export default function AdminPage() {
             )}
             {visitedTabs.teams && (
               <div className={activeTab === 'teams' ? 'block' : 'hidden'}>
-                <AdminTeamsTab />
+                <AdminTeamsTab activeTab={activeTab} />
               </div>
             )}
             {visitedTabs.members && (
               <div className={activeTab === 'members' ? 'block' : 'hidden'}>
-                <AdminMembersTab />
+                <AdminMembersTab setParentActiveTab={setActiveTab} />
               </div>
             )}
             {visitedTabs.control && (

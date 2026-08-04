@@ -6,7 +6,7 @@ import EditModal from './EditModal';
 import ConfirmModal from '../../components/ConfirmModal';
 import { adminCache } from './adminCache';
 
-export default function AdminTeamsTab() {
+export default function AdminTeamsTab({ activeTab }) {
   const [teams, setTeams] = useState(adminCache.teams || []);
   const [loading, setLoading] = useState(!adminCache.teams);
   const [expandedTeams, setExpandedTeams] = useState({});
@@ -32,6 +32,11 @@ export default function AdminTeamsTab() {
   // Selection mode state
   const [isSelectionMode, setIsSelectionMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState([]);
+
+  // Sorting and filtering state
+  const [sortField, setSortField] = useState('creation_date');
+  const [sortOrder, setSortOrder] = useState('descending');
+  const [teamFilter, setTeamFilter] = useState('all');
 
   const fetchTeams = async (force = false) => {
     if (!force && adminCache.isFresh('teams')) {
@@ -67,6 +72,24 @@ export default function AdminTeamsTab() {
   useEffect(() => {
     fetchTeams(false);
   }, []);
+
+  useEffect(() => {
+    if (teams.length > 0 && activeTab === 'teams') {
+      const openTeamId = localStorage.getItem('admin_open_team_id');
+      if (openTeamId) {
+        setExpandedTeams(prev => ({ ...prev, [openTeamId]: true }));
+        localStorage.removeItem('admin_open_team_id');
+        setTimeout(() => {
+          const el = document.getElementById(`team-row-${openTeamId}`);
+          if (el) {
+            el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            el.classList.add('ring-2', 'ring-blue-500', 'ring-offset-2');
+            setTimeout(() => el.classList.remove('ring-2', 'ring-blue-500', 'ring-offset-2'), 2000);
+          }
+        }, 100);
+      }
+    }
+  }, [teams, activeTab]);
 
   const toggleExpand = (teamId) => {
     setExpandedTeams((prev) => ({
@@ -262,11 +285,39 @@ export default function AdminTeamsTab() {
     fetchTeams(true);
   };
 
+  const getMinTeamSize = () => {
+    if (adminCache.settings && adminCache.settings.min_team_members !== 'none' && adminCache.settings.min_team_members) {
+      return parseInt(adminCache.settings.min_team_members, 10) || 3;
+    }
+    return 3;
+  };
+
   const filteredTeams = teams.filter((t) => {
     const s = searchTerm.toLowerCase();
     const nameMatch = t.name && t.name.toLowerCase().includes(s);
     const leaderMatch = t.leader_email && t.leader_email.toLowerCase().includes(s);
-    return nameMatch || leaderMatch;
+    if (s && !nameMatch && !leaderMatch) return false;
+
+    if (teamFilter === 'valid') {
+       if (!t.mentor_id || (t.members?.length || 0) < getMinTeamSize()) return false;
+    } else if (teamFilter === 'invalid') {
+       if (t.mentor_id && (t.members?.length || 0) >= getMinTeamSize()) return false;
+    }
+    
+    return true;
+  });
+
+  const sortedTeams = [...filteredTeams].sort((a, b) => {
+    let comparison = 0;
+    if (sortField === 'creation_date') {
+      comparison = new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+    } else if (sortField === 'team_size') {
+      comparison = (a.members?.length || 0) - (b.members?.length || 0);
+    } else if (sortField === 'status') {
+      comparison = (a.is_banned === b.is_banned) ? 0 : (a.is_banned ? 1 : -1);
+    }
+    
+    return sortOrder === 'descending' ? -comparison : comparison;
   });
 
   return (
@@ -337,28 +388,54 @@ export default function AdminTeamsTab() {
         </div>
       </div>
 
-      {/* Search Bar */}
-      <div className="max-w-md">
+      {/* Filter and Search Bar */}
+      <div className="flex flex-col sm:flex-row gap-4 flex-wrap">
         <input
           type="text"
           placeholder="Search teams by name or leader email..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          className="w-full px-4 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-blue-500 font-semibold text-sm"
+          className="flex-1 min-w-[200px] px-4 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-blue-500 font-semibold text-sm"
         />
+        <select
+          value={teamFilter}
+          onChange={(e) => setTeamFilter(e.target.value)}
+          className="px-4 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-blue-500 font-semibold text-sm bg-white"
+        >
+          <option value="all">All Teams</option>
+          <option value="valid">Valid Teams</option>
+          <option value="invalid">Invalid Teams</option>
+        </select>
+        <select
+          value={sortField}
+          onChange={(e) => setSortField(e.target.value)}
+          className="px-4 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-blue-500 font-semibold text-sm bg-white"
+        >
+          <option value="creation_date">Sort by Creation Date</option>
+          <option value="team_size">Sort by Team Size</option>
+          <option value="status">Sort by Status</option>
+        </select>
+        <select
+          value={sortOrder}
+          onChange={(e) => setSortOrder(e.target.value)}
+          className="px-4 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-blue-500 font-semibold text-sm bg-white"
+        >
+          <option value="descending">Descending</option>
+          <option value="ascending">Ascending</option>
+        </select>
       </div>
 
       {loading ? (
         <div className="flex justify-center py-20">
           <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600"></div>
         </div>
-      ) : filteredTeams.length === 0 ? (
+      ) : sortedTeams.length === 0 ? (
         <div className="bg-white p-12 rounded-2xl border border-slate-200 text-center">
           <p className="text-slate-500 font-semibold">No teams found matching your criteria.</p>
         </div>
       ) : (
         <div className="space-y-4">
-          {filteredTeams.map((team) => {
+          {sortedTeams.map((team) => {
             const isExpanded = Boolean(expandedTeams[team.id]);
             const teamMenuKey = `team-${team.id}`;
             const isMenuOpen = openMenuId === teamMenuKey;
@@ -367,7 +444,8 @@ export default function AdminTeamsTab() {
             return (
               <div
                 key={team.id}
-                className={`bg-white rounded-2xl border border-slate-200 shadow-sm transition-all ${hasOpenMenu ? 'relative z-30' : 'relative z-10'}`}
+                id={`team-row-${team.id}`}
+                className={`bg-white rounded-2xl border border-slate-200 shadow-sm transition-all duration-500 ${hasOpenMenu ? 'relative z-30' : 'relative z-10'}`}
               >
                 {/* Team Header Row */}
                 <div className={`p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:bg-slate-50/50 transition-colors ${isExpanded ? 'rounded-t-2xl' : 'rounded-2xl'}`}>
